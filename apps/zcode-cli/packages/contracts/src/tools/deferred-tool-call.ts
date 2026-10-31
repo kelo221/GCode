@@ -10,7 +10,7 @@ export const DeferredToolCallInputSchema = z
   })
   .strict();
 export const DeferredToolCallInputJsonSchema = zodToJsonSchema(
-  DeferredToolCallInputSchema,
+  DeferredToolCallInputSchema as any,
 ) as JsonSchema;
 
 // 原始目标名称与参数由调用本身保存；仅记录还原模型协议所需的包装标记。

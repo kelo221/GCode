@@ -258,7 +258,7 @@ export interface AgentRuntimeTurnMethods {
     options: RuntimeBackgroundStopOptions,
   ): Promise<RuntimeBackgroundStopResult>;
   cancelRunningRuntimeBackgroundTasks(input: {
-    reason: "subagent_cancelled" | "subagent_worktree_finalize";
+    reason: "subagent_cancelled" | "subagent_worktree_finalize" | "session_closed";
     traceContext?: TraceContext;
   }): Promise<number>;
   hasRunningBackgroundTasks(): boolean;
@@ -365,6 +365,7 @@ export interface AgentRuntimeTurnMethods {
     options?: {
       model?: Model;
       operationId?: string;
+      leadingReminderEntries?: readonly RuntimeMessageEntry[];
       postCompactReminderEntries?: readonly RuntimeMessageEntry[];
     },
   ): Promise<void>;
@@ -400,7 +401,7 @@ export interface AgentRuntimeTurnMethods {
     messageID: MessageId;
     sessionId: SessionId;
     source: SyntheticUserMessageSource;
-    text: string;
+    text: string | readonly string[];
     traceContext: TraceContext;
     metadata?: Record<string, unknown>;
     visibility?: MessageVisibility;

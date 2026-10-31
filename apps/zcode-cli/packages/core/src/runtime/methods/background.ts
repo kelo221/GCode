@@ -107,7 +107,7 @@ export async function stopBackgroundTask(
   }
 
   if (target.taskType === "local_agent") {
-    return stopLocalAgentBackgroundTask.call(this, target);
+    return stopLocalAgentBackgroundTask.call(this, target, options.initiator);
   }
 
   if (target.taskType === "local_bash") {
@@ -177,11 +177,13 @@ function unsupportedBackgroundStopResult(
 async function stopLocalAgentBackgroundTask(
   this: AgentRuntimeInternal,
   target: TypedRuntimeBackgroundStopTarget,
+  initiator: RuntimeBackgroundStopOptions["initiator"],
 ): Promise<RuntimeBackgroundStopResult> {
   if (!this.subagentPort?.stopTask) {
     return unsupportedBackgroundStopResult(target);
   }
-  const snapshot = await this.subagentPort.stopTask(target.taskId);
+  // 停止者随停止请求传给 subagent：killed 通知据此写 "by ZCode" / "by user" / 不写。
+  const snapshot = await this.subagentPort.stopTask(target.taskId, { initiator });
   if (!snapshot) {
     return {
       ok: false,
@@ -291,29 +293,34 @@ async function stopLocalBashBackgroundTask(
 export async function cancelRunningRuntimeBackgroundTasks(
   this: AgentRuntimeInternal,
   input: {
-    reason: "subagent_cancelled" | "subagent_worktree_finalize";
+    reason: "subagent_cancelled" | "subagent_worktree_finalize" | "session_closed";
     traceContext?: TraceContext;
   },
 ): Promise<number> {
-  if (this.config.taskType !== "subagent_child") return 0;
+  if (input.reason !== "session_closed" && this.config.taskType !== "subagent_child") return 0;
   const traceContext = input.traceContext ?? this.rootTraceContext;
   const tasks = Object.values(this.runtimeTaskRegistry.all()).filter(
     (task) =>
       task.type === "local_bash" && task.isBackgrounded === true && task.status === "running",
   );
 
-  for (const task of tasks) {
-    this.logger?.info?.("Cancelling subagent background task during runtime cleanup", {
-      ...traceContextToLogContext(traceContext),
-      event: "runtime.background_task.cleanup_cancel",
-      module: "core.runtime",
-      reason: input.reason,
-      taskId: task.taskId,
-    });
-    await this.stopBackgroundTask(task.taskId, {
-      traceContext,
-    });
-  }
+  const results = await Promise.allSettled(
+    tasks.map(async (task) => {
+      this.logger?.info?.("Cancelling background task during runtime cleanup", {
+        ...traceContextToLogContext(traceContext),
+        event: "runtime.background_task.cleanup_cancel",
+        module: "core.runtime",
+        reason: input.reason,
+        taskId: task.taskId,
+      });
+      await this.stopBackgroundTask(task.taskId, {
+        traceContext,
+      });
+    }),
+  );
+  // 某个取消失败也要等其他任务完成收尾，否则上层会提前关闭共享存储和执行器。
+  const errors = results.flatMap((result) => (result.status === "rejected" ? [result.reason] : []));
+  if (errors.length) throw new AggregateError(errors, "Background tasks cleanup failed");
   return tasks.length;
 }
 

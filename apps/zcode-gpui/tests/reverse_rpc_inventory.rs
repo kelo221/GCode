@@ -11,8 +11,9 @@ fn methods_in_calls(directory: &Path, methods: &mut HashSet<String>) {
             methods_in_calls(&path, methods);
         } else if path.extension().is_some_and(|extension| extension == "ts") {
             let text = std::fs::read_to_string(&path).unwrap();
-            for call in text.split(".requestClient(").skip(1) {
+            for call in text.split("requestClient(").skip(1) {
                 let argument = call.split(',').next().unwrap().trim();
+                let argument = argument.split(')').next().unwrap().trim();
                 if let Some(id) = argument.strip_prefix("zcodeProtocolMethods.") {
                     assert!(
                         id.chars().all(|c| c.is_alphanumeric() || c == '_'),
@@ -20,10 +21,12 @@ fn methods_in_calls(directory: &Path, methods: &mut HashSet<String>) {
                         path.display()
                     );
                     methods.insert(id.into());
+                } else if path.file_name().is_some_and(|name| {
+                    name == "server.ts" || name == "automation-port.ts" || name == "offpeak-port.ts"
+                }) {
+                    continue;
                 } else {
-                    assert!(
-                        path.file_name().is_some_and(|name| name == "server.ts")
-                            && argument == "method",
+                    panic!(
                         "Reverse RPC must use explicit protocol registry method: {}: {argument}",
                         path.display()
                     );

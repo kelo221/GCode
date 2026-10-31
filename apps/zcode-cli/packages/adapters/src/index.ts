@@ -23,3 +23,5 @@ export * from "./lsp/index.js";
 export * from "./git/worktree.js";
 export * from "./jj/workspace.js";
 export * from "./vcs/auto-worktree.js";
+// 官方命令端点转发 zcode-server 时复用 MCP 的网络配置（代理、CA）。
+export { createMcpTransportFetch } from "./mcp/network.js";

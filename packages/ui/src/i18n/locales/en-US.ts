@@ -38,6 +38,133 @@ const enUS: Record<string, string> = {
   "archives.loading": "Loading archived sessions…",
   "archives.empty": "No archived sessions",
   "archives.noResults": "No matching archived sessions",
+  "projectManagement.nav": "Projects",
+  "projectManagement.intro":
+    "Removing a project takes it out of the sidebar and the project picker. Its sessions stay in Recent and search, and nothing on disk is touched.",
+  "projectManagement.manage": "Manage projects…",
+  "projectManagement.suggestion.title": "{count} projects look unused",
+  "projectManagement.suggestion.titleOne": "1 project looks unused",
+  "projectManagement.suggestion.missing": "{count} have a missing folder",
+  "projectManagement.suggestion.missingOne": "1 has a missing folder",
+  "projectManagement.suggestion.empty": "{count} have no sessions",
+  "projectManagement.suggestion.emptyOne": "1 has no sessions",
+  "projectManagement.suggestion.idle": "{count} idle for 90+ days",
+  "projectManagement.suggestion.idleOne": "1 idle for 90+ days",
+  "projectManagement.review": "Review {count}",
+  "projectManagement.search": "Search projects, folders or devices",
+  "projectManagement.clearSearch": "Clear search",
+  "projectManagement.filterLabel": "Show",
+  "projectManagement.filter.all": "All projects",
+  "projectManagement.filter.unused": "Looks unused · {count}",
+  "projectManagement.sortLabel": "Sort by",
+  "projectManagement.sort.lastActive": "Last active",
+  "projectManagement.sort.name": "Name",
+  "projectManagement.sort.sessions": "Sessions",
+  "projectManagement.column.project": "Project",
+  "projectManagement.column.device": "Device",
+  "projectManagement.column.sessions": "Sessions",
+  "projectManagement.column.lastActive": "Last active",
+  "projectManagement.selectAll": "Select all",
+  "projectManagement.selectProject": "Select {name}",
+  "projectManagement.rowActions": "Actions for {name}",
+  "projectManagement.removeOne": "Remove…",
+  "projectManagement.pinned": "Pinned",
+  "projectManagement.moreRoots": "{count} more folders",
+  "projectManagement.moreRootsOne": "1 more folder",
+  "projectManagement.reason.missing": "Folder missing",
+  "projectManagement.reason.empty": "No sessions",
+  "projectManagement.reason.idle": "Idle {months} months",
+  "projectManagement.never": "Never",
+  "projectManagement.offline": "Device offline",
+  "projectManagement.unremovable": "This project can’t be removed here",
+  "projectManagement.sessionsCount": "{count} sessions",
+  "projectManagement.sessionsCountOne": "1 session",
+  "projectManagement.projectsCount": "{count} projects",
+  "projectManagement.projectsCountOne": "1 project",
+  "projectManagement.showMore": "Show {count} more",
+  "projectManagement.selected": "{count} selected",
+  "projectManagement.ofShown": "of {count} shown",
+  "projectManagement.clearSelection": "Clear",
+  "projectManagement.removeSelected": "Remove {count} projects",
+  "projectManagement.removeSelectedOne": "Remove 1 project",
+  "projectManagement.confirm.title": "Remove {count} projects?",
+  "projectManagement.confirm.titleOne": "Remove 1 project?",
+  "projectManagement.confirm.description":
+    "They leave the sidebar and the project picker. Their sessions ({sessions}) stay in Recent and search. Folders on disk are not touched.",
+  "projectManagement.confirm.remoteNote":
+    "Removed from this computer only. They stay on {device} for its other clients.",
+  "projectManagement.confirm.remoteNoteOne":
+    "Removed from this computer only. It stays on {device} for its other clients.",
+  "projectManagement.confirm.restoreLocal":
+    "Projects on this computer can be restored later from Removed projects on this page.",
+  "projectManagement.confirm.restoreRemote":
+    "To bring back a remote project later, add it again from its device.",
+  "projectManagement.confirm.data.option": "Also delete their ZCode data",
+  "projectManagement.confirm.data.optionOne": "Also delete its ZCode data",
+  "projectManagement.confirm.data.note":
+    "Sessions, session files, checkpoints and memory of the {count} projects on this computer.",
+  "projectManagement.confirm.data.noteOne":
+    "Sessions, session files, checkpoints and memory of the project on this computer.",
+  "projectManagement.confirm.data.calculating": "Calculating…",
+  "projectManagement.confirm.data.sessions": "{count} sessions and their files",
+  "projectManagement.confirm.data.sessionsOne": "1 session and its files",
+  "projectManagement.confirm.data.checkpoints": "File checkpoints",
+  "projectManagement.confirm.data.memory": "Memory",
+  "projectManagement.confirm.data.notDeleted": "Not deleted: your folders and app logs.",
+  "projectManagement.confirm.data.notDeletedRemote":
+    "Not deleted: your folders, app logs, and data on {devices}.",
+  "projectManagement.confirm.data.title": "Remove {count} projects and delete their data?",
+  "projectManagement.confirm.data.titleOne": "Remove 1 project and delete its data?",
+  "projectManagement.confirm.data.description":
+    "They leave the sidebar and the project picker. The {sessions} of the {count} projects on this computer are deleted with their files. Folders on disk are not touched.",
+  "projectManagement.confirm.data.descriptionOne":
+    "They leave the sidebar and the project picker. The {sessions} of the project on this computer are deleted with their files. Folders on disk are not touched.",
+  "projectManagement.confirm.data.noRestore":
+    "The {count} projects on this computer can’t be restored afterwards.",
+  "projectManagement.confirm.data.noRestoreOne":
+    "The project on this computer can’t be restored afterwards.",
+  "projectManagement.confirm.data.type": "Type {word} to confirm",
+  "projectManagement.confirm.data.word": "delete",
+  "projectManagement.confirm.data.confirm": "Remove and delete {size}",
+  "projectManagement.data.progress": "Deleting data of {count} projects…",
+  "projectManagement.data.progressOne": "Deleting data of 1 project…",
+  "projectManagement.data.progressAmount": "{done} of {total}",
+  "projectManagement.data.removedToast": "Removed {count} projects · freed {size}",
+  "projectManagement.data.removedToastOne": "Removed 1 project · freed {size}",
+  "projectManagement.data.deletedToast": "Deleted the data of {count} projects · freed {size}",
+  "projectManagement.data.deletedToastOne": "Deleted the data of 1 project · freed {size}",
+  "projectManagement.confirm.cancel": "Cancel",
+  "projectManagement.removedToast": "Removed {count} projects",
+  "projectManagement.removedToastOne": "Removed 1 project",
+  "projectManagement.restoredToast": "Restored {count} projects",
+  "projectManagement.restoredToastOne": "Restored 1 project",
+  "projectManagement.undo": "Undo",
+  "projectManagement.failure.remove": "{count} projects weren’t removed: {name} — {reason}",
+  "projectManagement.failure.removeOne": "1 project wasn’t removed: {name} — {reason}",
+  "projectManagement.failure.undo": "{count} projects couldn’t be restored: {name} — {reason}",
+  "projectManagement.failure.undoOne": "1 project couldn’t be restored: {name} — {reason}",
+  "projectManagement.failure.restore": "Couldn’t restore {name} — {reason}",
+  "projectManagement.failure.restoreOne": "Couldn’t restore {name} — {reason}",
+  "projectManagement.failure.purge":
+    "The data of {count} projects wasn’t deleted: {name} — {reason}",
+  "projectManagement.failure.purgeOne": "The data of 1 project wasn’t deleted: {name} — {reason}",
+  "projectManagement.retry": "Retry",
+  "projectManagement.dismiss": "Dismiss",
+  "projectManagement.removed.title": "Removed projects",
+  "projectManagement.removed.when": "Removed {time}",
+  "projectManagement.restore": "Restore",
+  "projectManagement.loading": "Loading projects…",
+  "projectManagement.loadFailed": "Could not load projects",
+  "projectManagement.empty": "No projects yet",
+  "projectManagement.noResults": "No matching projects",
+  "projectManagement.noUnused": "Nothing looks unused right now",
+  "project.dataSessionRunning": "a session is still running; try again when it finishes",
+  "project.dataSessionReferenced":
+    "a fork in another project still uses the attachments of a session, so that session was kept",
+  "project.dataDeleteFailed": "some files couldn’t be deleted",
+  "project.dataUnavailable": "this version of the agent can’t delete project data",
+  "project.undoUnavailable":
+    "This entry has no project identity, so it can’t be added back automatically.",
   "project.switchDevice": "Switch device?",
   "project.switchDeviceDescription":
     "The selected folders will be cleared. The project name will be kept.",
@@ -55,8 +182,8 @@ const enUS: Record<string, string> = {
   "project.hasUnread": "Project has unread tasks",
   "project.projectOrder": "Project order",
   "project.taskOrder": "Task order",
-  "project.browseHint": "GCode can read and edit these folders",
-  "project.connectAndBrowseHint": "Device status: {status}. GCode connects first.",
+  "project.browseHint": "ZCode can read and edit these folders",
+  "project.connectAndBrowseHint": "Device status: {status}. ZCode connects first.",
   "project.selectHost": "Choose a remote connection",
   "project.back": "Back",
   "project.next": "Next",
@@ -69,7 +196,7 @@ const enUS: Record<string, string> = {
   "project.trustFolderTitle": "Trust this folder?",
   "project.trustFoldersTitle": "Trust these folders?",
   "project.trustFoldersDescription":
-    "GCode can read and edit files in these folders and run commands within your current permission settings. Continue only if you trust every folder listed.",
+    "ZCode can read and edit files in these folders and run commands within your current permission settings. Continue only if you trust every folder listed.",
   "project.trustFoldersAndCreate": "Trust folders and create",
   "project.trustFoldersAndRestore": "Trust folders and restore",
   "project.existingOnDeviceHint": "Already have projects on this device?",
@@ -131,6 +258,7 @@ const enUS: Record<string, string> = {
   "taskGroup.color.purple": "Purple",
   "project.viewByProject": "By project",
   "project.viewRecentlyUpdated": "Recently updated",
+  "project.viewUnread": "Unread",
   "project.archived": "Archived",
   "project.sort": "Sort projects",
   "project.manual": "Project order",
@@ -198,6 +326,13 @@ const enUS: Record<string, string> = {
   "remote.action.cancel": "Cancel connection",
   "remote.action.update-server": "Update remote device",
   "remote.action.update-desktop": "Update desktop app",
+  "remote.action.downgrade-server": "Switch remote to {version}",
+  "remote.downgradeConfirmTitle": "Switch the remote to {version}?",
+  "remote.downgradeConfirmDescription":
+    "The remote ZCode service will switch from {current} to {version}, the same version as this desktop app. Devices that still use the newer desktop app must update the remote again when they connect. The older version may not fully show content that the newer version wrote.",
+  "remote.downgradeConfirm": "Switch",
+  "remote.downgradedHint":
+    "An older desktop app switched this remote from {from} to the current version. The remote updates only after you confirm.",
   "remote.action.install": "Install and connect",
   "remote.action.confirm-identity": "Use as a new device",
   "remote.reusedConnection":
@@ -212,6 +347,7 @@ const enUS: Record<string, string> = {
   "remote.action.retry": "Retry",
   "remote.action.none": "",
   "remote.error.authentication": "SSH authentication failed",
+  "remote.error.authenticationUnsupported": "Server requires additional verification",
   "remote.error.details": "Details",
   "remote.error.hostUnreachable.reason":
     "Check the device address and port, and make sure it is running and reachable.",
@@ -230,12 +366,16 @@ const enUS: Record<string, string> = {
   "remote.error.spaceInsufficient.reason": "Free up disk space on the device and retry.",
   "remote.error.permissionDenied.reason":
     "The current user cannot write to the installation directory. Check its permissions.",
+  "remote.error.platformUnsupported.reason":
+    "Remote connections support Linux and macOS on x64 and arm64. On Windows, connect through WSL or use a Linux device.",
   "remote.error.connectionCanceled.reason":
     "The connection was canceled. You can reconnect at any time.",
   "remote.error.credentialsRequired.reason":
     "Enter the password or key passphrase for this connection.",
   "remote.error.authentication.reason":
     "Check your SSH username, password or private key and retry.",
+  "remote.error.authenticationUnsupported.reason":
+    "After the password, this server asks for more verification (for example a one-time code). Only password, private key, and SSH agent sign-in are supported. Use a private key instead.",
   "remote.error.unknown.reason": "Unable to connect. Retry or view details.",
   "remote.error.hostUnreachable.wsl": "Cannot access WSL distribution",
   "remote.error.hostUnreachable.wsl.reason":
@@ -278,6 +418,8 @@ const enUS: Record<string, string> = {
     "View details, follow the instructions, and retry.",
   "remote.error.sourceServerRunningTasks.reason":
     "View details, follow the instructions, and retry.",
+  "remote.error.sourceServerDowngradeUnconfirmed.reason":
+    "Reconnect to read the latest version of the remote device.",
   "remote.error.workspaceTaskIdentityConflict.reason":
     "View details, follow the instructions, and retry.",
   "remote.error.workspaceConfigConflict.reason":
@@ -286,8 +428,14 @@ const enUS: Record<string, string> = {
   "remote.error.bindSessionMissing.reason": "View details, follow the instructions, and retry.",
   "remote.error.workspaceDirectoryUnavailable.reason":
     "View details, follow the instructions, and retry.",
+  "remote.error.workspaceDirectoryUnresponsive.reason":
+    "If the remote device is a Mac, check the Mac for a folder access prompt. If the folder is on a network or external drive, make sure the drive is available. Then retry.",
   "remote.error.recoveryBudgetExhausted.reason":
     "View details, follow the instructions, and retry.",
+  "remote.error.sourceServerStopFailed.reason":
+    "The remote service didn't exit cleanly. Try again later, or sign in to the device to check it.",
+  "remote.error.sourceServerControlUnresponsive.reason":
+    "The remote service didn't answer the request. Sign in to the device to check it, then try again.",
   "remote.error.workspaceMigrationPlanDiverged.reason":
     "View details, follow the instructions, and retry.",
   "remote.error.workspaceSessionGenerationChanged.reason":
@@ -330,7 +478,7 @@ const enUS: Record<string, string> = {
   "startPlan.recommendation.dismiss": "Don’t show again",
   "occupationOnboarding.stepMode": "UI mode",
   "occupationOnboarding.modeTitle": "Choose your UI mode",
-  "occupationOnboarding.modeDescription": "How would you like GCode to show its work?",
+  "occupationOnboarding.modeDescription": "How would you like ZCode to show its work?",
   "occupationOnboarding.coding": "Coding mode",
   "occupationOnboarding.codingDescription":
     "I want to see code, command output, and change details throughout the development process.",
@@ -381,27 +529,27 @@ const enUS: Record<string, string> = {
   "occupationOnboarding.migration": "Migrate conversations",
   "occupationOnboarding.migrationDescription": "Migrate conversation history from Claude Code",
   "occupationOnboarding.memory": "Enable Workspace Memory",
-  "occupationOnboarding.memoryDescription": "Let GCode remember your preferences and work context.",
+  "occupationOnboarding.memoryDescription": "Let ZCode remember your preferences and work context.",
   "occupationOnboarding.suggestions": "Enable proactive task suggestions",
   "occupationOnboarding.suggestionsDescription":
     "Show suggestions in new conversations. Click to fill the composer.",
   "occupationOnboarding.close": "Exit onboarding",
-  "startup.global.silent": "Starting GCode",
+  "startup.global.silent": "Starting ZCode",
   "startup.global.upgrading": "Upgrading local data",
   "startup.global.initializing": "Initializing local data",
   "startup.global.waiting": "Waiting for database preparation",
   "startup.global.saving": "Saving updates",
   "startup.global.finishing": "Finishing startup",
   "startup.global.servicesFailed":
-    "Local data is ready, but app services failed to start. Copy the diagnostics, then exit and reopen GCode.",
+    "Local data is ready, but app services failed to start. Copy the diagnostics, then exit and reopen ZCode.",
   "startup.global.starting": "Preparing local data",
   "startup.global.preparing_host_storage": "Preparing task index",
   "startup.global.preparing_session_storage": "Preparing chat history",
-  "startup.global.starting_services": "Starting GCode",
+  "startup.global.starting_services": "Starting ZCode",
   "startup.global.ready": "Local data is ready",
   "startup.global.failed": "Startup preparation failed",
   "startup.global.help":
-    "GCode will open when preparation finishes. Large histories may take longer. Please keep the app running.",
+    "ZCode will open when preparation finishes. Large histories may take longer. Please keep the app running.",
   "startup.global.diagnostic": "Diagnostic ID",
   "startup.global.copy": "Copy diagnostics",
   "startup.global.exit": "Exit",
@@ -422,15 +570,15 @@ const enUS: Record<string, string> = {
   "startup.global.error.open_failed":
     "The database could not be opened. Check that the data directory exists and is accessible, then retry.",
   "startup.global.error.lock_timeout":
-    "Waiting for the database write lock timed out. Another GCode or CLI process may be updating data. Retry after it finishes.",
+    "Waiting for the database write lock timed out. Another ZCode or CLI process may be updating data. Retry after it finishes.",
   "startup.global.error.sql_failed":
     "Preparation did not finish. Copy the diagnostics and check the logs. Resolve the issue, then retry manually. The app will not retry automatically.",
   "startup.global.error.startup_status_timeout":
-    "No startup status was received. Exit and reopen GCode. If it fails again, provide the diagnostics to support.",
+    "No startup status was received. Exit and reopen ZCode. If it fails again, provide the diagnostics to support.",
   "startup.global.error.transport_closed":
-    "The preparation process exited or disconnected. Exit and reopen GCode to check the migration records again.",
+    "The preparation process exited or disconnected. Exit and reopen ZCode to check the migration records again.",
   "startup.global.error.unsupported_runtime":
-    "The configured Agent does not support storage preparation. Restore the bundled Agent, then reopen GCode.",
+    "The configured Agent does not support storage preparation. Restore the bundled Agent, then reopen ZCode.",
 
   "startup.database.checking": "Checking history",
   "startup.database.waiting_for_lock": "Waiting for another window to prepare data",
@@ -486,7 +634,7 @@ const enUS: Record<string, string> = {
   "offPeak.chatCreated.queuedAt": "#{position} in queue",
   "offPeak.chatCreated.open": "Go to idle-time tasks",
   "settings.computerUse.disabledToast":
-    "Computer Use is disabled. Existing conversations require a GCode restart to take effect.",
+    "Computer Use is disabled. Existing conversations require a ZCode restart to take effect.",
   "settings.modelProvider.connectionUnavailableNotice": "The current plan is unavailable.",
   "settings.modelProvider.switchConnection": "Switch to “{connection}”",
   "settings.modelProvider.connectionSuggestionStale":
@@ -598,7 +746,7 @@ const enUS: Record<string, string> = {
   "manualClaimPlan.claim.share.copyImageSucceeded": "Image copied",
   "manualClaimPlan.claim.share.actionFailed": "Share action failed. Please try again.",
   "manualClaimPlan.claim.share.twitterText":
-    "I claimed {subtitle} on GCode. Download and install GCode to claim yours. https://zcode.z.ai",
+    "I claimed {subtitle} on ZCode. Download and install ZCode to claim yours. https://zcode.z.ai",
   "manualClaimPlan.claim.share.twitterTextLabel": "Twitter/X post text",
   // Common
   "common.loading": "Loading...",
@@ -649,7 +797,7 @@ const enUS: Record<string, string> = {
   "conversationShare.readonly.artifactPreview": "Download file",
   "conversationShare.readonly.markerCompact": "Context compacted",
   "conversationShare.readonly.markerModelChange": "Model switched",
-  "conversationShare.readonly.unsupportedRows": "Some content requires a newer version of GCode",
+  "conversationShare.readonly.unsupportedRows": "Some content requires a newer version of ZCode",
   "conversationShare.workflowSnapshot": "Snapshot at tool execution; does not update live",
   "conversationShare.shareTitle": "Share title",
   "conversationShare.permissionLabel": "Access",
@@ -680,7 +828,7 @@ const enUS: Record<string, string> = {
   "conversationShare.error.preparationExpired": "Share preparation expired. Generate a new link.",
   "conversationShare.import.notAllowed":
     "This share is view-only. Ask the author to enable importing.",
-  "conversationShare.import.unsupportedVersion": "This share format is unsupported. Update GCode.",
+  "conversationShare.import.unsupportedVersion": "This share format is unsupported. Update ZCode.",
   "conversationShare.issue.ruleLabel": "Validation rule",
   "conversationShare.issue.pathLabel": "Field path",
   "conversationShare.issue.fieldLabel": "Field",
@@ -688,7 +836,7 @@ const enUS: Record<string, string> = {
   "conversationShare.issue.rowKindLabel": "Content type",
   "conversationShare.publishFailed": "Could not generate the share link. Try again.",
   "conversationShare.error.authenticationRequired":
-    "Sign in to GCode before sharing. If you're already signed in, sign in again and retry.",
+    "Sign in to ZCode before sharing. If you're already signed in, sign in again and retry.",
   "conversationShare.error.featureDisabled": "Sharing is currently unavailable. Try again later.",
   "conversationShare.error.artifactNotAllowed":
     "A previewed file type is not supported for sharing. Deselect that conversation and retry.",
@@ -698,7 +846,7 @@ const enUS: Record<string, string> = {
   "conversationShare.error.invalidContractHttp":
     "The share service returned HTTP {status}. Retry, and provide the error details if the problem persists.",
   "conversationShare.error.invalidContract":
-    "GCode could not read the share service’s response, so sharing could not finish. Try again later. If it still fails, copy the request ID from Error details and contact support.",
+    "ZCode could not read the share service’s response, so sharing could not finish. Try again later. If it still fails, copy the request ID from Error details and contact support.",
   "conversationShare.issue.clientRequestIdLabel": "Client request ID",
   "conversationShare.issue.codeLabel": "Error code",
   "conversationShare.error.network":
@@ -900,7 +1048,7 @@ const enUS: Record<string, string> = {
   "conversationShare.import.committing": "Creating the shared conversation",
   "conversationShare.import.complete": "Share import complete",
   "conversationShare.import.loginRequired":
-    "This share cannot be imported anonymously. Sign in to GCode and try again",
+    "This share cannot be imported anonymously. Sign in to ZCode and try again",
   "conversationShare.import.notFound":
     "Share not found or access denied. Check the link and your account.",
   "conversationShare.import.expired": "The share expired. Ask the author to create a new one",
@@ -1024,7 +1172,7 @@ const enUS: Record<string, string> = {
   "confirmDialog.taskArchiveDescription":
     "Task “{taskTitle}” will move to the archive list and can still be restored later.",
   "bots.title": "Bots",
-  "bots.description": "Connect external chats and webhooks to GCode bots.",
+  "bots.description": "Connect external chats and webhooks to ZCode bots.",
   "bots.listTitle": "Bots",
   "bots.addBot": "New bot",
   "bots.addBinding": "Add binding",
@@ -1078,9 +1226,9 @@ const enUS: Record<string, string> = {
   "bots.setup.guide.weixin.create.1":
     "Start Weixin QR login, scan the QR code with Weixin, then confirm on your phone.",
   "bots.setup.guide.weixin.create.2":
-    "GCode saves the bot_token returned by iLink automatically; after scanning, send any message to the bot in Weixin to activate the chat.",
+    "ZCode saves the bot_token returned by iLink automatically; after scanning, send any message to the bot in Weixin to activate the chat.",
   "bots.setup.guide.weixin.create.3":
-    "GCode uses a built-in iLink client: `/ilink/bot/getupdates` for long polling and `/ilink/bot/sendmessage` for replies.",
+    "ZCode uses a built-in iLink client: `/ilink/bot/getupdates` for long polling and `/ilink/bot/sendmessage` for replies.",
   "bots.setup.guide.weixin.bind.1": "Open the Weixin direct chat you want to bind.",
   "bots.setup.guide.weixin.bind.2": "Send {command}.",
   "bots.setup.guide.weixin.bind.3":
@@ -1097,13 +1245,13 @@ const enUS: Record<string, string> = {
   "bots.setup.guide.feishu.bind.3":
     "Return here after the bind succeeds to finish the workspace and CLI defaults.",
   "bots.setup.guide.webhook.create.1":
-    "Webhook mode does not require a native bot in the third-party product; your integration only needs to POST messages to GCode.",
+    "Webhook mode does not require a native bot in the third-party product; your integration only needs to POST messages to ZCode.",
   "bots.setup.guide.webhook.create.2":
     "Set a shared secret first; add an outbound webhook URL as well if you want asynchronous replies pushed back.",
   "bots.setup.guide.webhook.create.3":
     "Keep one stable userId per external user so binding and future context resolve to the same person.",
   "bots.setup.guide.webhook.bind.1":
-    "POST a private-message callback to GCode's `/api/bots/webhook` endpoint.",
+    "POST a private-message callback to ZCode's `/api/bots/webhook` endpoint.",
   "bots.setup.guide.webhook.bind.2":
     'The payload should at least include this botId, a stable userId, `chatType: "private"`, and set text to {command}.',
   "bots.setup.guide.webhook.bind.3":
@@ -1242,7 +1390,7 @@ const enUS: Record<string, string> = {
   "bots.runtime.telegramLongPollingStarting": "Telegram long polling is starting.",
   "bots.runtime.telegramLongPollingStopped": "Telegram long polling is stopped.",
   "bots.runtime.telegramLongPollingHandledElsewhere":
-    "Telegram long polling is handled by another GCode window.",
+    "Telegram long polling is handled by another ZCode window.",
   "bots.runtime.telegramTokenMissing": "Telegram bot credential is missing.",
   "bots.runtime.telegramPollingFailedRetrying": "Telegram polling failed; retrying.",
   "bots.runtime.feishuWebSocketStarting": "Feishu WebSocket is starting.",
@@ -1330,14 +1478,14 @@ const enUS: Record<string, string> = {
   "bots.deleteFailed": "Failed to delete bot: {error}",
 
   // Welcome / Login
-  "welcome.title": "Welcome to GCode",
+  "welcome.title": "Welcome to ZCode",
   "welcome.username": "Username",
   "welcome.password": "Password",
   "welcome.login": "Login",
   "welcome.loggingIn": "Logging in...",
   "welcome.loginFailed": "Login failed",
-  "login.title": "Welcome to GCode",
-  "login.description": "Connect your account to start using GCode",
+  "login.title": "Welcome to ZCode",
+  "login.description": "Connect your account to start using ZCode",
   "login.oauth.activeProviderHint":
     "Current active provider: {provider}. Signing in again replaces the current identity.",
   "login.oauth.loadingProviders": "Loading account providers...",
@@ -1349,6 +1497,10 @@ const enUS: Record<string, string> = {
   "login.oauth.regionTag.zai": "Global",
   "login.oauth.regionTag.bigmodel": "CN",
   "login.oauth.waiting": "Waiting for {provider} authentication...",
+  "login.oauth.browserNotOpened": "Browser didn't open?",
+  "login.oauth.copyLoginLink": "Copy login link",
+  "login.oauth.copyLinkSuccess": "Copied. Paste and open it in your browser.",
+  "login.oauth.copyLinkFailed": "Could not copy the login link. Please try again.",
   "login.oauth.loginFailure": "Login failed, please try again",
   "login.oauth.cancel": "Cancel",
   "login.oauth.retry": "Retry login",
@@ -1380,7 +1532,7 @@ const enUS: Record<string, string> = {
   "app.currentTheme": "Current: {theme}",
   "app.login": "Connect",
   "app.logout": "Disconnect",
-  "logout.confirm.title": "Disconnect and restart GCode?",
+  "logout.confirm.title": "Disconnect and restart ZCode?",
   "logout.confirm.descriptionWithRunningSessions":
     "{count} session(s) are currently running. Disconnecting will interrupt them and restart the app.",
   "logout.confirm.descriptionDefault":
@@ -1511,6 +1663,7 @@ const enUS: Record<string, string> = {
   "sidePane.subagent": "Subagent",
   "sidePane.subagentDirectory": "Subagents",
   "sidePane.selectionChat": "Side conversation",
+  "sidePane.sites": "Sites",
   "sidePane.workflowRun": "Workflow run",
   "sidePane.workflowDirectory": "Workflow runs",
   "sidePane.workflowActor": "Workflow subagent",
@@ -1555,6 +1708,7 @@ const enUS: Record<string, string> = {
   "chat.selections.limit.total":
     "Conversation selections can contain at most 16,000 characters in total.",
   "sidePane.launcher.selection-side-conversation": "Continue a conversation in the side pane.",
+  "sidePane.launcher.sites": "View sites, deployments, and usage.",
   "sidePane.launcher.review": "Review code changes and diffs.",
   "sidePane.launcher.terminal": "Run commands and view output.",
   "sidePane.launcher.browser": "Browse websites and preview apps.",
@@ -1575,6 +1729,7 @@ const enUS: Record<string, string> = {
   "pluginUi.pin": "Keep expanded",
   "pluginUi.unpin": "Stop keeping expanded",
   "pluginUi.openInSidePane": "Open in side pane",
+  "pluginUi.open": "Open",
   "pluginUi.openedInSidePane": "Opened in side pane",
   "genUi.copyImage": "Copy image",
   "genUi.title": "Interactive view",
@@ -1633,7 +1788,7 @@ const enUS: Record<string, string> = {
   "modelTrajectory.refresh": "Refresh",
   "modelTrajectory.close": "Close",
   "modelTrajectory.loading": "Loading trajectory…",
-  "modelTrajectory.empty": "No model calls recorded (only GCode Agent writes model-io)",
+  "modelTrajectory.empty": "No model calls recorded (only ZCode Agent writes model-io)",
   "modelTrajectory.error": "Failed to load trajectory",
   "modelTrajectory.truncatedNotice": "Too many records, showing the most recent calls",
   "modelTrajectory.summaryCalls": "{count} calls",
@@ -2072,6 +2227,17 @@ const enUS: Record<string, string> = {
   "appHeader.openInEditor": "Open in {editor}",
   "appHeader.selectOpenApp": "Choose app",
   "appHeader.copyPath": "Copy path",
+  "fileActions.saved": "Saved",
+  "fileActions.downloadStarted": "Download started",
+  "fileActions.saveAs": "Save as…",
+  "fileActions.saveAsUnavailable": "Saving files is unavailable here",
+  "fileActions.saveAsFailed":
+    "Could not save this file. Check the source connection and try again.",
+  "fileActions.saveAsTooLarge": "Files larger than 50 MiB cannot be saved here.",
+  "fileActions.moreOpenWith": "More apps",
+  "fileActions.scrollMoreApps": "Scroll to see more apps",
+  "fileActions.openInApplication": "Open in {application}",
+  "fileActions.defaultApp": "Default",
   "fileActions.copyAbsolutePath": "Copy absolute path",
   "fileActions.copyRelativePath": "Copy relative path",
   "appHeader.copyTaskPath": "Copy task path",
@@ -2096,6 +2262,10 @@ const enUS: Record<string, string> = {
   "workspaceHeader.help.productRequestDraft": "I would like to suggest: ",
   "workspaceHeader.help.community": "User community",
   "workspaceHeader.help.docs": "Product docs",
+  "workspaceHeader.help.copyDeviceMid": "Copy device MID",
+  "workspaceHeader.help.deviceMidCopied": "Device MID copied",
+  "workspaceHeader.help.deviceMidCopyFailed":
+    "Could not copy device MID. Check clipboard access and try again.",
   "titleBar.menu.file": "File",
   "titleBar.menu.view": "View",
   "titleBar.menu.help": "Help",
@@ -2109,7 +2279,7 @@ const enUS: Record<string, string> = {
   "titleBar.menu.view.actualSize": "Actual size",
   "titleBar.menu.view.zoomIn": "Zoom in",
   "titleBar.menu.view.zoomOut": "Zoom out",
-  "titleBar.menu.help.about": "About GCode",
+  "titleBar.menu.help.about": "About ZCode",
   "titleBar.menu.help.checkForUpdates": "Check for updates",
   "titleBar.menu.help.feedback": "Feedback",
   "sidebar.menu.community": "Community",
@@ -2166,7 +2336,7 @@ const enUS: Record<string, string> = {
   "update.toast.ready": "v{version} downloaded, restart to install",
   "update.toast.devSkipped": "Updates are disabled in dev builds",
   "update.toast.error": "Update check failed: {error}",
-  "forceUpdate.title": "Update GCode to continue",
+  "forceUpdate.title": "Update ZCode to continue",
   "forceUpdate.description":
     "Your current version v{currentVersion} is below the minimum supported version v{minimalVersion}. Update first before continuing with this client.",
   "forceUpdate.currentVersion": "Current version",
@@ -2255,9 +2425,11 @@ const enUS: Record<string, string> = {
   "remote.error.credentialsRequired":
     "No usable SSH password or private-key credential is available. Return to settings to add one.",
   "remote.error.sourceServerUpgradeRequired":
-    "remote device is incompatible with this GCode Desktop version and must be upgraded.",
+    "remote device is incompatible with this ZCode Desktop version and must be upgraded.",
   "remote.error.sourceServerRunningTasks":
     "remote device still has running tasks. Wait for them to finish or confirm a forced update.",
+  "remote.error.sourceServerDowngradeUnconfirmed":
+    "The remote device was updated to a newer version. This operation did not downgrade it.",
   "remote.error.workspaceTaskIdentityConflict":
     "This remote directory contains task identity conflicts that cannot be merged automatically.",
   "remote.error.workspaceConfigConflict":
@@ -2267,8 +2439,12 @@ const enUS: Record<string, string> = {
     "The remote workspace session is no longer available. Reconnect and try again.",
   "remote.error.workspaceDirectoryUnavailable":
     "The remote project directory is missing, is not a folder, or cannot be accessed. Check the directory and permissions, then try again.",
+  "remote.error.workspaceDirectoryUnresponsive":
+    "The remote device did not respond for 30 seconds while reading the project folder",
   "remote.error.recoveryBudgetExhausted":
     "Automatic recovery stopped after {attempt}/{limit} attempts. Reconnect manually to try again.",
+  "remote.error.sourceServerStopFailed": "The remote service didn't stop",
+  "remote.error.sourceServerControlUnresponsive": "The remote service isn't responding",
   "remote.error.workspaceMigrationPlanDiverged":
     "A new workspace identity appeared while migration was paused. Review the migration report before retrying.",
   "remote.error.workspaceSessionGenerationChanged":
@@ -2283,13 +2459,14 @@ const enUS: Record<string, string> = {
   "remote.error.installFailed": "Remote installation failed",
   "remote.error.spaceInsufficient": "Not enough space on remote device",
   "remote.error.permissionDenied": "Remote write permission denied",
+  "remote.error.platformUnsupported": "This device's system is not supported",
   "remote.error.connectionCanceled": "Connection canceled",
   "remote.error.unknown": "Connection failed",
   "settings.source.recentLog": "View recent logs",
   "remote.error.retryableHint": "You can try again later.",
   "remote.error.connectionClosed": "The remote connection was closed",
   "workspaceSidebar.unavailableLocalDirectory":
-    "The workspace directory does not exist or cannot be accessed. You can only view history for now. Restore the directory and restart GCode to continue.",
+    "The workspace directory does not exist or cannot be accessed. You can only view history for now. Restore the directory and restart ZCode to continue.",
   "workspaceSidebar.toggleSidebar": "Toggle sidebar",
   "workspaceSidebar.resizeSidebar": "Resize sidebar",
   "workspaceSidebar.showFileTree": "Show files",
@@ -2326,7 +2503,7 @@ const enUS: Record<string, string> = {
   "ssh.assetInstallMode.local-download-upload": "Download locally, then upload",
   "ssh.assetInstallMode.remote-download": "Download on remote server",
   "ssh.assetInstallModeDescription":
-    "Remote server download reduces upload waiting, but the server must reach the GCode CDN and have download, extract, and checksum tools.",
+    "Remote server download reduces upload waiting, but the server must reach the ZCode CDN and have download, extract, and checksum tools.",
   "ssh.password": "Password",
   "ssh.passwordPlaceholder": "Enter your SSH password",
   "ssh.privateKey": "Private key",
@@ -2418,15 +2595,17 @@ const enUS: Record<string, string> = {
     "Connection failed · retry, or adjust the configuration and try again",
   "remote.phase.channel": "Connect to device",
   "remote.phase.identify": "Identify device",
-  "remote.phase.deploy": "Install GCode Server",
+  "remote.phase.deploy": "Install ZCode Server",
   "remote.phase.handshake": "Start and check compatibility",
+  "remote.phase.workspace": "Open project folder",
+  "remote.phaseSub.workspaceReading": "Reading {path}",
   "remote.progress.step": "Step {current}/{total}",
   "remote.progress.elapsedSeconds": "{seconds}s elapsed",
   "remote.progress.elapsedMinutesSeconds": "{minutes}m {seconds}s elapsed",
   "remote.progress.copyError": "Copy error details",
   "remote.progress.copied": "Copied",
   "remote.link.local": "This device",
-  "remote.link.localVersion": "GCode v{version}",
+  "remote.link.localVersion": "ZCode v{version}",
   "remote.link.deviceHint": "Device details appear after connecting",
   "remote.link.devicePending": "Remote device",
   "remote.recognizedDevice": "Connected to device {device}",
@@ -2458,7 +2637,7 @@ const enUS: Record<string, string> = {
   "remote.phaseSub.channelEstablished.docker": "Connected to the container",
   "remote.phaseSub.channelEstablished": "Connected to device",
   "remote.phaseSub.identifyExisting": "Connected to device {device}",
-  "remote.phaseSub.identifyNew": "New device · GCode Server not installed",
+  "remote.phaseSub.identifyNew": "New device · ZCode Server not installed",
   "remote.phaseSub.deploySkipped": "Remote already on v{version} · deployment skipped",
   "remote.phaseSub.deployWaitingConfirm": "Waiting for install confirmation…",
   "remote.phaseSub.deployUploading": "Uploading {file} · {sent} / {total}",
@@ -2552,6 +2731,7 @@ const enUS: Record<string, string> = {
   "webRemoteControl.refreshQr.success": "Remote control QR refreshed",
   "webRemoteControl.refreshQr.failed": "Could not refresh remote control QR: {error}",
   "webRemoteControl.stop": "Stop",
+  "webRemoteControl.pullMobileLogs": "Pull mobile logs",
   "webRemoteControl.switchWorkspace": "Switch workspace",
   "webRemoteControl.expandNavigation": "Expand tasks and workspaces",
   "webRemoteControl.collapseNavigation": "Collapse tasks and workspaces",
@@ -2582,7 +2762,7 @@ const enUS: Record<string, string> = {
   "remote.kind.wsl": "WSL",
   "remote.kind.docker": "Docker",
   "remote.kind.server.note":
-    "Server (direct connection to a running GCode service) is shown only in development builds.",
+    "Server (direct connection to a running ZCode service) is shown only in development builds.",
   "remote.addAndConnect": "Add and connect",
   "remote.connect": "Connect",
   "remote.connecting": "Connecting...",
@@ -2593,16 +2773,16 @@ const enUS: Record<string, string> = {
   "remote.connectionLog": "Connection log",
   "remote.connectionLogEmpty": "waiting for connection output...",
   "remote.connectingConfirmTitle": "Stop the current connection?",
-  "remote.sourceServerInstallTitle": "GCode Server installation required",
+  "remote.sourceServerInstallTitle": "ZCode Server installation required",
   "remote.sourceServerInstallDescription":
-    "GCode will upload the matching release, install it under ~/.zcode/server, and start the background daemon. Existing legacy remote files will be preserved.",
+    "ZCode will upload the matching release, install it under ~/.zcode/server, and start the remote service. Existing legacy remote files will be preserved.",
   "remote.sourceServerInstallConfirm": "Install and continue",
   "remote.installTarget": "Target account",
   "remote.installVersion": "Install version",
   "remote.installLocation": "Install location",
   "remote.sourceServerBoundaryTitle": "Local offline, tasks keep running",
   "remote.sourceServerBoundaryDescription":
-    "Remote tasks keep running, even when you close GCode or put your computer to sleep.",
+    "Remote tasks keep running, even when you close ZCode or put your computer to sleep.",
   "remote.sourceServerBoundaryEyebrow": "New remote connection",
   "remote.sourceServerBoundaryLocalDevice": "This computer",
   "remote.sourceServerBoundaryLocalStatus": "Sleeping / closed",
@@ -2626,7 +2806,7 @@ const enUS: Record<string, string> = {
   "settings.source.retiredEntryNote": "Connection target changed; new identity confirmed",
   "settings.source.retiredNameSuffix": " (old)",
   "settings.source.reinstallRequired":
-    "GCode Server was uninstalled remotely; connection and task records remain on this device.",
+    "ZCode Server was uninstalled remotely; connection and task records remain on this device.",
   "settings.source.reinstallAndConnect": "Reinstall and connect",
   "settings.source.copyDeviceId": "Copy device ID",
   "common.justNow": "just now",
@@ -2641,21 +2821,46 @@ const enUS: Record<string, string> = {
     "Connection changes take effect the next time you connect. Existing projects and tasks are unchanged.",
   "settings.source.deviceName": "Device name",
   "settings.source.removeSourceServer": "Remove device",
+  "settings.source.restartRemoteService": "Restart remote service",
+  "settings.source.restartRemoteServiceTitle": "Restart the remote service?",
+  "settings.source.reinstallRemoteService": "Reinstall remote service",
+  "settings.source.reinstallRemoteServiceHint":
+    "Uses this computer's version. Projects and tasks are kept.",
+  "settings.source.reinstallRemoteServiceTitle": "Reinstall the remote service?",
+  "settings.source.reinstallRemoteServiceDescription":
+    "ZCode Server {version} will be reinstalled on {source}. Damaged program files are replaced. Projects, tasks, settings, and sign-in information are kept.",
+  "settings.source.reinstallRemoteServiceConfirm": "Reinstall",
+  "settings.source.stopRemoteService": "Stop remote service",
+  "settings.source.stopRemoteServiceTitle": "Stop the remote service?",
+  "settings.source.remoteServiceInterruptionDescription":
+    "This interrupts all running tasks on this device. They won't resume automatically.",
+  "settings.source.remoteServiceRunningTasksUnavailable": "The device didn't provide a task list.",
+  "settings.source.remoteServiceNoRunningTasks": "No tasks are running on this device right now.",
+  "settings.source.remoteServiceOtherClientsNotice":
+    "If ZCode on another computer is connected to this device, it may start the remote service again.",
+  "settings.source.stopRemoteServiceStartupReconnectNotice":
+    "“Reconnect automatically at startup” is on, so the remote service will start again the next time you open ZCode.",
+  "settings.source.remoteServiceUpdateRequired": "Available after updating the remote service",
   "settings.source.removeOpenProjects": "These open projects will be disconnected:\n{projects}",
   "settings.source.noOpenProjects": "This device has no open projects.",
   "settings.source.disconnectHint": "Remote tasks will continue running after you disconnect.",
-  "settings.machine.local": "This computer",
-  "settings.machine.remote": "{name} (remote)",
   "settings.machine.unknownRemote": "Remote device",
-  "settings.machine.scope": "{scope} · {machine}",
   "settings.source.connectionName": "Connection name",
   "settings.source.connectionAddress": "Address",
-  "settings.source.connectionNameHint": "Used only to distinguish this connection in GCode.",
+  "settings.source.connectionNameHint": "Used only to distinguish this connection in ZCode.",
   "settings.source.deviceNameRequired": "Device name is required.",
   "settings.source.error.connection-profile-unavailable":
     "This connection is no longer available. Refresh and try again.",
   "settings.source.error.recent-project-unresolved":
     "The original project cannot be identified. Select a project from the sidebar.",
+  "settings.source.error.credentials-required":
+    "Couldn't get the SSH credentials automatically. Connect to this device once first.",
+  "settings.source.error.source-server-stop-failed":
+    "The remote service didn't stop. Try again later, or sign in to the device to check it.",
+  "settings.source.error.source-server-control-unresponsive":
+    "The remote service isn't responding. Sign in to the device to check it, then try again.",
+  "settings.source.error.source-server-operation-in-progress":
+    "Another operation is in progress on this device. Try again later.",
   "settings.source.connectionNameRequired": "Connection name is required.",
   "settings.source.keepSavedSecret": "Leave blank to keep the saved credential",
   "settings.source.otherSavedConnections": "Other saved connections",
@@ -2664,6 +2869,8 @@ const enUS: Record<string, string> = {
   "settings.source.lastConnected": "Last success {time}",
   "settings.source.lastConnectError": "Last failure: {error}",
   "settings.source.devicesHeading": "Devices",
+  "settings.source.searchPlaceholder": "Search devices, addresses, or projects",
+  "settings.source.searchEmpty": "No devices match “{query}”",
   "settings.source.recentProjects": "Recent projects",
   "settings.source.showAllProjects": "Show all ({count})",
   "settings.source.showLessProjects": "Show less",
@@ -2686,7 +2893,7 @@ const enUS: Record<string, string> = {
   "settings.source.updatePhase.checking": "Checking the device and update files",
   "settings.source.updatePhase.downloading": "Downloading update files",
   "settings.source.updatePhase.uploading": "Uploading update files",
-  "settings.source.updatePhase.installing": "Installing GCode Server",
+  "settings.source.updatePhase.installing": "Installing ZCode Server",
   "settings.source.updatePhase.reconnecting": "Starting the service and reconnecting",
   "settings.source.updatePhase.completed": "Update complete",
   "settings.source.updateLog": "Update log ({count})",
@@ -2709,7 +2916,10 @@ const enUS: Record<string, string> = {
   "settings.source.removeSourceServerTitle": "Remove this device?",
   "settings.source.removeSourceServerDescription":
     "This removes all local connections, credentials, and project records. Remote services and data are not affected.",
-  "settings.source.connectionPreferences": "Connection preferences",
+  "settings.source.preferences": "Preferences",
+  "settings.source.hideProjectDeviceNames": "Hide device names in project rows",
+  "settings.source.hideProjectDeviceNamesDescription":
+    "Hide remote device names in task list project rows. Hover to view them.",
   "settings.source.startupAutoReconnect": "Reconnect automatically at startup",
   "settings.source.startupAutoReconnectDescription":
     "Reconnects devices seen online in the last 7 days at startup. Changes take effect on the next startup.",
@@ -2740,14 +2950,22 @@ const enUS: Record<string, string> = {
   "sourceServer.updateCompletedToast": "{source} was updated and reconnected.",
   "sourceServer.updateFailedToast":
     "{source} could not be updated. Review the log under Remote devices and try again.",
+  "sourceServer.reinstallCompletedToast": "{source} was reinstalled and reconnected.",
+  "sourceServer.reinstallFailedToast":
+    "{source} could not be reinstalled. Review the log under Remote devices and try again.",
+  "sourceServer.stopCompletedToast": "Stopped the remote service on {source}.",
+  "sourceServer.stopFailedToast": "Couldn't stop the remote service on {source}. View details.",
+  "sourceServer.restartCompletedToast": "Restarted the remote service on {source} and reconnected.",
+  "sourceServer.restartFailedToast":
+    "Couldn't restart the remote service on {source}. View details.",
   "sourceServer.controllerUpdateAvailableToast":
-    "GCode has an update for {source}\nDesktop {current} → {available}; update GCode to match this Source.",
+    "ZCode has an update for {source}\nDesktop {current} → {available}; update ZCode to match this Source.",
   "settings.source.forceUpdate": "Force update",
   "settings.source.forceUpdateTitle": "Force-update this device?",
   "settings.source.forceUpdateDescription":
     "A forced update stops tasks that are still running on this device. Confirm that those tasks may be interrupted.",
   "settings.source.controllerUpdateRequired":
-    "Update this GCode Desktop first; the Server cannot be updated from here.",
+    "Update this ZCode Desktop first; the Server cannot be updated from here.",
   "settings.source.neverConnected": "Not connected",
   "settings.source.unidentifiedProfiles": "Not connected",
   "settings.source.unidentifiedProfilesDescription":
@@ -2810,7 +3028,7 @@ const enUS: Record<string, string> = {
   "remote.log.requestingSession": "Requesting the host process to create a remote session...",
   "remote.log.sessionReady":
     "Remote session created successfully. You can choose a directory next.",
-  "server.description": "Connect to an already running GCode server.",
+  "server.description": "Connect to an already running ZCode server.",
   "server.url": "Server URL",
   "server.urlPlaceholder": "e.g. https://studio.example.com:3030",
   "server.name": "Display name",
@@ -2871,17 +3089,24 @@ const enUS: Record<string, string> = {
     "An input submitted before the CLI restarted did not reach the conversation. Confirm whether to send it again.",
   "chat.pendingCommand.resend": "Send again",
   "chat.pendingCommand.dismiss": "Later",
-  // Soft gate (D4): persistent banner when workspace hooks are pending review
+  // 软门禁（D4）：工作区 Hook 待审核时 composer 图标与浮层
+  "chat.workspaceHookPending.label": "Workspace hooks pending review",
   "chat.workspaceHookPending.message":
     "{count} workspace hook(s) pending review; disabled for this session",
   "chat.workspaceHookPending.review": "Review",
   "chat.workspaceHookPending.dismiss": "Dismiss",
+  "chat.workspaceMcpPending.label": "Workspace MCP servers awaiting trust",
+  "chat.workspaceMcpPending.message":
+    "{count} workspace MCP server(s) await trust. Trust changes apply to new or restarted chats; you can continue chatting.",
+  "chat.workspaceMcpPending.review": "Review",
+  "chat.workspaceMcpPending.dismiss": "Dismiss",
 
   // Task list
   "taskList.title": "Task list",
   "taskList.newThread": "New task",
   "taskList.forkedUntitled": "New task",
   "taskList.noTasks": "No tasks yet",
+  "taskList.noUnreadTasks": "No unread tasks",
   "taskList.loading": "Loading tasks...",
   "taskList.remoteConnectionUnknown": "Remote connection unavailable",
   "taskList.showMore": "Show more",
@@ -2896,6 +3121,17 @@ const enUS: Record<string, string> = {
   "taskList.renamePlaceholder": "Task name",
   "taskList.renameFailed": "Could not rename task",
   "taskList.pinFailed": "Could not update pinned state",
+  "taskList.restartUnsupported":
+    "This Agent version does not support restarting tasks. Update it first.",
+  "taskList.recoverWorkspace": "Restart Agent process",
+  "taskList.recoverWorkspaceDescription":
+    "Task resources could not be safely released. Continuing stops every task sharing this Agent process, including tasks in other workspaces. Conversation history is kept.",
+  "taskList.restart": "Restart task",
+  "taskList.restarting": "Restarting task…",
+  "taskList.restartFailed": "Restart failed. Check the task status and try again.",
+  // 命令说明沿用 CLI 英文目录；任务菜单名称仍按界面语言展示。
+  "chat.slash.app.reload.description":
+    "Reload the task runtime, preserving history and stopping current execution.",
   "taskList.markAsUnread": "Mark as unread",
   "chat.toolCall.agent.openInSidePane": "Open in side pane",
   "v4Pane.renamePlaceholder": "Rename session…",
@@ -2949,7 +3185,7 @@ const enUS: Record<string, string> = {
   "chat.changeSummary.reverted": "Undone",
   "chat.changeSummary.rewindDialog.title": "Undo file changes",
   "chat.changeSummary.rewindDialog.description":
-    "GCode checks current file content again before writing. If another process changed a file, no files will be written.",
+    "ZCode checks current file content again before writing. If another process changed a file, no files will be written.",
   "chat.changeSummary.rewindDialog.loading": "Checking reversible files…",
   "chat.changeSummary.rewindDialog.safeTitle": "Safe to undo {count}",
   "chat.changeSummary.rewindDialog.unsafeTitle": "Unsafe to undo {count}",
@@ -2993,12 +3229,14 @@ const enUS: Record<string, string> = {
   "chat.previewCards.video": "Video",
   "chat.previewCards.audio": "Audio",
   "chat.previewCards.openExternal": "Open in browser",
+  "chat.message.link.openInZCode": "Open in ZCode",
   "chat.previewCards.previewInSidePane": "Preview",
-  "chat.previewCards.openDefaultApp": "Open",
+  "chat.previewCards.openDefaultApp": "Open with default app",
   "chat.previewCards.openWith": "Open with",
   "chat.previewCards.copyLink": "Copy link",
   "chat.previewCards.openFileFailed": "Could not open this file",
   "chat.previewCards.noOpenApps": "No apps found",
+  "chat.previewCards.openCard": "Open {title}",
   "chat.turnNavigator.label": "Conversation query map",
   "chat.turnNavigator.jumpToQuery": "Jump to query {index}",
   "chat.turnNavigator.emptyAssistant": "No assistant text yet",
@@ -3128,7 +3366,7 @@ const enUS: Record<string, string> = {
     "When launching the built-in terminal, inherit login shell environment, proxy, Kubernetes variables, and local terminal font when possible.",
   "settings.terminalFontFamily": "Terminal font",
   "settings.terminalFontFamilyDescription":
-    "Leave blank to auto-detect system terminal settings; set a value to override the GCode terminal font.",
+    "Leave blank to auto-detect system terminal settings; set a value to override the ZCode terminal font.",
   "settings.terminalFontFamilyPlaceholder": "Leave blank to inherit, e.g. MesloLGS NF, monospace",
   "settings.integratedTerminalShell": "Integrated terminal shell",
   "settings.integratedTerminalShellDescription":
@@ -3146,6 +3384,20 @@ const enUS: Record<string, string> = {
   "settings.nativeSearchEnhancementsDescription":
     "Use enhanced Find and Grep in new sessions and sessions restored after an app restart. Active sessions keep their current setting; Find remains unchanged on Windows.",
   "settings.memory": "Memory",
+  "settings.personalization.title": "Personalization",
+  "settings.personalization.description":
+    "Add custom instructions to personalize Agent responses. Instructions apply to future conversations of the local Agent; remote devices need separate configuration.",
+  "settings.personalization.placeholder": "Add custom instructions...",
+  "settings.personalization.editorLabel": "Custom instructions editor",
+  "settings.personalization.saved": "Saved; effective for new conversations",
+  "settings.personalization.saveFailed": "Failed to save. Check the logs",
+  "settings.personalization.loadFailed": "Failed to load custom instructions. Check the logs",
+  "settings.personalization.localOnly":
+    "Custom instructions can only be edited on the local desktop. Open Settings → Personalization in the desktop app.",
+  "settings.personalization.unsaved": "Unsaved changes",
+  "settings.personalization.sizeCount": "{used} / {limit}",
+  "settings.personalization.sizeOverLimit":
+    "Content exceeds the 100 KB limit the Agent reads; anything beyond it is ignored. Trim before saving.",
   "settings.memory.workspaceMemory": "Workspace Memory",
   "settings.memoryDescription":
     "Save and reuse long-term context in workspaces. Applies to new sessions and may increase model requests and token costs.",
@@ -3257,7 +3509,7 @@ const enUS: Record<string, string> = {
     "Group consecutive Write, Edit, and ApplyPatch calls into a Changes section.",
   "settings.zcodeInteractionBehavior": "Interaction behavior",
   "settings.zcodeInteractionBehaviorDescription":
-    "While GCode is running, add follow-up actions to the queue or guide them to run after the next tool call.",
+    "While ZCode is running, add follow-up actions to the queue or guide them to run after the next tool call.",
   "settings.zcodeInteractionBehavior.option.queue": "Queue",
   "settings.zcodeInteractionBehavior.option.guide": "Guide",
   "settings.askUserQuestionAutoResolution": "Automatically continue questions",
@@ -3301,7 +3553,7 @@ const enUS: Record<string, string> = {
   "settings.dataBaseDirCopying": "Copying data, please do not close the app...",
   "settings.dataBaseDirCopyFailed": "Data copy failed. Path was not changed.",
   "settings.dataBaseDirForbiddenInstallDir":
-    "The data directory cannot be the GCode installation folder on Windows. Choose a folder outside the app install location.",
+    "The data directory cannot be the ZCode installation folder on Windows. Choose a folder outside the app install location.",
   "settings.dataBaseDirRestartRequired": "Data saved. Please restart the app to take effect.",
   "settings.locale.system": "System default",
   "settings.locale.zh-CN": "中文简体",
@@ -3317,7 +3569,7 @@ const enUS: Record<string, string> = {
   "settings.migration.title": "Migration",
   "settings.migration.sectionTitle": "Claude History Migration",
   "settings.migration.sectionDescription":
-    "Scan native Claude Code history on this machine, optionally filter by workspace and activity window, then import the selected sessions into their matching GCode task lists.",
+    "Scan native Claude Code history on this machine, optionally filter by workspace and activity window, then import the selected sessions into their matching ZCode task lists.",
   "settings.migration.badge.localOnly": "Local Claude records",
   "settings.migration.badge.manualOnly": "Manual only",
   "settings.migration.currentWorkspace": "Current workspace",
@@ -3371,14 +3623,14 @@ const enUS: Record<string, string> = {
   "settings.usageTitle": "Usage stats",
   "settings.usageDescription":
     "Review rough activity and model usage aggregated from local sessions.",
-  "resourceManager.storage.summaryTotal": "Total used by GCode",
+  "resourceManager.storage.summaryTotal": "Total used by ZCode",
   "resourceManager.storage.scanning": "Calculating…",
   "resourceManager.storage.lastScanned": "Last calculated {time}",
   "resourceManager.storage.idle": "Not calculated yet",
   "resourceManager.storage.failed": "Calculation failed",
   "resourceManager.storage.rescan": "Recalculate",
   "resourceManager.storage.disk": "Disk",
-  "resourceManager.storage.diskUsage": "GCode uses {used}",
+  "resourceManager.storage.diskUsage": "ZCode uses {used}",
   "resourceManager.storage.diskFree": "{free} free of {total}",
   "resourceManager.storage.diskUnknown": "Disk capacity unavailable",
   "resourceManager.storage.roots": "Data directories",
@@ -3446,7 +3698,7 @@ const enUS: Record<string, string> = {
   "settings.embeddedBrowserAllowInsecureCertificatesSavedHint":
     "Certificate setting saved. Restart the app to take effect.",
   "settings.browser.data.section": "Browser data",
-  "settings.browser.desktopOnly": "Browser data can only be managed in the GCode desktop app.",
+  "settings.browser.desktopOnly": "Browser data can only be managed in the ZCode desktop app.",
   "settings.browser.import.title": "Import Chrome sign-in state",
   "settings.browser.import.description":
     "Bring your Chrome sign-in state into the built-in browser once, so the AI can open sites you are already signed in to and work more smoothly.",
@@ -3464,13 +3716,13 @@ const enUS: Record<string, string> = {
   "settings.browser.import.elevationCancelled":
     "Windows administrator access was canceled. No cookies were imported.",
   "settings.browser.import.helperVerificationFailed":
-    "GCode could not verify its Windows secure import component. Reinstall or update GCode before importing cookies.",
+    "ZCode could not verify its Windows secure import component. Reinstall or update ZCode before importing cookies.",
   "settings.browser.import.appBoundFailed":
     "Windows could not unlock Chrome's App-Bound cookies. No cookies were imported.",
   "settings.browser.import.adminConfirmTitle":
     "Allow administrator access to import Chrome cookies?",
   "settings.browser.import.adminConfirmDescription":
-    "Chrome protects cookies with App-Bound encryption on Windows. For this import only, GCode will request administrator access, start a temporary system service, and delete it immediately afterward. Chrome passwords are never read or imported.",
+    "Chrome protects cookies with App-Bound encryption on Windows. For this import only, ZCode will request administrator access, start a temporary system service, and delete it immediately afterward. Chrome passwords are never read or imported.",
   "settings.browser.import.adminConsent":
     "I confirm administrator access for this cookie import only",
   "settings.browser.import.adminConfirmAction": "Continue and request access",
@@ -3529,7 +3781,17 @@ const enUS: Record<string, string> = {
   "settings.previewBadge.dark": "Dark",
   "settings.modelProviderTitle": "Model settings",
   "settings.mcpTitle": "MCP Servers",
-  "settings.mcp.description": "Manage MCP server configurations used by GCode Agent.",
+  "settings.mcp.trust.action": "Trust",
+  "settings.mcp.trust.revoke": "Revoke trust",
+  "settings.mcp.trust.title": "Trust workspace MCP: {name}",
+  "settings.mcp.trust.revokeTitle": "Revoke workspace MCP trust: {name}",
+  "settings.mcp.trust.description":
+    "Connections may run code or send data. Trust does not enable MCP. Existing chats keep their authorization. Changes apply to new or restarted chats.",
+  "settings.mcp.trust.pending": "Current declaration awaits trust",
+  "settings.mcp.trust.trusted": "Current declaration trusted",
+  "settings.mcp.trust.failed":
+    "The declaration changed or trust is unavailable. Refresh and try again.",
+  "settings.mcp.description": "Manage MCP server configurations used by ZCode Agent.",
   "settings.mcp.create.open": "Add MCP server",
   "settings.mcp.import.open": "Import MCP servers from external agents",
   "settings.mcp.import.action": "Import",
@@ -3538,60 +3800,9 @@ const enUS: Record<string, string> = {
   "settings.mcp.searchPlaceholder": "Search MCP servers…",
   "settings.mcp.group.local": "Configured MCP servers",
   "settings.mcp.group.plugin": "Plugin MCP servers",
-  "settings.remoteSync.open": "Sync",
-  "settings.remoteSync.preflighting": "Checking remote write access...",
-  "settings.remoteSync.preflightTimeout":
-    "Remote write check timed out after {seconds}s. Check the remote connection and try again.",
-  "settings.remoteSync.preflightFailed": "Remote target is not writable: {path}. {error}",
   "settings.mcp.remoteSync.open": "Sync MCP",
-  "settings.mcp.remoteSync.title": "Sync MCP servers to remote target",
-  "settings.mcp.remoteSync.warningTitle": "MCP data and environment availability",
-  "settings.mcp.remoteSync.warningDescription":
-    "Sync copies local user MCP server configuration to the remote host. HTTP MCP URLs are copied, and filesystem MCP paths are rewritten for the selected remote workspace, but not all dependent data and system environment capabilities can be guaranteed. If an MCP server is unavailable because of the remote environment, permissions, or missing dependencies, install it or add the dependencies on the remote server.",
-  "settings.mcp.remoteSync.target": "Target: {target}",
-  "settings.mcp.remoteSync.loading": "Loading local MCP servers...",
-  "settings.mcp.remoteSync.empty": "No local user MCP servers found.",
-  "settings.mcp.remoteSync.filteredEmpty":
-    "All local user MCP servers already exist on the remote host.",
-  "settings.mcp.remoteSync.showExisting": "Show existing remote MCP servers",
-  "settings.mcp.remoteSync.selectAll": "Select all",
-  "settings.mcp.remoteSync.start": "Sync selected",
-  "settings.mcp.remoteSync.syncing": "Syncing MCP servers...",
-  "settings.mcp.remoteSync.existing": "Already exists on remote",
-  "settings.mcp.remoteSync.synced": "Synced",
-  "settings.mcp.remoteSync.skipped": "Skipped",
-  "settings.mcp.remoteSync.failed": "Failed",
-  "settings.mcp.remoteSync.resultEmpty": "No MCP sync results were returned.",
-  "settings.mcp.remoteSync.selectionCount": "{selected}/{total} selected",
-  "settings.mcp.remoteSync.noSelection": "Select at least one missing MCP server.",
   "settings.plugins.remoteContext": "Current remote workspace: {target}",
   "settings.plugins.remoteSync.open": "Sync Plugin",
-  "settings.plugins.remoteSync.title": "Sync Plugins to remote target",
-  "settings.plugins.remoteSync.warningTitle": "Remote execution reminder",
-  "settings.plugins.remoteSync.warningDescription":
-    "Synced plugins can load or run Skills, Commands, Hooks, and MCP servers in the remote environment. Marketplace plugins are reinstalled on the remote target and require remote access to their marketplace source.",
-  "settings.plugins.remoteSync.target": "Target: {target}",
-  "settings.plugins.remoteSync.loading": "Loading local Plugins...",
-  "settings.plugins.remoteSync.empty": "No local plugins available for remote sync.",
-  "settings.plugins.remoteSync.filteredEmpty":
-    "All local plugins already exist on the remote host.",
-  "settings.plugins.remoteSync.showExisting": "Show existing remote plugins",
-  "settings.plugins.remoteSync.selectAll": "Select all",
-  "settings.plugins.remoteSync.start": "Sync selected",
-  "settings.plugins.remoteSync.syncing": "Syncing plugins...",
-  "settings.plugins.remoteSync.queued": "Queued",
-  "settings.plugins.remoteSync.existing": "Already exists on remote",
-  "settings.plugins.remoteSync.synced": "Synced",
-  "settings.plugins.remoteSync.skipped": "Skipped",
-  "settings.plugins.remoteSync.failed": "Failed",
-  "settings.plugins.remoteSync.stopped": "Stopped",
-  "settings.plugins.remoteSync.stop": "Stop sync",
-  "settings.plugins.remoteSync.logTooltip": "Sync log",
-  "settings.plugins.remoteSync.optionsSummary":
-    "Options: {syncable} will be attempted; {manual} require manual setup on remote",
-  "settings.plugins.remoteSync.resultEmpty": "No plugin sync results were returned.",
-  "settings.plugins.remoteSync.selectionCount": "{selected}/{total} selected",
-  "settings.plugins.remoteSync.noSelection": "Select at least one missing plugin.",
   "settings.mcp.remoteContext": "Current remote workspace: {target}",
   "settings.mcp.plugin.active": "Built-in",
   "settings.mcp.plugin.activeDescription":
@@ -3606,7 +3817,7 @@ const enUS: Record<string, string> = {
     "This plugin MCP server is loaded but not currently connected.",
   "settings.mcp.host.active": "Host built-in",
   "settings.mcp.host.activeDescription":
-    "GCode provides this MCP server for the {pluginName} plugin. Its runtime identity is managed by the host.",
+    "ZCode provides this MCP server for the {pluginName} plugin. Its runtime identity is managed by the host.",
   "settings.mcp.plugin.disabled": "Plugin disabled",
   "settings.mcp.plugin.disabledDescription":
     "This MCP server is built into a plugin. Enable the plugin to load it.",
@@ -3618,7 +3829,7 @@ const enUS: Record<string, string> = {
     "Open authorization to finish connecting this plugin MCP server.",
   "settings.mcp.oauth.openAuthorization": "Open authorization",
   "settings.mcp.statusOnlyUnsupported":
-    "This GCode Agent cannot refresh OAuth status. Upgrade or restart GCode, then reopen MCP settings to run a full refresh.",
+    "This ZCode Agent cannot refresh OAuth status. Upgrade or restart ZCode, then reopen MCP settings to run a full refresh.",
   "settings.mcp.refreshFailed": "Failed to refresh MCP status: {error}",
   "settings.mcp.status.toolCount": "{count} tools",
   "settings.mcp.status.connectedReason": "Connected and available.",
@@ -3645,7 +3856,7 @@ const enUS: Record<string, string> = {
   "settings.mcp.failure.official_origin_untrusted":
     "The MCP server URL failed the security check. The connection was blocked.",
   "settings.mcp.failure.not_authenticated":
-    "You are not signed in. Sign in to GCode to use this MCP server.",
+    "You are not signed in. Sign in to ZCode to use this MCP server.",
   "settings.mcp.failure.coding_plan_required":
     "This account has no Coding Plan. Purchase or configure a Coding Plan to use this MCP server.",
   "settings.mcp.failure.server_not_found":
@@ -3715,20 +3926,24 @@ const enUS: Record<string, string> = {
   "settings.mcpServers.import.targetLabel": "Import target",
   "settings.mcpServers.import.target.global": "Import to Global",
   "settings.mcpServers.import.target.project": "Import to Project",
-  "settings.mcpServers.import.importing": "Importing MCP servers into GCode",
+  "settings.mcpServers.import.importing": "Importing MCP servers into ZCode",
   "settings.mcpServers.import.imported": "Imported",
   "settings.mcpServers.import.skipped": "Skipped",
   "settings.mcpServers.import.failed": "Failed",
   "settings.mcpServers.import.resultList": "MCP server results",
   "settings.mcpServers.import.resultEmpty": "No MCP server results were returned.",
   "settings.mcpServers.import.finish": "Done",
+  "settings.scope.deviceOffline":
+    "{device} is offline. Its configuration cannot be read or changed until it reconnects.",
+  "settings.scope.deviceConnecting": "Connecting to {device}…",
+  "settings.scope.localDevice": "This computer",
   "settings.scope.label": "Scope",
   "settings.scope.user": "User",
   "settings.scope.workspace": "Workspace",
   "settings.scope.default": "Default",
-  "settings.plugins.scope.inheritedUser": "Inherits User default",
-  "settings.plugins.scope.userDefault": "User default",
-  "settings.plugins.scope.workspaceOverride": "Workspace override",
+  "settings.scope.projects": "Projects",
+  "settings.scope.searchProjects": "Search projects",
+  "settings.scope.noMatchingProjects": "No matching projects",
   "settings.plugins.scope.restoreUserDefault": "Restore User default",
   "settings.plugins.scope.restored": "Restored {plugin} to User default",
   "settings.plugins.scope.workspaceHint":
@@ -3851,7 +4066,7 @@ const enUS: Record<string, string> = {
   "settings.modelProvider.startPlan.highlight.trial.label": "Trial period",
   "settings.modelProvider.startPlan.highlight.trial.value": "5 calendar days",
   "settings.modelProvider.startPlan.highlight.trial.description":
-    "Timing starts after signing in to GCode 3.x.",
+    "Timing starts after signing in to ZCode 3.x.",
   "settings.modelProvider.startPlan.highlight.quota.label": "Daily quota",
   "settings.modelProvider.startPlan.highlight.quota.value": "3M tokens daily",
   "settings.modelProvider.startPlan.highlight.quota.description":
@@ -3861,7 +4076,7 @@ const enUS: Record<string, string> = {
   "settings.modelProvider.startPlan.highlight.metering.description":
     "Metered only after using platform GLM flagship models.",
   "settings.modelProvider.startPlan.compatibility":
-    "Supports BYOK and BYOA. Base URL, API format, and API Key are maintained by GCode automatically.",
+    "Supports BYOK and BYOA. Base URL, API format, and API Key are maintained by ZCode automatically.",
   "settings.modelProvider.codingPlan.title": "{provider} - Coding Plan",
   "settings.modelProvider.codingPlan.webview.title": "Upgrade Plan",
   "settings.modelProvider.codingPlan.webview.authInjectFailed":
@@ -4000,7 +4215,7 @@ const enUS: Record<string, string> = {
   "settings.modelProvider.codingPlan.purchase.teamMemberNoticeTitle":
     "Assign members to your team plan",
   "settings.modelProvider.codingPlan.purchase.teamMemberNoticeDescription":
-    "Add yourself or other members on the BigModel team plan management page. Once assigned, the team quota will be available in GCode.",
+    "Add yourself or other members on the BigModel team plan management page. Once assigned, the team quota will be available in ZCode.",
   "settings.modelProvider.codingPlan.purchase.manageTeamPlan": "Manage team plan",
   "settings.modelProvider.codingPlan.manage": "Manage",
   "settings.modelProvider.planCard.codingPlan": "Coding Plan",
@@ -4383,7 +4598,7 @@ const enUS: Record<string, string> = {
   "settings.modelProvider.resetForm": "Reset form",
   "settings.modelProvider.fieldHelp": "About {field}",
   "settings.modelProvider.help.contextWindow":
-    "The context capacity the model can process at once, in tokens. GCode uses this to manage context.\nDo not exceed the model's actual limit.",
+    "The context capacity the model can process at once, in tokens. ZCode uses this to manage context.\nDo not exceed the model's actual limit.",
   "settings.modelProvider.help.maxOutputTokens":
     "The maximum number of tokens a single model request may generate.\nDo not exceed the model's actual limit.",
   "settings.modelProvider.help.inputModalities":
@@ -4399,7 +4614,7 @@ const enUS: Record<string, string> = {
   "settings.modelProvider.help.advanced":
     "**MFJS tool schema**: Enables Moonshot Flavored JSON Schema compatibility, commonly used by Moonshot's Kimi model API. Enable only when the model API requires this format.",
   "settings.modelProvider.help.followRecommendedConfig":
-    "Matches recommended configuration using the model ID, Base URL, and API format. GCode continually updates recommendations and automatically syncs them to you.\nWhen you manually change a setting, that setting becomes manually managed and stops following recommendation updates; other settings remain managed by smart configuration.",
+    "Matches recommended configuration using the model ID, Base URL, and API format. ZCode continually updates recommendations and automatically syncs them to you.\nWhen you manually change a setting, that setting becomes manually managed and stops following recommendation updates; other settings remain managed by smart configuration.",
   "settings.modelProvider.modelDefaultsLoaded": "Smart configuration matched for this model",
   "settings.modelProvider.modelConfigIncomplete": "Model configuration is incomplete",
   "settings.modelProvider.models": "Model list",
@@ -4477,7 +4692,7 @@ const enUS: Record<string, string> = {
   "settings.usage.sourceProvider": "Source: {provider}",
   "settings.usage.billingBanner.title": "{provider} Coding Plan",
   "settings.usage.billingBanner.description":
-    "Connect your {provider} account to query Coding Plan entitlement, then keep coding in GCode after purchase or setup.",
+    "Connect your {provider} account to query Coding Plan entitlement, then keep coding in ZCode after purchase or setup.",
   "settings.usage.billingBanner.compactDescription":
     "Connect your {provider} account to sync usage.",
   "settings.usage.billingBanner.buy": "Buy Coding Plan",
@@ -4536,7 +4751,7 @@ const enUS: Record<string, string> = {
   "settings.usage.entitlementFiveHourUsage": "5-hour remaining",
   "settings.usage.entitlementWeeklyUsage": "Weekly remaining",
   "settings.usage.entitlementMonthlyMcpUsage": "Tool calls",
-  "settings.usage.entitlementServerMcpUsage": "GCode MCP",
+  "settings.usage.entitlementServerMcpUsage": "ZCode MCP",
   "settings.usage.entitlementResetAt": "Resets {time}",
   "settings.usage.entitlementUsageDetails": "Tool usage detail",
   "settings.usage.entitlementPromptCap": "5-hour prompt pool",
@@ -4594,9 +4809,9 @@ const enUS: Record<string, string> = {
   "sidebar.usage.plan.fiveHour": "5 hours",
   "sidebar.usage.plan.weekly": "Weekly",
   "sidebar.usage.plan.toolCalls": "Tool calls",
-  "sidebar.usage.plan.mcp": "GCode MCP",
-  "sidebar.usage.plan.zcodeMcp": "GCode MCP",
-  "sidebar.usage.plan.zcodeMcpDescription": "Daily aggregate quota for GCode built-in plugin MCPs",
+  "sidebar.usage.plan.mcp": "ZCode MCP",
+  "sidebar.usage.plan.zcodeMcp": "ZCode MCP",
+  "sidebar.usage.plan.zcodeMcpDescription": "Daily aggregate quota for ZCode built-in plugin MCPs",
   "chat.planUsage.title": "Plan usage",
   "chat.planUsage.titleWithPlan": "{plan} Plan usage",
   "chat.planUsage.providerFallback": "Current provider",
@@ -4781,7 +4996,7 @@ const enUS: Record<string, string> = {
   "settings.skills.delete.title": "Delete skill",
   "settings.skills.delete.description":
     'Delete "{name}"? This removes the skill folder from disk and cannot be undone.',
-  "settings.skills.agent.glm": "GCode Agent",
+  "settings.skills.agent.glm": "ZCode Agent",
   "settings.skills.agent.unknown": "Unknown source",
   "settings.skills.create.open": "New skill",
   "settings.skills.create.taskCreateFailed":
@@ -4822,10 +5037,10 @@ const enUS: Record<string, string> = {
   "settings.skills.import.mode.copy": "Copy",
   "settings.skills.import.mode.symlink": "Symlink",
   "settings.skills.import.mode.copy.description":
-    "Copy the full skill directory into GCode. Later changes in the external agent directory will not sync automatically.",
+    "Copy the full skill directory into ZCode. Later changes in the external agent directory will not sync automatically.",
   "settings.skills.import.mode.symlink.description":
-    "Create a directory link to the external agent skill. GCode follows later source changes, but the skill depends on that source path remaining available.",
-  "settings.skills.import.importing": "Importing skills into GCode",
+    "Create a directory link to the external agent skill. ZCode follows later source changes, but the skill depends on that source path remaining available.",
+  "settings.skills.import.importing": "Importing skills into ZCode",
   "settings.skills.import.imported": "Imported",
   "settings.skills.import.skipped": "Skipped",
   "settings.skills.import.failed": "Failed",
@@ -4835,35 +5050,6 @@ const enUS: Record<string, string> = {
     "The skills list has been refreshed. Existing same-name skills were kept.",
   "settings.skills.import.finish": "Done",
   "settings.skills.remoteSync.open": "Sync Skill",
-  "settings.skills.remoteSync.title": "Sync Skills to remote target",
-  "settings.skills.remoteSync.warningTitle": "Skill data and environment availability",
-  "settings.skills.remoteSync.warningDescription":
-    "Sync migrates local user-level Skills to the remote host, but not all dependent data and system environment capabilities can be guaranteed. If a Skill is unavailable because of the remote environment, permissions, or missing dependencies, install it or add the dependencies on the remote server.",
-  "settings.skills.remoteSync.target": "Target: {target}",
-  "settings.skills.remoteSync.loading": "Loading local Skills...",
-  "settings.skills.remoteSync.empty": "No local user skills found.",
-  "settings.skills.remoteSync.filteredEmpty":
-    'Only Skills that already exist on the remote are available. Enable "Show existing remote skills" to view them.',
-  "settings.skills.remoteSync.showExisting": "Show existing remote skills",
-  "settings.skills.remoteSync.selectAll": "Select all",
-  "settings.skills.remoteSync.clearAll": "Clear all",
-  "settings.skills.remoteSync.start": "Sync selected",
-  "settings.skills.remoteSync.syncing": "Syncing skills...",
-  "settings.skills.remoteSync.existing": "Already exists on remote",
-  "settings.skills.remoteSync.expandDescription": "Show more",
-  "settings.skills.remoteSync.collapseDescription": "Show less",
-  "settings.skills.remoteSync.synced": "Synced",
-  "settings.skills.remoteSync.skipped": "Skipped",
-  "settings.skills.remoteSync.failed": "Failed",
-  "settings.skills.remoteSync.complete": "Skill sync complete.",
-  "settings.skills.remoteSync.selectionCount": "{selected}/{total} selected",
-  "settings.skills.remoteSync.noSelection": "Select at least one missing skill.",
-  "settings.skills.remoteSync.sizeLimit.selectedContent":
-    "Sync failed: the selected Skills contain about {actualSize} of content, exceeding the {maxSize} per-sync limit. Deselect some Skills and try again. Nothing was written to the remote host.",
-  "settings.skills.remoteSync.sizeLimit.archive":
-    "Sync failed: the generated sync archive is about {actualSize}, exceeding the {maxSize} per-sync limit. Deselect some Skills and try again. Nothing was written to the remote host.",
-  "settings.skills.remoteSync.sizeLimit.extractedContent":
-    "Sync failed: the extracted Skill content is about {actualSize}, exceeding the {maxSize} remote limit. Deselect some Skills and try again.",
   "settings.skills.userScopeDesktopOnly":
     "User-level skills are available on desktop only in this phase.",
   "settings.skills.detail.description": "Description",
@@ -4901,7 +5087,7 @@ const enUS: Record<string, string> = {
   "settings.skills.diagnostics.code.skill_not_found": "Skill not found",
   "settings.subagents.title": "Subagents",
   "settings.subagents.description":
-    "Manage user-level subagent Markdown files consumed by GCode Agent.",
+    "Manage user-level subagent Markdown files consumed by ZCode Agent.",
   "settings.subagents.workspaceScopeUnsupported":
     "Workspace-level creation or editing is unsupported",
   "settings.subagents.searchPlaceholder": "Search subagents...",
@@ -5016,7 +5202,6 @@ const enUS: Record<string, string> = {
   "settings.plugin.plugins.emptyInstalledTitle": "No plugins installed",
   "settings.plugin.plugins.emptyInstalledDescription":
     "Discover and install plugins to add MCPs, skills, and more.",
-  "settings.plugin.plugins.browse": "Browse plugins",
   "settings.plugin.mcp.emptyInstalledTitle": "No MCP servers installed",
   "settings.plugin.mcp.emptyInstalledDescription":
     "Add a server manually or import an existing configuration.",
@@ -5064,7 +5249,6 @@ const enUS: Record<string, string> = {
   "settings.plugins.store.ui.capability":
     "Provides interactive interfaces that open in the side pane.",
   "settings.plugins.store.ui.title": "App plugins",
-  "settings.plugins.store.browseAll": "Browse all plugins",
   "settings.plugins.store.segment.public": "Public",
   "settings.plugins.store.segment.personal": "Personal",
   "settings.plugins.store.featured": "Featured",
@@ -5132,6 +5316,10 @@ const enUS: Record<string, string> = {
   "settings.plugins.marketplaces.dropHint": "Drag a file or folder here, or choose a directory.",
   "settings.plugins.marketplaces.validate": "Validate marketplace",
   "settings.plugins.marketplaces.add": "Add marketplace",
+  "settings.plugins.marketplaces.riskWarning":
+    "Unofficial plugin marketplaces may contain malicious plugins that can harm your device. Verify the source and take precautions before adding.",
+  "settings.plugins.marketplaces.riskAcknowledgement":
+    "I understand the risks, have verified the source, and have taken precautions.",
   "settings.plugins.marketplaces.update": "Update marketplace",
   "settings.plugins.marketplaces.remove": "Remove marketplace",
   "settings.plugins.marketplaces.empty": "No marketplaces added",
@@ -5165,6 +5353,11 @@ const enUS: Record<string, string> = {
   "settings.plugins.checkForUpdates": "Check for updates",
   "settings.plugins.checkForUpdates.found": "Found {count} plugin update(s) available",
   "settings.plugins.checkForUpdates.none": "All installed plugins are up to date",
+  "settings.plugins.updateAll": "Update all ({count})",
+  "settings.plugins.updateAll.done": "Updated {count} plugin(s)",
+  "settings.plugins.updateAll.partial": "Updated {succeeded}, failed {failed}: {plugins}",
+  "settings.plugins.updateAll.aborted":
+    "Update all stopped because the plugin scope changed; updated {count} plugin(s)",
   "settings.plugins.list.updateAvailable": "Update",
   "settings.plugins.list.versionChanged": "Changed",
   "settings.plugins.restore": "Restore",
@@ -5268,10 +5461,10 @@ const enUS: Record<string, string> = {
   "settings.plugins.import.mode.copy": "Copy",
   "settings.plugins.import.mode.symlink": "Symlink",
   "settings.plugins.import.mode.copy.description":
-    "Copy the full plugin directory into GCode and register it in plugins.dirs. Later changes in the external agent directory will not sync automatically.",
+    "Copy the full plugin directory into ZCode and register it in plugins.dirs. Later changes in the external agent directory will not sync automatically.",
   "settings.plugins.import.mode.symlink.description":
-    "Create a directory link to the external agent plugin and register it in plugins.dirs. GCode follows later source changes, but the plugin depends on that source path remaining available.",
-  "settings.plugins.import.importing": "Importing plugins into GCode",
+    "Create a directory link to the external agent plugin and register it in plugins.dirs. ZCode follows later source changes, but the plugin depends on that source path remaining available.",
+  "settings.plugins.import.importing": "Importing plugins into ZCode",
   "settings.plugins.import.imported": "Imported",
   "settings.plugins.import.skipped": "Skipped",
   "settings.plugins.import.failed": "Failed",
@@ -5280,9 +5473,9 @@ const enUS: Record<string, string> = {
   "settings.plugins.import.finish": "Done",
   "settings.commands.title": "Commands",
   "settings.commands.description":
-    "Manage GCode Agent .md command files. Commands can be invoked with /command-name in chat.",
+    "Manage ZCode Agent .md command files. Commands can be invoked with /command-name in chat.",
   "settings.commands.sourceFilterLabel": "Source filter",
-  "settings.commands.source.zcodeAgent": "GCode Agent",
+  "settings.commands.source.zcodeAgent": "ZCode Agent",
   "settings.commands.add": "New",
   "settings.commands.addNew": "New command",
   "settings.commands.addDescription":
@@ -5342,10 +5535,10 @@ const enUS: Record<string, string> = {
   "settings.commands.import.mode.copy": "Copy",
   "settings.commands.import.mode.symlink": "Symlink",
   "settings.commands.import.mode.copy.description":
-    "Copy the command file into GCode. Later changes in the external agent file will not sync automatically.",
+    "Copy the command file into ZCode. Later changes in the external agent file will not sync automatically.",
   "settings.commands.import.mode.symlink.description":
-    "Create a file link to the external agent command. GCode follows later source changes, but the command depends on that source path remaining available.",
-  "settings.commands.import.importing": "Importing commands into GCode",
+    "Create a file link to the external agent command. ZCode follows later source changes, but the command depends on that source path remaining available.",
+  "settings.commands.import.importing": "Importing commands into ZCode",
   "settings.commands.import.imported": "Imported",
   "settings.commands.import.skipped": "Skipped",
   "settings.commands.import.failed": "Failed",
@@ -5433,7 +5626,7 @@ const enUS: Record<string, string> = {
   "settings.hooks.customJson": "Custom fields JSON",
   "settings.hooks.customJsonObjectError": "Custom fields must be a JSON object.",
   "settings.hooks.customJsonParseError": "Custom fields JSON parsing failed.",
-  "settings.plugins.zcodeOnly": "GCode Agent only",
+  "settings.plugins.zcodeOnly": "ZCode Agent only",
   "settingsSync.dialog.title": "Import Settings",
   "settingsSync.dialog.description":
     "Only missing items will be imported. Existing settings will be skipped automatically.",
@@ -5442,8 +5635,8 @@ const enUS: Record<string, string> = {
   "settingsSync.action.rescanning": "Scanning...",
   "settingsSync.action.importSelected": "Import selected",
   "settingsSync.action.importing": "Importing...",
-  "settingsSync.action.finish": "Start using GCode",
-  "settingsSync.agent.zcode": "GCode Agent",
+  "settingsSync.action.finish": "Start using ZCode",
+  "settingsSync.agent.zcode": "ZCode Agent",
   "settingsSync.agent.claudeCode": "Claude Code",
   "settingsSync.agent.codexCli": "Codex CLI",
   "settingsSync.agent.openCode": "OpenCode",
@@ -5492,20 +5685,12 @@ const enUS: Record<string, string> = {
   "settingsSync.discovery.description":
     "Importable agent settings are no longer scanned automatically.",
   "settingsSync.discovery.helper":
-    "Only missing items will be imported and your current GCode settings will not be overwritten.",
+    "Only missing items will be imported and your current ZCode settings will not be overwritten.",
   "settingsSync.discovery.agentCount": "Agents found: {count}",
   "settingsSync.discovery.categoryCount": "Categories found: {count}",
   "settingsSync.discovery.error": "Scan failed: {error}",
   "settingsSync.discovery.continue": "Continue",
-  "onboarding.dialog.title": "Welcome to GCode",
-  "onboarding.dialog.description": "Choose how to start your first session.",
   "onboarding.wizard.label": "Migration guide",
-  "onboarding.welcome.eyebrow": "First run setup",
-  "onboarding.welcome.title": "Welcome to GCode",
-  "onboarding.welcome.start": "Start GCode",
-  "onboarding.welcome.migrate": "Migration Guide",
-  "onboarding.welcome.helper":
-    "Import existing tool settings now, or skip and continue later from Settings.",
   "onboarding.step.session": "Sessions",
   "onboarding.step.skillsImport": "Skills",
   "onboarding.step.mcpImport": "MCP servers",
@@ -5526,7 +5711,7 @@ const enUS: Record<string, string> = {
     "Import selected commands from external agents before the final migration.",
   "onboarding.stepDescription.agentSettings": "Choose which agents' providers to bring in.",
   "onboarding.stepDescription.migration":
-    "Start migration and wait while GCode imports your selections.",
+    "Start migration and wait while ZCode imports your selections.",
   "onboarding.sessions.empty":
     "No workspaces yet. Scan local history, then pick workspaces to migrate.",
   "onboarding.sessions.count": "{count} sessions",
@@ -5545,7 +5730,7 @@ const enUS: Record<string, string> = {
   "onboarding.agentsFile.error": "Could not check AGENTS.md migration status: {error}",
   "onboarding.agentsFile.confirmTitle": "Overwrite default AGENTS.md?",
   "onboarding.agentsFile.confirmDescription":
-    "GCode will copy {source} to {target}.\nIf the target file already exists, the GCode default AGENTS configuration will be overwritten.",
+    "ZCode will copy {source} to {target}.\nIf the target file already exists, the ZCode default AGENTS configuration will be overwritten.",
   "onboarding.agentsFile.confirmAction": "Overwrite and migrate",
   "onboarding.finish.summary.label.imported": "Imported",
   "onboarding.finish.summary.label.skipped": "Skipped",
@@ -5563,6 +5748,8 @@ const enUS: Record<string, string> = {
   "onboarding.migration.confirmCloseConfirm": "Close anyway",
   "onboarding.finish.done": "Migration complete",
   "onboarding.finish.ready": "Review what was imported before you continue.",
+  "onboarding.finish.workspaceRequired":
+    "{count} items need a project and were not imported. Open a project, then migrate them again.",
   "onboarding.finish.currentWorkspace": "Migrating sessions from {workspace}",
   "onboarding.finish.currentAgentsFile": "Migrating AGENTS.md",
   "onboarding.finish.currentSettings": "Importing agent settings",
@@ -5633,8 +5820,8 @@ const enUS: Record<string, string> = {
   "chat.emptyResult.description":
     "This task finished without any chat content. It may have been stopped before the model produced a response.",
   "chat.placeholder.newTask":
-    "Ask GCode anything, @ to add context, / for commands or capabilities",
-  "chat.placeholder.newTaskMobile": "Ask GCode anything…",
+    "Ask ZCode anything, @ to add context, / for commands or capabilities",
+  "chat.placeholder.newTaskMobile": "Ask ZCode anything…",
   "chat.placeholder.followUpAsk": "Ask for follow-up changes",
   "chat.placeholder.followUpQueue": "Keep typing to queue follow-up changes",
   "chat.placeholder.loading": "Initializing task...",
@@ -5692,6 +5879,7 @@ const enUS: Record<string, string> = {
   "chat.message.toolSnapshot.retry": "Load failed, retry",
   "chat.message.time.yesterday": "Yesterday {time}",
   "chat.message.retry": "Retry",
+  "chat.loading.working": "Working",
   "chat.history.workingFor": "Working for {duration}",
   "chat.history.workedFor": "Worked for {duration}",
   "chat.history.worked": "Worked",
@@ -5903,14 +6091,13 @@ const enUS: Record<string, string> = {
   "chat.toolbar.modelSwitch.lockedByRunningTask.short": "busy",
   "chat.goal.runningBlocked": "Set a goal after the current task finishes.",
   "chat.goal.planModeBlocked": "Goal is unavailable in Plan mode. Switch modes to continue.",
-  "chat.slash.app.plan.label": "Plan mode",
   "chat.slash.app.plan.description": "Enable Plan mode",
   "chat.compact.runningBlocked": "Compact context after the current task finishes.",
   "chat.compact.queued": "Compaction queued and will run in order.",
   "chat.compact.duplicateBlocked": "A compaction is already running or queued.",
   "chat.modelSwitch.contextWindowGuard.title": "Compress context before switching models",
   "chat.modelSwitch.contextWindowGuard.description":
-    "This conversation has used {used} tokens, which exceeds {modelName}'s available context of {target} tokens after reserving maximum output.\nCompress the current conversation with the current model first. If the compressed context fits, GCode will continue switching models.",
+    "This conversation has used {used} tokens, which exceeds {modelName}'s available context of {target} tokens after reserving maximum output.\nCompress the current conversation with the current model first. If the compressed context fits, ZCode will continue switching models.",
   "chat.modelSwitch.contextWindowGuard.compress": "Compress",
   "chat.modelSwitch.contextWindowGuard.runningBlocked":
     "This conversation has used more context than the target model's available context after reserving maximum output. The conversation must be compressed before switching models, but the current task is still running and context compression cannot run now. Wait for the task to finish, then switch models again.",
@@ -5923,11 +6110,11 @@ const enUS: Record<string, string> = {
     "Computer Use is idle — it will start automatically on first use",
   "chat.toolbar.computerUse.tooltip.starting": "Enabling Computer Use plugin…",
   "chat.toolbar.computerUse.tooltip.ready":
-    "Computer Use ready — just describe what you want GCode to do",
+    "Computer Use ready — just describe what you want ZCode to do",
   "chat.toolbar.computerUse.tooltip.permissionRequired":
     "Missing macOS permissions — click to grant",
   "chat.toolbar.computerUse.tooltip.error":
-    "Computer Use enablement failed. Please restart GCode app and retry, or ask GCode to investigate the logs",
+    "Computer Use enablement failed. Please restart ZCode app and retry, or ask ZCode to investigate the logs",
   "chat.toolbar.computerUse.tooltip.sessionBusy":
     "A conversation is running. Computer Use can't be toggled right now — try again after it finishes.",
   "chat.toolbar.mode.description":
@@ -6279,7 +6466,7 @@ const enUS: Record<string, string> = {
     "Could not reach the local agent; global workflows are unavailable.",
   "workflows.hub.empty.title": "No saved workflows in your open projects yet",
   "workflows.hub.empty.hint":
-    "Design a workflow with GCode in chat, then have it save the workflow to a project once it works. Projects that aren't open don't appear here.",
+    "Design a workflow with ZCode in chat, then have it save the workflow to a project once it works. Projects that aren't open don't appear here.",
   "workflows.hub.noWorkspace": "Open a workspace to see its workflows.",
   "workflows.hub.loadError": "Could not read workflows: {error}",
   "workflows.hub.invalid": "{count} files could not be read",
@@ -6342,7 +6529,7 @@ const enUS: Record<string, string> = {
   "workflows.hub.detail.description": "Description",
   "workflows.hub.detail.whenToUse": "When to use",
   "workflows.hub.detail.whenToUse.help":
-    "A routing hint for GCode: when this workflow is the right pick.",
+    "A routing hint for ZCode: when this workflow is the right pick.",
   "workflows.hub.detail.args": "Arguments",
   "workflows.hub.detail.args.name": "Name",
   "workflows.hub.detail.args.type": "Type",
@@ -6363,7 +6550,7 @@ const enUS: Record<string, string> = {
   "workflows.hub.detail.meta.descriptionRequired": "Description is required",
   "workflows.hub.detail.script": "Script",
   "workflows.hub.detail.script.note":
-    "The script is read-only. To change it, revise it with GCode in chat and save a new version.",
+    "The script is read-only. To change it, revise it with ZCode in chat and save a new version.",
   "workflows.hub.detail.script.copy": "Copy script",
   "workflows.hub.detail.loadError": "Could not read this workflow: {reason}",
   "workflows.hub.detail.notFound": "This workflow is no longer in the project.",
@@ -6560,10 +6747,10 @@ const enUS: Record<string, string> = {
   "chat.toolCall.workflow.saveRun.announce.project": "Saved to the project",
   "chat.toolCall.workflow.saveRun.announce.global": "Saved as a global workflow",
   "chat.toolCall.workflow.saveRun.title": "Save workflow",
-  "chat.toolCall.workflow.saveRun.lead": "Let GCode refine and save it",
+  "chat.toolCall.workflow.saveRun.lead": "Let ZCode refine and save it",
   "chat.toolCall.workflow.saveRun.lead.hint":
-    "GCode distills a reusable workflow for you, then asks you to confirm.",
-  "chat.toolCall.workflow.saveRun.lead.sending": "Handed to GCode…",
+    "ZCode distills a reusable workflow for you, then asks you to confirm.",
+  "chat.toolCall.workflow.saveRun.lead.sending": "Handed to ZCode…",
   "chat.toolCall.workflow.saveRun.lead.unsupported": "This agent cannot save directly.",
   "chat.toolCall.workflow.saveRun.or": "or save it as is",
   "chat.toolCall.workflow.saveRun.name": "Name",
@@ -6855,6 +7042,23 @@ const enUS: Record<string, string> = {
   "chat.attachments.preview.pdfUnavailable": "This PDF is no longer available to preview.",
   "markdownImage.previous": "Previous image",
   "markdownImage.next": "Next image",
+  "imageEditor.tools": "Image editing tools",
+  "imageEditor.select": "Select and move",
+  "imageEditor.pen": "Pen",
+  "imageEditor.text": "Text",
+  "imageEditor.rectangle": "Rectangle",
+  "imageEditor.ellipse": "Ellipse",
+  "imageEditor.arrow": "Arrow",
+  "imageEditor.eraser": "Eraser",
+  "imageEditor.color": "Annotation color",
+  "imageEditor.undo": "Undo",
+  "imageEditor.redo": "Redo",
+  "imageEditor.save": "Save to chat",
+  "imageEditor.saving": "Saving…",
+  "imageEditor.saveFailed": "Could not save the image. Try again.",
+  "imageEditor.noComposer": "No chat input is available for this image",
+  "imageEditor.textValue": "Annotation text",
+  "imageEditor.applyText": "Add text",
   "markdownImage.zoomIn": "Zoom in",
   "markdownImage.zoomOut": "Zoom out",
   "markdownImage.download": "Download image",
@@ -6926,7 +7130,7 @@ const enUS: Record<string, string> = {
   "chat.slash.subagents.title": "Agents",
   "chat.slash.subagents.empty": "No matching agents",
   "chat.slash.emptyUnavailable":
-    "No slash commands have been broadcast for the current GCode Agent session",
+    "No slash commands have been broadcast for the current ZCode Agent session",
   "chat.slash.emptyResults": "No matching slash commands",
   // Errors
   "chat.error.connectionLost": "Connection to agent lost",
@@ -6961,19 +7165,19 @@ const enUS: Record<string, string> = {
   "chat.quota.startPlan.modelVeryLow":
     "{model} has {percent} of its plan quota remaining ({remaining} tokens).",
   "chat.quota.startPlan.modelExhausted":
-    "All available quota for {model} has been used up. Switch models or upgrade your plan.",
+    "All available quota for {model} has been used up. Switch to another model or to a Coding Plan subscription.",
   "chat.quota.startPlan.dailyExhausted":
-    "Your Start Plan quota has been used up. Upgrade your plan or wait for the quota to reset.",
+    "Your Start Plan quota has been used up. Switch to a Coding Plan subscription, or wait for the quota to reset.",
   "chat.quota.startPlan.concurrentLimit":
-    "The system is busy. Please switch models, upgrade your account, or try again later.",
+    "The system is busy. Please switch models, switch to a Coding Plan subscription, or try again later.",
   "chat.quota.startPlan.concurrentLimit.retryExhausted":
-    "The system is busy, and automatic retries have reached the maximum count. Please try again later or upgrade your account.",
+    "The system is busy, and automatic retries have reached the maximum count. Please try again later or switch to a Coding Plan subscription.",
   "chat.quota.startPlan.concurrentLimit.switchModel":
     "The current model request concurrency limit has been reached. Switch models to continue your current task.",
   "chat.quota.mcp.quotaExhausted":
-    'GCode MCP "{server}" has used up today\'s quota. It resets tomorrow.',
+    'ZCode MCP "{server}" has used up today\'s quota. It resets tomorrow.',
   "chat.quota.mcp.codingPlanRequired":
-    'No GCode MCP "{server}" quota. Sign in or get a Coding Plan to use it.',
+    'No ZCode MCP "{server}" quota. Sign in or get a Coding Plan to use it.',
   "chat.quota.providerLimited":
     "The current account quota or plan limit has been reached. Upgrade or adjust the plan to continue.",
   "chat.quota.action.upgrade": "Upgrade",
@@ -7126,6 +7330,22 @@ const enUS: Record<string, string> = {
   "mode.label.glm.plan": "Plan mode",
   "mode.label.glm.guarded": "Autonomous mode",
   "mode.description.glm.guarded": "Ask when there’s risk",
+  "mode.yoloConfirmation.title": "Enable full access?",
+  "mode.yoloConfirmation.description":
+    "Tasks can perform the following actions without asking for your approval each time.",
+  "mode.yoloConfirmation.files": "Files and folders",
+  "mode.yoloConfirmation.files.description": "Read, create, change, and delete accessible files.",
+  "mode.yoloConfirmation.commands": "Terminal commands",
+  "mode.yoloConfirmation.commands.description":
+    "Run commands, install software, or change system settings.",
+  "mode.yoloConfirmation.network": "Network and apps",
+  "mode.yoloConfirmation.network.description":
+    "Access the network, send data, and use connected apps.",
+  "mode.yoloConfirmation.risk":
+    "These actions may cause data loss or disclosure. Enable only for tasks you trust. You can switch to another permission mode at any time.",
+  "mode.yoloConfirmation.acknowledgement":
+    "I understand the risks and take responsibility for my data security.",
+  "mode.yoloConfirmation.confirm": "Confirm",
   "mode.label.glm.yolo": "Full access",
   "mode.description.glm.default": "Use default confirmations.",
   "mode.description.glm.build": "Ask before file changes.",
@@ -7176,7 +7396,7 @@ const enUS: Record<string, string> = {
     "Claude Code does not recognize {command} (args: {args}). Check the command name, or switch to an Agent/skill that supports it and try again.",
   "zcode.error.providerBusiness.1006": "Your login session has expired. Please sign in again.",
   "zcode.error.providerBusiness.1005":
-    "Today's free plan quota has been used up. Upgrade to continue now, or wait for the quota to reset.",
+    "Today's free plan quota has been used up. Switch to a Coding Plan subscription or another model, or wait for the quota to reset.",
   "zcode.error.providerBusiness.3006":
     "The current model is not included in this plan. Switch to an allowed model and try again.",
   "zcode.error.providerBusiness.3002":
@@ -7184,13 +7404,17 @@ const enUS: Record<string, string> = {
   "zcode.error.providerBusiness.3001":
     "The request parameters are invalid. Check the input and try again.",
   "zcode.error.providerBusiness.3008":
-    "The system is busy. Please switch models, upgrade your account, or try again later.",
+    "The system is busy. Please switch models, switch to a Coding Plan subscription, or try again later.",
   "zcode.error.providerBusiness.3009":
-    "The system is busy. Please switch models, upgrade your account, or try again later.",
+    "The system is busy. Please switch models, switch to a Coding Plan subscription, or try again later.",
   "zcode.error.providerBusiness.3010":
-    "The system is busy. Please switch models, upgrade your account, or try again later.",
+    "The system is busy. Please switch models, switch to a Coding Plan subscription, or try again later.",
   "zcode.error.providerBusiness.3102":
-    "This run exceeded the maximum single-run time. Create a new off-peak task to continue.",
+    "Your device was offline when this task reached the front of the queue. The quota has been returned. Keep your device online and create a new idle-time task.",
+  "zcode.error.providerBusiness.3106":
+    "This run exceeded the maximum single-run time. Create a new idle-time task to continue.",
+  "zcode.error.offPeakTicketExpired":
+    "This idle-time task can no longer continue. Create a new idle-time task.",
   "zcode.error.providerBusiness.2007":
     "The upstream service is temporarily unavailable. Please try again later.",
   "zcode.error.providerBusiness.429":
@@ -7225,7 +7449,7 @@ const enUS: Record<string, string> = {
   "resourceManager.network.empty": "Waiting for new network requests…",
   "resourceManager.network.noMatches": "No matching requests",
   "resourceManager.storage": "Storage",
-  "resourceManager.appUsage": "GCode",
+  "resourceManager.appUsage": "ZCode",
   "resourceManager.systemUsage": "System",
   "resourceManager.category.base": "Base services",
   "resourceManager.category.builtinPlugin": "Built-in plugins",
@@ -7469,7 +7693,7 @@ const enUS: Record<string, string> = {
   "feedback.submit.template.section.errorSummaryLine": "Error Summary: {message}",
   "feedback.submit.template.section.errorDetail": "Error Details",
   "feedback.submit.template.section.errorTraceId": "TraceID: {traceId}",
-  "feedback.submit.template.section.copyErrorHeading": "GCode Error Info",
+  "feedback.submit.template.section.copyErrorHeading": "ZCode Error Info",
   "feedback.submit.template.section.notProvided": "Not provided",
   "feedback.submit.template.section.remoteLogEmpty": "No connection logs captured",
   "feedback.submit.template.section.taskFeedbackTitle": "Feedback about task: {title}",
@@ -7629,7 +7853,7 @@ const enUS: Record<string, string> = {
   "automations.statusFilter.completed": "Completed",
   "automations.statusFilter.failed": "Failed",
   "automations.statusFilter.empty": "No tasks match this filter",
-  "offPeak.keepAwakeBanner": "Keep your computer awake while GCode is running a chat.",
+  "offPeak.keepAwakeBanner": "Keep your computer awake while ZCode is running a chat.",
   "offPeak.sectionTitle": "Idle-time tasks",
   "offPeak.createButton": "Create idle-time task",
   "offPeak.templates.sectionTitle": "Idle-time task template",
@@ -7686,7 +7910,7 @@ const enUS: Record<string, string> = {
   "offPeak.form.titlePlaceholder": "e.g. Nightly refactor",
   "offPeak.form.instructionsLabel": "Instructions",
   "offPeak.form.instructionsPlaceholder":
-    "Describe a task GCode can work on in the background, including the expected result and any constraints…",
+    "Describe a task ZCode can work on in the background, including the expected result and any constraints…",
   "offPeak.form.permissionWarning":
     "Idle-time runs are unattended. Actions that need confirmation will pause the task until you respond.",
   "offPeak.form.modelLabel": "Model",
@@ -7881,9 +8105,9 @@ const enUS: Record<string, string> = {
   "automations.runs.nextPage": "Next",
   // CUA (Computer Use)
   "chat.cuaReadiness.toolsNotLoaded":
-    "GCode Computer Use is still preparing — its tools aren't loaded yet ({count} loaded). Grant the permissions below; tools appear once the helper is ready.",
+    "ZCode Computer Use is still preparing — its tools aren't loaded yet ({count} loaded). Grant the permissions below; tools appear once the helper is ready.",
   "chat.cuaReadiness.toolsPreparing":
-    "GCode Computer Use is still preparing — its tools aren't loaded yet. Grant the permissions below; tools appear once the helper is ready.",
+    "ZCode Computer Use is still preparing — its tools aren't loaded yet. Grant the permissions below; tools appear once the helper is ready.",
   "chat.toolCall.cua.requestAccess": "Check Computer Use access",
   "chat.toolCall.cua.appName": "Computer Use",
   "chat.toolCall.cua.group.completedLabel": "Computer Use",
@@ -8011,9 +8235,9 @@ const enUS: Record<string, string> = {
   "cuaPermission.modal.restartButton": "Restart Helper",
   "cuaPermission.modal.restarting": "Restarting Helper…",
   "cuaPermission.modal.restartFailed": "Couldn't restart Helper: {error}",
-  "cuaPermission.modal.relaunchAppButton": "Restart GCode",
+  "cuaPermission.modal.relaunchAppButton": "Restart ZCode",
   "cuaPermission.modal.relaunchAppHint":
-    "Still not working after restarting Helper? Restart GCode to fully reload the Helper process.",
+    "Still not working after restarting Helper? Restart ZCode to fully reload the Helper process.",
   "cuaPermission.status.granted": "Granted",
   "cuaPermission.status.missing": "Missing",
   "cuaPermission.status.unknown": "Unknown",
@@ -8027,7 +8251,7 @@ const enUS: Record<string, string> = {
   "cuaPermission.tools.agentUpdateRequired":
     "The connected Agent is too old for a safe readiness check. Update or restart it, then check again.",
   "cuaPermission.tools.untrustedRuntime":
-    "Computer Use tools were found, but they did not come from the verified GCode plugin. Review the plugin installation, then check again.",
+    "Computer Use tools were found, but they did not come from the verified ZCode plugin. Review the plugin installation, then check again.",
   "cuaPermission.perm.accessibility": "Accessibility",
   "cuaPermission.perm.accessibility.purpose": "Read/drive UI elements + synthesize input",
   "cuaPermission.perm.screenRecording": "Screen Recording",
@@ -8038,7 +8262,7 @@ const enUS: Record<string, string> = {
     "Please upgrade macOS before using it. Permission setup cannot be completed on older versions.",
   "cuaPermission.ready": "Permissions ready",
   "cuaPermission.ready.sessionValidationHint":
-    "GCode will verify the Computer Use tools against the exact session when your first session starts.",
+    "ZCode will verify the Computer Use tools against the exact session when your first session starts.",
   "settings.computerUse.title": "Computer Use",
   "settings.computerUse.toggleLabel": "Enable Computer Use",
   "settings.computerUse.toggleDescription":
@@ -8089,15 +8313,133 @@ const enUS: Record<string, string> = {
   "globalNotice.highspeed.textCopied": "Share text copied",
   "globalNotice.highspeed.textCopyFailed": "Could not copy share text. Try again.",
   "globalNotice.highspeed.copyImage": "Copy image",
-  "globalNotice.highspeed.badge": "GCode & Coding Plan Exclusive Benefits",
+  "globalNotice.highspeed.badge": "ZCode & Coding Plan Exclusive Benefits",
   "globalNotice.highspeed.standardTaskSpeed": "Standard generation speed",
   "globalNotice.highspeed.relativeTaskDuration": "Relative generation time",
   "globalNotice.highspeed.speedSummary": "HighSpeed · {duration}",
   "globalNotice.highspeed.lessWaiting": "{percent}% less waiting",
   "globalNotice.highspeed.copySummary":
-    "I used the GCode Highspeed card and saved {duration}s. Give it a try. Download GCode https://zcode.z.ai",
+    "I used the ZCode Highspeed card and saved {duration}s. Give it a try. Download ZCode https://zcode.z.ai",
   "globalNotice.highspeed.imageSummary": "{tokens} tokens · {duration}s saved",
   "globalNotice.highspeed.close": "Close Highspeed share card",
+  "remoteSync.title": "Data sync",
+  "remoteSync.description": "Sync local configuration to remote devices.",
+  "remoteSync.rules.title": "Sync rules",
+  "remoteSync.rules.description": "Only adds or updates items. Remote-only content is preserved.",
+  "remoteSync.device.status.online": "Connected",
+  "remoteSync.empty.title": "No connected devices",
+  "remoteSync.empty.description":
+    "Connect an SSH, WSL, or Docker device to push this device's configuration to its ~/.zcode directory.",
+  "remoteSync.empty.connect": "Connect remote device",
+  "remoteSync.device.neverSynced": "Not synced yet",
+  "remoteSync.device.lastSynced.today": "Synced today at {time}",
+  "remoteSync.device.lastSynced": "Synced {time}",
+  "remoteSync.device.status.failed": "Last sync failed",
+  "remoteSync.device.status.offline": "Not connected",
+  "remoteSync.device.status.connecting": "Connecting…",
+  "remoteSync.action.open": "Sync configuration",
+  "remoteSync.action.migrate": "Migrate data",
+  "remoteSync.action.retry": "Retry",
+  "remoteSync.action.connect": "Connect",
+  "remoteSync.action.connecting": "Connecting…",
+  "remoteSync.action.close": "Close",
+  "remoteSync.action.pushAll": "Push all",
+  "remoteSync.action.transferringAll": "Syncing all…",
+  "remoteSync.action.transferredAll": "All synced",
+  "remoteSync.action.pushCategory": "Push {category}",
+  "remoteSync.action.clear": "Clear selection",
+  "remoteSync.action.transferring": "Syncing…",
+  "remoteSync.action.transferAgain": "Sync again",
+  "remoteSync.action.stop": "Stop",
+  "remoteSync.dialog.title": "Data sync",
+  "remoteSync.dialog.categories": "Sync content",
+  "remoteSync.dialog.offline":
+    "The device is offline, so actions are disabled. The list refreshes automatically when the device is back online.",
+  "remoteSync.category.overview": "Overview",
+  "remoteSync.category.plugins": "Plugins",
+  "remoteSync.category.subagents": "Subagents",
+  "remoteSync.category.skills": "Skills",
+  "remoteSync.category.mcp": "MCP Servers",
+  "remoteSync.category.commands": "Commands",
+  "remoteSync.category.hooks": "Hooks",
+  "remoteSync.category.empty": "No items on this device to sync",
+  "remoteSync.category.loadFailed": "Failed to load: {error}",
+  "remoteSync.overview.description":
+    "Review configuration differences between this device and the target.",
+  "remoteSync.overview.column.category": "Category",
+  "remoteSync.overview.column.local": "Local",
+  "remoteSync.overview.column.remote": "Remote",
+  "remoteSync.overview.loading": "Loading…",
+  "remoteSync.overview.loadFailed": "Failed to load",
+  "remoteSync.difference.matching": "Identical",
+  "remoteSync.difference.changes": "{count} changes",
+  "remoteSync.selection.selectAll": "Select all",
+  "remoteSync.selection.empty": "No items selected",
+  "remoteSync.selection.summary": "{count} items to sync",
+  "remoteSync.selection.failed": "{count} failed",
+  "remoteSync.version.pushSourceOlder": "Local version is older",
+  "remoteSync.version.contentDiffers": "Content differs",
+  "remoteSync.operation.push": "Push",
+  "remoteSync.operation.update": "Update",
+  "remoteSync.operation.difference": "Difference",
+  "remoteSync.operation.synced": "Synced",
+  "remoteSync.blocked.sizeLimit": "Exceeds the size limit and cannot be synced",
+  "remoteSync.blocked.containsSymlink": "Contains a symbolic link and cannot be synced",
+  "remoteSync.blocked.targetSymlink":
+    "The remote item is a symbolic link and cannot be overwritten",
+  "remoteSync.blocked.compatDirectory":
+    "The remote item is in the ~/.agents compatibility directory and cannot be overwritten",
+  "remoteSync.blocked.externalDirectory":
+    "The remote plugin with the same name is outside ~/.zcode/plugins (for example a development checkout) and cannot be updated",
+  "remoteSync.blocked.targetCompatConfig":
+    "The remote device uses the ~/.agents compatibility config; pushing would disable it",
+  "remoteSync.blocked.sourceRemoved": "The source was removed and cannot be synced",
+  "remoteSync.blocked.remoteLatestMismatch":
+    "The latest version from the remote source differs from the version on this device",
+  "remoteSync.blocked.crossMarketplaceDependency":
+    "Depends on a plugin from another marketplace. Mirroring does not support cross-marketplace dependencies",
+  "remoteSync.blocked.unsupportedSource": "This source type cannot be synced",
+  "remoteSync.item.conflict": "The remote item changed. Refresh and try again.",
+  "remoteSync.item.failed": "Sync failed: {error}",
+  "remoteSync.item.unknownError": "Unknown error",
+  "remoteSync.item.stopped": "Stopped",
+  "remoteSync.dependency.missingMcp": "Missing MCP on remote: {names}",
+  "remoteSync.dependency.missingSkills": "Missing skills on remote: {names}",
+  "remoteSync.dependency.nameSeparator": ", ",
+  "remoteSync.dependency.groupSeparator": "; ",
+  "remoteSync.error.offline": "The device disconnected during the push. The push did not finish.",
+  "remoteSync.error.preflightTimeout":
+    "Checking remote write access timed out. Nothing was written.",
+  "remoteSync.error.pushFailed": "Push failed: {error}",
+  "remoteSync.category.providers": "Model providers",
+  "remoteSync.category.providers.warning":
+    "This device's model configuration is the source of truth and syncs to the remote automatically after you save. API keys and sign-in state sync with it.",
+  "remoteSync.overview.autoSync": "Auto sync",
+  "remoteSync.overview.syncFailed": "Sync failed",
+  "remoteSync.providers.empty": "No custom model providers on this device",
+  "remoteSync.providers.apiKey": "API key {key}",
+  "remoteSync.providers.status.noLane":
+    "Syncs automatically after you open a project on this device",
+  "remoteSync.providers.status.running": "Syncing automatically…",
+  "remoteSync.providers.status.never": "Not synced automatically yet",
+  "remoteSync.providers.status.success": "Synced automatically {time}",
+  "remoteSync.providers.status.failed": "Automatic sync failed {time}: {reason}",
+  "remoteSync.providers.status.loadFailed": "Could not read the automatic sync status",
+  "remoteSync.providers.error.sourceReadFailed": "Could not read the local model configuration",
+  "remoteSync.providers.error.targetCallFailed": "Could not reach the remote sync service",
+  "remoteSync.providers.error.targetWriteFailed":
+    "The remote device could not write the configuration",
+  "remoteSync.providers.error.targetRefreshFailed":
+    "The remote device could not reload the model configuration",
+  "remoteSync.providers.error.targetCommitFailed":
+    "The remote device could not record the sync result",
+  "remoteSync.providers.error.targetApplyFailed":
+    "The remote device could not apply the configuration",
+  "remoteSync.providers.error.capabilityUnavailable":
+    "The remote version does not support model configuration sync",
+  "remoteSync.providers.error.sessionUnavailable": "The remote connection is no longer available",
+  "remoteSync.providers.error.hostExecutionFailed": "The sync could not run on this device",
+  "remoteSync.providers.error.unknown": "Unknown error",
   ...requestSecurityMessagesEnUS,
 };
 

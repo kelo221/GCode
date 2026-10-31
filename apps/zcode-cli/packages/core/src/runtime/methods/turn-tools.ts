@@ -7,7 +7,11 @@ import type {
   ToolCall,
   ToolExecutionResult,
 } from "../deps.js";
-import { emitStreamingToolLedgerUpdate, toRecordInput } from "../helpers/index.js";
+import {
+  emitStreamingToolLedgerUpdate,
+  throwIfTurnAborted,
+  toRecordInput,
+} from "../helpers/index.js";
 import type { RuntimeModelTextResult, StreamedToolExecutionResult } from "../types.js";
 import type { AgentRuntimeInternal } from "../internal.js";
 import { emitSyntheticStreamedToolError } from "./streaming-tool-synthetic-result.js";
@@ -29,6 +33,7 @@ import type { ToolCallInput } from "../../agent/message-history.js";
 import { settleToolResults, type ToolResultPart } from "./tool-result-settlement.js";
 import { SPEAK_TOOL_NAME } from "@zcode/contracts";
 import { requestedCompactFromResults } from "../../tool/handlers/compact.js";
+import { withUserStoppedToolResultContent } from "./interrupt-marker.js";
 
 export async function executeToolCallsForModelStep(
   this: AgentRuntimeInternal,
@@ -162,6 +167,7 @@ export async function executeToolCallsForModelStep(
     });
     const execution = await this.executeTools(pendingToolCalls, pendingSchedule, {
       automationTurn: isAutomationMutationRestrictedTurn(state),
+      automationId: state.automationId,
       offPeakTurn: isOffPeakCreateRestrictedTurn(state),
       signal: state.turnAbortSignal,
       traceContext: options.modelTraceContext,
@@ -228,23 +234,40 @@ export async function executeToolCallsForModelStep(
   for (const pending of pendingExecutionResults) {
     resultById.set(pending.toolCallId, pending);
   }
-  const results = coreToolCalls
-    .map((toolCall) => resultById.get(toolCall.id))
-    .filter((result): result is ToolExecutionResult => result !== undefined);
-  await settleToolResults.call(this, state, {
-    assistantMessageId: options.assistantMessageId,
-    modelTraceContext: options.modelTraceContext,
-    results,
-    toolParts,
-    toolCallById,
-    streamedResultsById,
-  });
+  const results = withUserStoppedToolResultContent(
+    this,
+    state,
+    coreToolCalls
+      .map((toolCall) => resultById.get(toolCall.id))
+      .filter((result): result is ToolExecutionResult => result !== undefined),
+  );
+  try {
+    await settleToolResults.call(this, state, {
+      assistantMessageId: options.assistantMessageId,
+      modelTraceContext: options.modelTraceContext,
+      results,
+      toolParts,
+      toolCallById,
+      streamedResultsById,
+    });
+  } finally {
+    // 工具执行中停止：中断标记用工具阶段的文字。
+    // 修复原因：checkpoint 被取消时，结算写完结果后自己抛出取消，走不到下面的分支，
+    // 标记会用成模型请求阶段的文字。
+    if (state.turnAbortSignal.aborted) state.interruptedDuringToolBatch = true;
+  }
   const requestedCompact = requestedCompactFromResults(results);
   if (requestedCompact) {
     state.requestedCompact = {
       ...state.requestedCompact,
       ...requestedCompact,
     };
+  }
+  // 工具执行中停止：结算后直接结束本轮。
+  // 修复原因：继续往下会把挂起的 guide drain 进已停止的轮次；结束后 guide 由取消路径退回队列。
+  if (state.turnAbortSignal.aborted) {
+    await persistToolModelStepFinish(this, state, options);
+    throwIfTurnAborted(state.turnAbortSignal);
   }
 
   const stopTurnResult =
