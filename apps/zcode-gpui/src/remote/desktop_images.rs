@@ -56,8 +56,11 @@ fn digest(parts: &[&str]) -> String {
         sha.update(part.as_bytes());
         sha.update([0]);
     }
-    let hex = format!("{:x}", sha.finalize());
-    hex[..32].to_string()
+    // sha2 0.11 digests no longer implement LowerHex; 16 bytes = 32 hex chars, as before.
+    sha.finalize()[..16]
+        .iter()
+        .map(|b| format!("{b:02x}"))
+        .collect()
 }
 
 fn file_cache_name(path: &Path, mtime: u64, size: u64) -> String {

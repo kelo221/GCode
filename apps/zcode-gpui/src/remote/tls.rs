@@ -42,7 +42,7 @@ impl DesktopIdentity {
         let generated = rcgen::generate_simple_self_signed(vec![SERVER_NAME.to_string()])
             .map_err(|e| format!("certificate generation failed: {e}"))?;
         let cert = generated.cert.der().to_vec();
-        let key = generated.key_pair.serialize_der();
+        let key = generated.signing_key.serialize_der();
         std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
         std::fs::write(&key_path, &key).map_err(|e| e.to_string())?;
         std::fs::write(&cert_path, &cert).map_err(|e| e.to_string())?;

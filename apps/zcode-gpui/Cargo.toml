@@ -25,16 +25,16 @@ url = "2.5.8"
 uuid = { version = "1", features = ["v7"] }
 futures = "0.3"
 base64 = "0.22"
-sha2 = "0.10"
+sha2 = "0.11"
 crc32fast = "1"
 image = { version = "0.25.10", default-features = false, features = ["png", "jpeg", "gif", "webp", "bmp", "ico", "tiff", "pnm"] }
-pulldown-cmark = "0.13.4"
+pulldown-cmark = "0.13.6"
 syntect = { version = "5.3.0", default-features = false, features = ["default-fancy"] }
 portable-pty = "0.9.0"
 alacritty_terminal = "0.26.0"
 rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12", "logging"] }
 ring = "0.17"
-rcgen = { version = "0.13", default-features = false, features = ["ring", "pem"] }
+rcgen = { version = "0.14", default-features = false, features = ["ring", "pem"] }
 qrcode = { version = "0.14", default-features = false }
 # @ file mentions: gitignore-aware parallel walk and change watcher.
 ignore = "0.4"
