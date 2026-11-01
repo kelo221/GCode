@@ -85,6 +85,8 @@ pub(crate) enum Pending {
     SystemPrompt {
         read: bool,
     },
+    /// GPUI-only `secrets/sync` (backend/secrets_cmds.rs).
+    Secrets,
     /// Model settings page (provider_settings/requests.rs).
     ProviderSettings(crate::provider_settings::Request),
     /// Answer forwarded to an async caller (backend/raw_query.rs).

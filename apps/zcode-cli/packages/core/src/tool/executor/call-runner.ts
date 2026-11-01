@@ -45,6 +45,7 @@ import { snapshotPermissionInput } from "./permission-input.js";
 import { buildToolInputResolutionContext } from "./permission-input-adjustments.js";
 import { createMcpToolDisplay, createToolResultDisplay } from "./result-display.js";
 import { serializeOutput } from "./result-serialization.js";
+import { redactSecretText, redactSecretsDeep } from "../../secrets/secret-vault.js";
 import {
   appendDiagnosticsTrailer,
   collectPostEditDiagnostics,
@@ -600,13 +601,17 @@ async function executeToolCallImpl(
         ...(inputAdjustments === undefined ? {} : { inputAdjustments }),
       };
 
-      const output = await executeWithTimeout(
-        entry.handler,
-        executionInput,
-        context,
-        deadline,
-        executionAbortController,
-        entry,
+      // GCode 密钥库（apps/zcode-gpui/SECRETS.md）：在序列化、display、失败转换之前按值脱敏，
+      // 模型内容、落盘、artifact 与 UI 用的都是同一份已脱敏输出。库为空时原样返回。
+      const output = redactSecretsDeep(
+        await executeWithTimeout(
+          entry.handler,
+          executionInput,
+          context,
+          deadline,
+          executionAbortController,
+          entry,
+        ),
       );
       const durationMs = Date.now() - startTime;
       if (isToolHandlerFailure(output)) {
@@ -761,6 +766,17 @@ async function executeToolCallImpl(
       return result;
     } catch (error) {
       const durationMs = Date.now() - startTime;
+      // 失败文本（MCP 错误、命令报错）同样可能带出密钥值，进结果与事件前先脱敏。
+      if (error instanceof Error) {
+        const redactedMessage = redactSecretText(error.message);
+        if (redactedMessage !== error.message) {
+          try {
+            error.message = redactedMessage;
+          } catch {
+            // 冻结的错误对象无法改写；保持原样，不让脱敏本身把失败路径打断。
+          }
+        }
+      }
       const failureHookResult = await runPostToolUseFailureHooks(
         deps,
         canonicalToolCall,

@@ -125,6 +125,7 @@ import {
 } from "./provider-settings.js";
 import { updateModelIoPreferences } from "./model-io-preferences.js";
 import { readSystemPrompt, updateSystemPrompt } from "./system-prompt-override.js";
+import { syncSecrets } from "./secrets-sync.js";
 import { updateOffPeakToolPolicy } from "./off-peak-tool-policy.js";
 import { updateDynamicWorkflowPolicy } from "./dynamic-workflow-policy.js";
 import { grantWorkspaceHookTrustForProtocol } from "./workspace-hook-trust.js";
@@ -808,6 +809,8 @@ export class ZCodeProtocolAgentServer {
         return await readSystemPrompt(this.context, request.params);
       case zcodeProtocolMethods.workspaceUpdateSystemPrompt:
         return await updateSystemPrompt(this.context, request.params);
+      case zcodeProtocolMethods.secretsSync:
+        return await syncSecrets(this.context, request.params);
       case zcodeProtocolMethods.workspaceUpdateOffPeakToolPolicy:
         return await updateOffPeakToolPolicy(this.context, request.params);
       case zcodeProtocolMethods.workspaceUpdateDynamicWorkflowPolicy:

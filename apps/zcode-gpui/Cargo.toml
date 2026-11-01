@@ -40,6 +40,11 @@ qrcode = { version = "0.14", default-features = false }
 ignore = "0.4"
 notify = { version = "8", default-features = false }
 
+# Secrets vault (SECRETS.md): the OS secret store — Windows Credential Manager,
+# macOS Keychain, Linux Secret Service (pure-Rust zbus). The phone holds no secrets.
+[target.'cfg(not(target_os = "android"))'.dependencies]
+keyring = "4.2"
+
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.62", features = [
     "Win32_System_JobObjects",

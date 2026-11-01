@@ -33,6 +33,15 @@ pub(crate) fn override_path() -> PathBuf {
 }
 
 impl SystemPromptState {
+    /// Tests never read the real home file; the phone has no agents of its own.
+    pub(crate) fn for_app(remote: bool) -> Self {
+        if cfg!(test) || remote {
+            Self::default()
+        } else {
+            Self::load(override_path())
+        }
+    }
+
     pub(crate) fn load(path: PathBuf) -> Self {
         let override_text = std::fs::read_to_string(&path)
             .ok()

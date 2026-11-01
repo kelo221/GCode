@@ -14,6 +14,16 @@ export * from "./compact/index.js";
 // Memory paths
 export { resolveProjectMemoryRoot } from "./memory/project-root.js";
 
+// GCode secrets vault (apps/zcode-gpui/SECRETS.md)
+export {
+  redactSecretText,
+  redactSecretsDeep,
+  replaceSecretVault,
+  secretVaultEnv,
+  secretVaultSize,
+  type SecretVaultEntry,
+} from "./secrets/secret-vault.js";
+
 // Tool components
 export { ToolScheduler, defaultToolScheduler, READ_ONLY_TOOLS } from "./tool/scheduler.js";
 export type { ToolSchedule, ToolScheduleItem, ToolDependency } from "./tool/scheduler.js";

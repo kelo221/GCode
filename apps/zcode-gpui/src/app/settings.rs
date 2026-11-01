@@ -36,6 +36,7 @@ pub(crate) enum SettingsSection {
     Browser,
     Voice,
     SystemPrompt,
+    Secrets,
     CodeSearch,
     Diagnostics,
     Usage,
@@ -56,6 +57,7 @@ impl SettingsSection {
             "browser" => Self::Browser,
             "voice" => Self::Voice,
             "system-prompt" => Self::SystemPrompt,
+            "secrets" => Self::Secrets,
             "code-search" => Self::CodeSearch,
             "diagnostics" => Self::Diagnostics,
             "usage" => Self::Usage,
@@ -79,7 +81,24 @@ pub(crate) struct SettingsView {
     pub model_query: String,
     pub system_prompt: Option<crate::app::settings_system_prompt::PromptEditor>,
     pub provider_form: Option<crate::app::settings_provider_form::ProviderForm>,
+    pub secrets_form: Option<crate::app::settings_secrets::SecretForm>,
     pub focus: FocusHandle,
+}
+
+impl SettingsView {
+    pub(crate) fn new(focus: FocusHandle) -> Self {
+        Self {
+            open: false,
+            section: Default::default(),
+            focus,
+            query: String::new(),
+            shortcut_query: String::new(),
+            model_query: String::new(),
+            system_prompt: None,
+            provider_form: None,
+            secrets_form: None,
+        }
+    }
 }
 
 impl RootView {
@@ -246,6 +265,7 @@ impl RootView {
             SettingsSection::Browser => self.browser_pane(cx),
             SettingsSection::Voice => self.voice_pane(&settings, blocked, cx),
             SettingsSection::SystemPrompt => self.system_prompt_pane(window, cx),
+            SettingsSection::Secrets => self.secrets_pane(window, cx),
             SettingsSection::CodeSearch => code_search_pane(&settings, blocked),
             SettingsSection::Diagnostics => lsp_diagnostics_pane(&settings, blocked),
             SettingsSection::Usage => self.usage_pane(cx),

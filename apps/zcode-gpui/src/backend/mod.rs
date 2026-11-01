@@ -61,6 +61,9 @@ pub(crate) mod saved_workflow_cmds;
 mod saved_workflow_safety_tests;
 #[cfg(test)]
 mod saved_workflow_tests;
+mod secrets_cmds;
+#[cfg(test)]
+mod secrets_tests;
 mod send_cmds;
 pub(crate) mod services_launch;
 pub(crate) mod services_rpc;

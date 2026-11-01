@@ -144,16 +144,7 @@ impl RootView {
             folders: Default::default(),
             session_limit_step: HashMap::new(),
             subagents: Default::default(),
-            settings: crate::app::settings::SettingsView {
-                open: false,
-                section: Default::default(),
-                focus: cx.focus_handle(),
-                query: String::new(),
-                shortcut_query: String::new(),
-                model_query: String::new(),
-                system_prompt: None,
-                provider_form: None,
-            },
+            settings: crate::app::settings::SettingsView::new(cx.focus_handle()),
         }
     }
 }

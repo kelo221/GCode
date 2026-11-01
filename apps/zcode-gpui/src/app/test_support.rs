@@ -80,6 +80,7 @@ impl AppState {
             browser: Default::default(),
             voice: None,
             system_prompt: Default::default(),
+            secrets: Default::default(),
             provider_settings: Default::default(),
             project_activity: Default::default(),
             sidebar_cache: Default::default(),

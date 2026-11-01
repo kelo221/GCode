@@ -115,6 +115,7 @@ mod settings_provider_models;
 #[cfg(test)]
 mod settings_provider_tests;
 mod settings_rows;
+pub(crate) mod settings_secrets;
 #[cfg(test)]
 mod settings_shell_tests;
 #[cfg(test)]

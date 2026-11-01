@@ -26,6 +26,7 @@ import {
   normalizeAgentProfiles,
   PermissionService,
   buildPluginReferenceCatalog,
+  secretVaultEnv,
   writeWorkflowDraft,
   type AmendWorkflowRunSettingsInput,
   type ResumeSessionResult,
@@ -427,6 +428,7 @@ export async function createZCodeApp(options: ZCodeAppOptions): Promise<ZCodeApp
           createMcpAdapter({
             clientVersion: appVersion,
             env: options.env,
+            extraStdioEnv: secretVaultEnv,
             logger,
             network: {
               httpProxy: configResult.config.network.httpProxy,
@@ -480,13 +482,20 @@ export async function createZCodeApp(options: ZCodeAppOptions): Promise<ZCodeApp
       workspacePath: workingDirectory,
       ...(officialCommandIdentity ? { workspaceIdentity: officialCommandIdentity } : {}),
     };
-    const executionPort = officialCommandEnv
+    const officialExecutionPort = officialCommandEnv
       ? withOfficialCommandEnv(
           baseExecutionPort,
           () => officialCommandEnv(sessionId, officialCommandWorkspace),
           logger,
         )
       : baseExecutionPort;
+    // GCode 密钥库（apps/zcode-gpui/SECRETS.md）：复用同一个 env overlay 包装，每条命令现取，
+    // GPUI 改动后下一条命令即生效；库为空或 `base: "empty"` 时请求原样透传。
+    const executionPort = withOfficialCommandEnv(
+      officialExecutionPort,
+      async () => secretVaultEnv(),
+      logger,
+    );
     const ownsExecutionPort = options.executionPort === undefined;
     const pdfDocumentPort =
       options.pdfDocumentPort ?? createPopplerPdfDocumentAdapter({ executionPort });

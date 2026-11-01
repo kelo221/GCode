@@ -19,7 +19,7 @@ import {
 import { createNodeSessionDataFiles, type SqliteSessionStore } from "@zcode/adapters/storage";
 import { traceContextToLogContext, createRootTraceContext } from "@zcode/contracts";
 import type { McpPort, ModelSelection } from "@zcode/contracts";
-import type { PresentationSurface } from "@zcode/core";
+import { secretVaultEnv, type PresentationSurface } from "@zcode/core";
 import type { RunZCodeProtocolAgentOptions, ZCodeAppOptions } from "./app/types.js";
 import { createZCodeApp } from "./app/create-app.js";
 import {
@@ -286,6 +286,8 @@ export async function runZCodeProtocolAgent(
             },
             clientVersion: options.version ?? "0.0.0",
             env: options.env,
+            // GCode 密钥库：stdio MCP 拉起时现取（apps/zcode-gpui/SECRETS.md）。
+            extraStdioEnv: secretVaultEnv,
             logger,
             network: {
               httpProxy: configResult.config.network.httpProxy,

@@ -320,6 +320,7 @@ impl AppState {
                                 self.subscribe_config(ws_key);
                                 self.probe_model_catalog(ws_key);
                                 self.sync_system_prompt(ws_key);
+                                self.sync_secrets(ws_key);
                                 // Cold-open: the user already picked a session
                                 // while this agent was starting.
                                 let desired = self

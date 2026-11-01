@@ -42,6 +42,7 @@ impl SettingsSection {
             Self::Browser => ("Browser Use", "浏览器使用"),
             Self::Voice => ("Voice", "语音"),
             Self::SystemPrompt => ("System prompt", "系统提示词"),
+            Self::Secrets => ("Secrets", "密钥"),
             Self::CodeSearch => ("Code search", "代码搜索"),
             Self::Diagnostics => ("Diagnostics", "诊断"),
             Self::Usage => ("Usage stats", "使用统计"),
@@ -64,6 +65,7 @@ impl SettingsSection {
             Self::Browser => IconName::Globe.path(),
             Self::Voice => IconName::Volume2.path(),
             Self::SystemPrompt => IconName::FileText.path(),
+            Self::Secrets => IconName::Key.path(),
             Self::CodeSearch => IconName::Search.path(),
             Self::Diagnostics => IconName::TriangleAlert.path(),
             Self::Usage => IconName::ChartColumn.path(),
@@ -84,6 +86,7 @@ impl SettingsSection {
             Self::Browser => "settings-browser",
             Self::Voice => "settings-voice",
             Self::SystemPrompt => "settings-system-prompt",
+            Self::Secrets => "settings-secrets",
             Self::CodeSearch => "settings-code-search",
             Self::Diagnostics => "settings-diagnostics",
             Self::Usage => "settings-usage",
@@ -114,6 +117,7 @@ pub(crate) fn navigation_sections(query: &str) -> Vec<(SettingsGroup, SettingsSe
         (AgentCapabilities, Browser),
         (AgentCapabilities, Voice),
         (AgentCapabilities, SystemPrompt),
+        (AgentCapabilities, Secrets),
         (AgentCapabilities, CodeSearch),
         (AgentCapabilities, Diagnostics),
         (DataAndStats, Usage),
@@ -286,6 +290,7 @@ impl RootView {
                     SettingsSection::Browser
                         | SettingsSection::Voice
                         | SettingsSection::SystemPrompt
+                        | SettingsSection::Secrets
                         | SettingsSection::CodeSearch
                         | SettingsSection::Diagnostics
                 )

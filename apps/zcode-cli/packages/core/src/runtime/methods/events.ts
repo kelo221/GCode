@@ -23,6 +23,7 @@ import { titleFromInput, slugify, projectIdFromDirectory } from "../helpers/inde
 import type { AgentRuntimeInternal } from "../internal.js";
 import { buildPersistedConversationInputIntent } from "./input-intent-persistence.js";
 import { recordToolUsageFromEvent } from "./usage-observability.js";
+import { redactSecretsDeep } from "../../secrets/secret-vault.js";
 import { persistSessionShellEnvironmentSnapshot } from "./session-shell-environment.js";
 import { persistRuntimeModelSelection } from "./turn-model.js";
 import { writeDynamicWorkflowActivationEntryIfActivated } from "./dynamic-workflow-activation.js";
@@ -102,7 +103,13 @@ export async function appendEvent(
 
   let phase = "event_store.append";
   try {
-    const storedEvent = await this.eventStore.append(event);
+    // GCode 密钥库：Bash 输出预览、后台任务输出、MCP 进度在落库与推流前按值脱敏
+    // （最终结果已在 call-runner 脱敏）。库为空时 payload 原样返回。
+    const storedEvent = await this.eventStore.append(
+      event.type === SessionEventType.ToolCallProgress
+        ? { ...event, payload: redactSecretsDeep(event.payload) }
+        : event,
+    );
     phase = "session_event.persist_durable";
     await persistDurableSessionEvent.call(this, storedEvent, traceContext);
     phase = "session_event.record_usage";

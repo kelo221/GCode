@@ -87,7 +87,14 @@ fn only_the_opened_workspace_topics_are_allowed() {
 #[test]
 fn unlisted_methods_and_commands_are_rejected() {
     let mut scope = RemoteScope::new(WS);
-    for method in ["plugins/list", "workflows/list", "mcp/list", "session/read"] {
+    // secrets/sync: the phone never holds or pushes secrets (SECRETS.md).
+    for method in [
+        "plugins/list",
+        "workflows/list",
+        "mcp/list",
+        "session/read",
+        "secrets/sync",
+    ] {
         let err = reply(&mut scope, json!({"id": 3, "method": method, "params": {}}));
         assert_eq!(err["error"]["code"], json!(-32601), "{method}");
         assert!(is_phone_scope_refusal(&err["error"]), "{method}");

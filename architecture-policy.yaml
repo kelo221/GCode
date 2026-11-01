@@ -1525,6 +1525,12 @@ exceptions:
       - apps/zcode-cli/packages/contracts/src/tools/compact.ts
       - apps/zcode-cli/packages/core/src/tool/handlers/compact.ts
     reason: Fork feature (apps/zcode-cli/docs/design/v2/compact/README.md "Agent 请求的 compact"). The Compact tool contract and handler live in their own files beside the existing tools (the Speak tool pattern) so upstream source syncs only meet small call sites in the turn loop and tool registry; adopting the CLI contracts or tool directories is outside this fork change.
+  - id: fork-secrets-vault-cli
+    rule: unmanaged-new-file
+    paths:
+      - apps/zcode-cli/packages/core/src/secrets/secret-vault.ts
+      - apps/zcode-cli/packages/bootstrap/src/zcode-protocol/secrets-sync.ts
+    reason: Fork feature (apps/zcode-gpui/SECRETS.md). The in-memory secrets vault (env for Bash/stdio MCP and value redaction) and its `secrets/sync` protocol handler live in their own files so the upstream call-runner, event append, create-app and MCP adapter files only gain small call sites and source syncs stay mergeable.
   - id: workflow-mode-user-choice-unmanaged-edit
     rule: unmanaged-new-file
     paths:

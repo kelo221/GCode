@@ -87,6 +87,8 @@ pub struct AppState {
     pub(crate) voice: Option<crate::voice::VoiceService>,
     /// GPUI-only main-agent system prompt override (system_prompt/mod.rs).
     pub(crate) system_prompt: crate::system_prompt::SystemPromptState,
+    /// GPUI-only secrets vault (SECRETS.md), pushed with `secrets/sync`.
+    pub(crate) secrets: crate::secrets::SecretVault,
     pub(crate) provider_settings: crate::provider_settings::ProviderSettingsState,
     /// Remembered project activity for sidebar order (app/project_order.rs).
     pub(crate) project_activity: crate::shared::project_activity::ProjectActivity,
@@ -123,12 +125,8 @@ impl AppState {
             browser: Default::default(),
             voice: None,
             provider_settings: Default::default(),
-            // Tests never read the real home file; the phone has no agents of its own.
-            system_prompt: if cfg!(test) || remote {
-                Default::default()
-            } else {
-                crate::system_prompt::SystemPromptState::load(crate::system_prompt::override_path())
-            },
+            system_prompt: crate::system_prompt::SystemPromptState::for_app(remote),
+            secrets: crate::secrets::SecretVault::for_app(remote),
             project_activity: Self::load_project_activity(remote),
             sidebar_cache: Self::load_sidebar_cache(remote),
             workspaces: workspace_paths
@@ -196,6 +194,7 @@ impl AppState {
             state.warm_sidebar(cx);
             state.init_phone_gateway(cx);
             state.init_browser_bridge(cx);
+            state.load_secrets(cx);
             state.voice = Some(crate::voice::VoiceService::new());
         }
         state.start_maintenance(cx);

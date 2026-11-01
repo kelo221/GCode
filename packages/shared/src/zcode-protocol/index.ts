@@ -2701,7 +2701,9 @@ export const zcodeProviderSettingsOperationSchema = z.discriminatedUnion("type",
       providerId: providerIdString,
       providerName: z.string().trim().min(1).optional(),
       enabled: z.boolean().optional(),
-      apiType: z.enum(["anthropic-messages", "openai-chat-completions", "openai-responses"]).optional(),
+      apiType: z
+        .enum(["anthropic-messages", "openai-chat-completions", "openai-responses"])
+        .optional(),
       baseUrl: z.string().optional(),
       apiKey: z.string().optional(),
     })
@@ -2879,6 +2881,66 @@ export const zcodeWorkspaceUpdateSystemPromptResultSchema = z
 export type ZCodeWorkspaceUpdateSystemPromptResult = z.infer<
   typeof zcodeWorkspaceUpdateSystemPromptResultSchema
 >;
+
+// GPUI 专属密钥库（apps/zcode-gpui/SECRETS.md）：值存在系统密钥库，GPUI 按 workspace 过滤后
+// 整表下发给该 workspace 的 agent；agent 只放内存，注入 Bash/stdio MCP 并在工具输出中脱敏。
+// 保留名会覆盖运行时依赖的变量（PATH、代理、证书、ZCODE_*），整表拒绝。
+const RESERVED_SECRET_NAMES = new Set([
+  "PATH",
+  "HOME",
+  "USERPROFILE",
+  "SHELL",
+  "TEMP",
+  "TMP",
+  "TMPDIR",
+  "COMSPEC",
+  "SYSTEMROOT",
+  "PATHEXT",
+  "NODE_OPTIONS",
+  "NODE_EXTRA_CA_CERTS",
+  "SSL_CERT_FILE",
+  "SSL_CERT_DIR",
+  "HTTP_PROXY",
+  "HTTPS_PROXY",
+  "ALL_PROXY",
+  "NO_PROXY",
+]);
+export const ZCODE_SECRET_NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_]{0,127}$/;
+export const ZCODE_SECRETS_MAX_ENTRIES = 256;
+export function isReservedSecretName(name: string): boolean {
+  const upper = name.toUpperCase();
+  return (
+    RESERVED_SECRET_NAMES.has(upper) || upper.startsWith("ZCODE_") || upper.startsWith("GCODE_")
+  );
+}
+export const zcodeSecretsSyncParamsSchema = z
+  .object({
+    workspace: zcodeWorkspaceRefSchema,
+    secrets: z
+      .array(
+        z
+          .object({
+            name: z
+              .string()
+              .regex(ZCODE_SECRET_NAME_PATTERN)
+              .refine((name) => !isReservedSecretName(name), "reserved secret name"),
+            value: z.string().min(1),
+          })
+          .strict(),
+      )
+      .max(ZCODE_SECRETS_MAX_ENTRIES)
+      .refine(
+        (secrets) =>
+          new Set(secrets.map((secret) => secret.name.toUpperCase())).size === secrets.length,
+        "duplicate secret name",
+      ),
+  })
+  .strict();
+export type ZCodeSecretsSyncParams = z.infer<typeof zcodeSecretsSyncParamsSchema>;
+export const zcodeSecretsSyncResultSchema = z
+  .object({ count: z.number().int().nonnegative() })
+  .strict();
+export type ZCodeSecretsSyncResult = z.infer<typeof zcodeSecretsSyncResultSchema>;
 
 export const zcodeWorkspaceUpdateOffPeakToolPolicyParamsSchema = z
   .object({
@@ -4488,6 +4550,8 @@ export const zcodeProtocolMethods = {
   // GPUI 专属 system prompt 覆盖（Electron 不调用）。
   workspaceReadSystemPrompt: "workspace/readSystemPrompt",
   workspaceUpdateSystemPrompt: "workspace/updateSystemPrompt",
+  // GPUI 专属密钥库整表同步（apps/zcode-gpui/SECRETS.md）。
+  secretsSync: "secrets/sync",
   // Off-Peak 工具面门禁是 workspace 级事实（灰度 + 本地/远程），由 host 在 agent 就绪时同步；
   // CLI 对 legacy create/resume 与 v4 冷恢复统一读取。旧 CLI method-not-found → host 降级忽略。
   workspaceUpdateOffPeakToolPolicy: "workspace/updateOffPeakToolPolicy",

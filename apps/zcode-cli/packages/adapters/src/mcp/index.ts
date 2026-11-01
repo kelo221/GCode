@@ -90,11 +90,7 @@ import {
   OfficialMcpAuthError,
   type OfficialMcpServerResponseInfo,
 } from "./official-auth.js";
-import {
-  createFileMcpToolCache,
-  createLazyStdioMcpPort,
-  isLazyStdioServer,
-} from "./lazy-stdio.js";
+import { createFileMcpToolCache, createLazyStdioMcpPort, isLazyStdioServer } from "./lazy-stdio.js";
 import {
   createMcpConnectionPool,
   type McpConnectionContext,
@@ -129,6 +125,11 @@ export interface CreateMcpAdapterOptions {
   clientVersion?: string;
   connectionContext?: McpConnectionContext;
   env?: NodeJS.ProcessEnv;
+  /**
+   * 宿主追加给 stdio MCP 的 env（GCode 密钥库，apps/zcode-gpui/SECRETS.md）。每次拉起进程时现取，
+   * 合并在 sanitize 后的 agent env 之后、server 自己的 config.env 之前。
+   */
+  extraStdioEnv?: () => Record<string, string>;
   logger?: Logger;
   telemetry?: McpTelemetryTracker;
   mcpOAuth?: McpOAuthRuntimeOptions;
@@ -278,6 +279,7 @@ class NodeMcpAdapter implements McpPort {
   private readonly logger?: Logger;
   private readonly mcpOAuth?: McpOAuthRuntimeOptions;
   private readonly network?: NetworkEgressEnvPolicy;
+  private readonly extraStdioEnv?: () => Record<string, string>;
   private readonly nodeFallback?: McpNodeFallbackProvider;
   private readonly officialMcpAuth?: CreateMcpAdapterOptions["officialMcpAuth"];
   private readonly telemetry?: McpTelemetryTracker;
@@ -326,6 +328,7 @@ class NodeMcpAdapter implements McpPort {
     });
     this.mcpOAuth = options.mcpOAuth;
     this.network = options.network;
+    this.extraStdioEnv = options.extraStdioEnv;
     this.nodeFallback = options.nodeFallback;
     this.officialMcpAuth = options.officialMcpAuth;
     this.telemetry = options.telemetry;
@@ -1971,6 +1974,7 @@ class NodeMcpAdapter implements McpPort {
           env: applyMcpNodeFallbackEnv(
             {
               ...buildMcpStdioEnv({ env: this.env, network: this.network }),
+              ...this.extraStdioEnv?.(),
               ...config.env,
             },
             nodeFallback,

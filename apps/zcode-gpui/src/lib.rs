@@ -21,6 +21,7 @@ mod files;
 mod provider_settings;
 pub mod remote;
 mod review;
+mod secrets;
 mod sessions;
 mod shared;
 mod system_prompt;

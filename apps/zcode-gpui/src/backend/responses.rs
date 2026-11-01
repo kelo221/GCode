@@ -1,5 +1,4 @@
-//! Response correlation: pending-entry resolution, subscription-id capture,
-//! CAS config acks (stale retry), history pages.
+//! Response correlation: pending-entry resolution, subscription-id capture, CAS config acks (stale retry), history pages.
 
 use crate::app::store::AppState;
 use crate::backend::workspace::Pending;
@@ -20,6 +19,7 @@ impl AppState {
             || self.handle_attachment_response(ws_key, id, &result, &error, cx)
             || self.handle_raw_query_response(ws_key, id, &result, &error, cx)
             || self.handle_system_prompt_response(ws_key, id, &result, &error, cx)
+            || self.handle_secrets_response(ws_key, id, &error, cx)
             || self.handle_provider_settings_response(ws_key, id, &result, &error, cx)
             || self.handle_auto_compact_response(ws_key, id, &result, &error)
         {
@@ -176,6 +176,7 @@ impl AppState {
             | Pending::WorkflowArtifacts(_)
             | Pending::WorkflowArtifactContent(_)
             | Pending::SystemPrompt { .. }
+            | Pending::Secrets
             | Pending::ProviderSettings(_)
             | Pending::AutoCompact(_)
             | Pending::RawQuery(_)

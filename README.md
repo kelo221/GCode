@@ -19,6 +19,7 @@ Highlights beyond a plain port:
 - **Voice.** Optionally, the main agent gets a `Speak` tool and says a short sentence on your PC when it needs you or finishes. Speech is generated locally by [apps/zcode-voice](apps/zcode-voice/README.md) (Kokoro). See [VOICE.md](apps/zcode-gpui/VOICE.md).
 - **Phone remote control.** An Android build of the same window ([apps/zcode-gpui-android](apps/zcode-gpui-android/README.md)) pairs with the desktop over the local network by QR code. See [REMOTE_CONTROL.md](apps/zcode-gpui/REMOTE_CONTROL.md).
 - **System prompt override.** Settings › System prompt replaces the main agent's system prompt for every workspace.
+- **Secrets vault instead of `.env` files.** Settings › Secrets stores tokens in the OS secret store (Windows Credential Manager, macOS Keychain, Linux Secret Service) and keeps only their names on disk. They reach the agent's Bash commands and stdio MCP servers as environment variables, for every workspace or only the ones you pick, and survive rebuilds. Any secret value in tool output is replaced with `***` before the model or the transcript sees it. See [SECRETS.md](apps/zcode-gpui/SECRETS.md).
 - **Agent branches review.** The Review pane lists branches produced by isolated subagents (see below) and shows their diff against the commit they started from, read-only.
 - **Idle unload that respects background work.** Inactive workspaces unload their agent after 10 minutes, but not while background subagents, shells or workflows are still running.
 - **Provider management.** Settings › Model settings has the desktop "Model Provider" section for API-key providers. You can add, edit, enable and delete providers, add, reorder and test their models, and start from a template. Edits go through the CLI. See [PROVIDER_SETTINGS.md](apps/zcode-gpui/PROVIDER_SETTINGS.md).
@@ -41,6 +42,7 @@ GPUI turns these on through optional runtime preferences. The Electron app never
 - **Subagent IDs survive restarts.** `SendMessage` can resume a subagent from its saved metadata after the CLI restarts, a foreground subagent fails, or the conversation is compacted. A `ListAgents` tool lists a session's subagents.
 - **Agents use the index for searching.** When code search is on, the agent, Explore subagents and custom agents that list Grep/Glob are pointed at `FindFiles`/`SearchCode` instead of `grep`/`find` through Bash.
 - **A closing `Speak` ends the turn.** A reply that comes with only `Speak` calls no longer triggers another model request.
+- **In-memory secrets for tools.** A `secrets/sync` request hands the agent the secrets from GPUI's vault. It never writes them to disk or logs them. It adds them to Bash and stdio MCP environments and masks their values in tool results, tool errors and live tool output.
 
 These apply to every client:
 
