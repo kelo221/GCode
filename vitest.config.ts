@@ -65,6 +65,17 @@ export default defineConfig({
           maxWorkers: 1,
         },
       },
+      {
+        extends: true,
+        test: {
+          // GPUI fork：浏览器扩展和 fork 协议扩展（Speak）的单测不在上游工程清单内。
+          name: "gpui-fork",
+          include: [
+            "apps/zcode-browser-extension/test/**/*.test.ts",
+            "packages/shared/test/zcodeProtocolSpeak.test.ts",
+          ],
+        },
+      },
       "packages/zcode-cua/vitest.config.ts",
     ],
   },

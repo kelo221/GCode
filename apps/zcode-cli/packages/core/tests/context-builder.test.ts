@@ -1334,7 +1334,7 @@ describe("ContextBuilder meta user context", () => {
         "",
         "Recent commits:\ned2cac59d Merge branch 'feat/trajectory' of https://example.com/team/project into feat/trajectory\n07957b58c chore: update doc",
         "",
-        "ZCode attached this context automatically; it isn't part of the user's message. It describes the user's own account and workspace, so they don't need it reported back.",
+        "GCode attached this context automatically; it isn't part of the user's message. It describes the user's own account and workspace, so they don't need it reported back.",
       ].join("\n"),
     );
     expect(

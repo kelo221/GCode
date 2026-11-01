@@ -172,7 +172,7 @@ function formatLocalAgentOutcome(
   if (input.status === "completed") return "finished";
   if (input.status === "failed") return `failed: ${failureReason(input.error)}`;
   // TaskStop 是模型自己停的。
-  if (input.stoppedBy === "model") return "was stopped by ZCode";
+  if (input.stoppedBy === "model") return "was stopped by GCode";
   if (input.stoppedBy === "user") return "was stopped by user";
   return "was stopped";
 }

@@ -164,7 +164,7 @@ export function buildGitSystemContextSection(envInfo: EnvInfo): ContextSection |
     "As you answer the user's questions, you can use the following context:",
     buildGitSystemContextContent(envInfo),
     "",
-    "ZCode attached this context automatically; it isn't part of the user's message. It describes the user's own account and workspace, so they don't need it reported back.",
+    "GCode attached this context automatically; it isn't part of the user's message. It describes the user's own account and workspace, so they don't need it reported back.",
   ].join("\n");
 
   return {
