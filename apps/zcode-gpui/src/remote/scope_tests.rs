@@ -104,6 +104,12 @@ fn unlisted_methods_and_commands_are_rejected() {
         json!({"id": 5, "method": "v4/command", "params": {"type": "sendText"}}),
     );
     assert_eq!(out["params"]["type"], json!("sendText"));
+    // The read-only subagent directory feeds the phone header icons.
+    let out = forward(
+        &mut scope,
+        json!({"id": 6, "method": "session/subagents", "params": {"sessionId": "s1", "endedLimit": 20}}),
+    );
+    assert_eq!(out["params"]["sessionId"], json!("s1"));
     // A rejected notification has nobody to answer.
     assert_eq!(
         scope.filter_phone_line(&json!({"method": "plugins/list"}).to_string(), None),

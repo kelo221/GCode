@@ -349,6 +349,23 @@ narrowing the window.
   topmost layer: first the command centre, then Settings, then Chat goes to Home. On Home it
   does nothing yet.
 - Above 767 px the layout is unchanged; `mobile_page` is ignored, not reset.
+- **Subagent icons** (2026-11-01). The phone has no Agents dock, so the chat header's right side
+  shows the active task's subagents, one bot icon each. Before this, an agent could only be opened
+  from its card in the transcript.
+  - **Which:** the parent task's running agents (`subagents.running` joined with `backgroundWorks`)
+    plus its ended agents from the `session/subagents` directory (the same cache as the desktop
+    Ended agents list, fetched again when the subagent revision moves). While a child is open, the
+    icons still describe its parent.
+  - **Number:** each agent is numbered 1, 2, 3… by start time (then child session id), across
+    running and ended. An agent keeps its number when it ends.
+  - **Status dot:** accent while running, waiting or blocked; danger for failed or lost; none
+    for success or cancelled, with a muted icon.
+  - **Room:** at most 4 icons. The open child comes first, then running agents, then the most
+    recently started ended ones, shown in number order. The rest go into a "+N" menu
+    (number, title, status).
+  - **Tap:** an icon opens that child read-only (`open_child_conversation`). Tapping the
+    highlighted icon of the open child returns to the parent.
+  - The phone scope allows the read-only `session/subagents` query for this.
 
 ## Spike results (2026-10-14, Pixel 7a, Android 17 / API 37, Mali-G710)
 

@@ -91,6 +91,7 @@ impl RootView {
                     .text_color(rgb(TEXT))
                     .child(t("webRemoteControl.mobileShell.chatTitle")),
             )
+            .children(self.mobile_agent_icons(cx))
             .into_any_element()
     }
 }

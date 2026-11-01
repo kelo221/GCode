@@ -33,6 +33,8 @@ const ALLOWED_METHODS: &[&str] = &[
     "v4/attachment/read",
     "v4/attachment/previewSource",
     "v4/command",
+    // Read-only subagent directory for the phone header icons (REMOTE_CONTROL.md, Subagent icons).
+    "session/subagents",
 ];
 
 const ALLOWED_COMMANDS: &[&str] = &[
