@@ -4741,7 +4741,13 @@ describe("Explore subagent", () => {
     parentTurn.abort(new Error("v4 sendQueuedNow preempts active turn"));
 
     expect(moved).toEqual([
-      expect.objectContaining({ agentId: expect.any(String), description: "Audit weapons" }),
+      expect.objectContaining({
+        agentId: expect.any(String),
+        agentType: "auditor",
+        childSessionId: expect.any(String),
+        description: "Audit weapons",
+        parentToolCallId: "call_auditor",
+      }),
     ]);
     const output = await runPromise;
     expect(output).toMatchObject({ status: "async_launched", agentId: moved[0].agentId });
@@ -4818,6 +4824,64 @@ describe("Explore subagent", () => {
     await runtime.executeTurn("And now?");
     const laterReminders = (requestTexts[1] ?? "").split("instead of being stopped").length - 1;
     expect(laterReminders).toBe(1);
+  });
+
+  it("tracks a subagent moved to the background by a preemption as background work", async () => {
+    // 回归（2026-11-01）：被抢占的 Agent 调用以 cancelled 结算，executor 不会追踪它，
+    // backgroundWorks 缺失导致 GUI Agents 面板看不到仍在运行的 child。
+    const sessionId = createSessionId("runtime-subagent-preempt-track");
+    const runtime = createTestAgentRuntime(
+      sessionId,
+      { mode: "build", workingDirectory: "/workspace/project" },
+      { eventStore: createTestSessionEventStore() },
+    );
+    (runtime as any).subagentPort = {
+      backgroundForegroundAgents: () => [
+        {
+          agentId: "agent_audit",
+          agentType: "general-purpose",
+          childSessionId: "sess_subagent_agent_audit",
+          description: "Audit weapons",
+          outputFile: "/tmp/agent_audit/output.txt",
+          parentToolCallId: "toolu_audit",
+        },
+      ],
+    };
+    const tracked: Array<{ toolCall: any; output: any }> = [];
+    (runtime as any).executor.trackExternalBackgroundTask = async (toolCall: any, output: any) => {
+      tracked.push({ toolCall, output });
+    };
+    const activeController = new AbortController();
+    (runtime as any).activeForegroundExecution = {
+      controller: activeController,
+      disposeParentAbort: () => undefined,
+      foregroundExecutionId: "fg-1",
+      preserveQueueAutoDrainOnCancel: false,
+    };
+
+    runtime.stopActiveForegroundExecution({
+      backgroundSubagents: true,
+      reason: "v4 sendQueuedNow preempts active turn",
+    });
+    (runtime as any).activeForegroundExecution = undefined;
+
+    expect(activeController.signal.aborted).toBe(true);
+    expect(tracked).toEqual([
+      {
+        toolCall: {
+          id: "toolu_audit",
+          name: "Agent",
+          input: { description: "Audit weapons", subagent_type: "general-purpose" },
+        },
+        output: expect.objectContaining({
+          status: "async_launched",
+          agentId: "agent_audit",
+          backgroundTaskId: "agent_audit",
+          childSessionId: "sess_subagent_agent_audit",
+          outputFile: "/tmp/agent_audit/output.txt",
+        }),
+      },
+    ]);
   });
 
   it("fails custom profiles instead of falling back when the configured model is invalid", async () => {

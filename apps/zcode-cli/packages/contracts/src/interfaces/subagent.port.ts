@@ -129,6 +129,11 @@ export interface SubagentListEntry {
 export interface SubagentBackgroundedForegroundAgent {
   agentId: string;
   description?: string;
+  /** 以下字段供 runtime 合成 `Agent` 后台追踪（被抢占的工具调用拿不到 async_launched 输出）。 */
+  agentType?: string;
+  childSessionId?: string;
+  outputFile?: string;
+  parentToolCallId?: string;
 }
 
 export interface SubagentPort {

@@ -653,6 +653,10 @@ export function createExploreSubagentPort(options: ExploreSubagentPortOptions): 
         moved.push({
           agentId: taskId,
           ...(task?.description ? { description: task.description } : {}),
+          ...(task?.agentType ? { agentType: task.agentType } : {}),
+          ...(task?.childSessionId ? { childSessionId: task.childSessionId } : {}),
+          ...(task?.outputFile ? { outputFile: task.outputFile } : {}),
+          ...(task?.parentToolCallId ? { parentToolCallId: String(task.parentToolCallId) } : {}),
         });
       }
       return moved;

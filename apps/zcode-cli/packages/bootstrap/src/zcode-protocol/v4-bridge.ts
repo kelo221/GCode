@@ -668,6 +668,26 @@ export function persistHighspeedTimingOnTurnTerminal(
   });
 }
 
+/** 本进程是否仍是该会话的事件源（gateway 的 isSessionDrivingTurn：为 true 时跳过冷投影保鲜）。 */
+export function isSessionRecordProducingLiveEvents(record: {
+  activeAbortController?: unknown;
+  app: {
+    runtime: {
+      getActiveForegroundExecutionId?: () => string | undefined;
+      hasRunningBackgroundTasks?: () => boolean;
+    };
+  };
+}): boolean {
+  // 上游测试的 runtime 替身不实现这两个方法；可选调用避免 GPUI 冷投影保鲜钩子在订阅路径上抛错。
+  const coreForegroundBusy = record.app.runtime.getActiveForegroundExecutionId?.() !== undefined;
+  // 修复原因（2026-11-01 日志）：父会话空闲、后台 child 仍在本进程运行时，child 的回报持续
+  // 追加 store，GPUI 3 s 尾部轮询因此每轮触发强制重物化，冷查询种子把 live
+  // subagents.running 清空（Agents 面板看不到运行中的 agent）。事件源仍在本进程，
+  // 与正在驱动 turn 同理，不需要冷保鲜。
+  const backgroundBusy = record.app.runtime.hasRunningBackgroundTasks?.() === true;
+  return Boolean(record.activeAbortController) || coreForegroundBusy || backgroundBusy;
+}
+
 export function createConversationV4Gateway(
   context: ZCodeProtocolAgentServerContext,
 ): ConversationV4Gateway {
@@ -1606,11 +1626,7 @@ export function createConversationV4Gateway(
       context.sessions.has(sessionId) && (context.sessionLifecycle?.isReady(sessionId) ?? true),
     isSessionDrivingTurn: (sessionId) => {
       const record = context.sessions.get(sessionId);
-      if (!record) return false;
-      // 上游测试的 runtime 替身不实现该方法；可选调用避免 GPUI 冷投影保鲜钩子在订阅路径上抛错。
-      const coreForegroundBusy =
-        record.app.runtime.getActiveForegroundExecutionId?.() !== undefined;
-      return Boolean(record.activeAbortController) || coreForegroundBusy;
+      return record ? isSessionRecordProducingLiveEvents(record) : false;
     },
     reconcileSessions: async ({ workspaceId, sessionIds }) => {
       const store = context.deps.sessionStore;

@@ -19,6 +19,9 @@ import { executeTargetContinuationCommand } from "./target.js";
 import { runActiveTargetContinuationLoop } from "./target-continuation-loop.js";
 import { isStaleBranchRuntimeCommand } from "./runtime-command-generation.js";
 import { noteWorkflowReminderCommandStarted } from "./dynamic-workflow-blocked-reminder.js";
+import type { SubagentBackgroundedForegroundAgent } from "@zcode/contracts";
+import { AGENT_TOOL_NAME } from "../../tool/compat.js";
+import type { ExecutableToolCall } from "../../tool/types.js";
 import type {
   AcquireForegroundPromotionLeaseResult,
   ActiveForegroundExecutionState,
@@ -534,6 +537,48 @@ function backgroundForegroundSubagentsForPreempt(
     foregroundExecutionId,
     module: "core.runtime",
   });
+  for (const agent of moved) trackPreemptBackgroundedAgent(runtime, agent);
+}
+
+/**
+ * 修复原因（2026-11-01 日志 + session store 证据）：随后的 abort 让 `Agent` 工具调用以
+ * cancelled 结算，executor 永远拿不到 run() 迟到的 async_launched 输出，trackBackgroundTask
+ * 不运行——没有 BackgroundTaskStarted、没有 backgroundWorks，GUI 看不到也停不了这个仍在跑的
+ * child。这里按原 parentToolCallId 合成同形描述子与输出，走 executor 同一条追踪路径
+ * （与 dwf resume 重臂同构）。fire-and-forget：不能阻塞或延后随后的同步 abort。
+ */
+function trackPreemptBackgroundedAgent(
+  runtime: AgentRuntimeInternal,
+  agent: SubagentBackgroundedForegroundAgent,
+): void {
+  const toolCall: ExecutableToolCall = {
+    id: agent.parentToolCallId ?? `preempt-${agent.agentId}`,
+    name: AGENT_TOOL_NAME,
+    input: {
+      ...(agent.description ? { description: agent.description } : {}),
+      ...(agent.agentType ? { subagent_type: agent.agentType } : {}),
+    },
+  };
+  const output: Record<string, unknown> = {
+    status: "async_launched",
+    isAsync: true,
+    agentId: agent.agentId,
+    backgroundTaskId: agent.agentId,
+    ...(agent.agentType ? { agentType: agent.agentType } : {}),
+    ...(agent.description ? { description: agent.description } : {}),
+    ...(agent.childSessionId ? { childSessionId: agent.childSessionId } : {}),
+    ...(agent.outputFile ? { outputFile: agent.outputFile } : {}),
+  };
+  void runtime.executor
+    .trackExternalBackgroundTask(toolCall, output, runtime.rootTraceContext, undefined)
+    .catch((error: unknown) => {
+      runtime.logger?.warn("Failed to track a subagent moved to background by preempt", {
+        agentId: agent.agentId,
+        errorMessage: error instanceof Error ? error.message : String(error),
+        event: "subagent.preempt.track_failed",
+        module: "core.runtime",
+      });
+    });
 }
 
 export function getActiveForegroundExecutionId(this: AgentRuntimeInternal): string | undefined {

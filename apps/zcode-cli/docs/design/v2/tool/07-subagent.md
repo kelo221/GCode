@@ -542,8 +542,10 @@ Child finish    -> no parent MCP cleanup
 - 带模型覆盖（`background: "deny"`）借用父 turn 模型的前台 child 不能转后台，照旧随 turn 取消。
 - 被抢占的 `Agent` 工具结果仍显示为 cancelled（executor 在 abort 时立即结算）。为避免主 agent 误以为子 agent 已停止而重开，runtime 记录被转后台的 agent，下一轮第一次模型请求前追加一条 `task_status` reminder：列出 agentId 与描述，说明它们仍在后台运行、结果会以 notification 返回、不要重新启动；需要追加指示时用 SendMessage。
 - 状态所有者：subagent port（registry 与 abort handle）；reminder 待发列表由 runtime 持有，被下一轮消费一次。
+- 后台追踪（2026-11-01）：被抢占的 `Agent` 工具调用以 cancelled 结算，executor 拿不到 `async_launched` 输出，`trackBackgroundTask` 不会运行——没有 `BackgroundTaskStarted`、没有 `backgroundWorks` 条目，GUI Agents 面板看不到仍在运行的 child，也无法从面板停止它。因此 runtime 转后台后，对每个被转的 agent 以原 `parentToolCallId` 合成 `Agent` 工具描述子与 `async_launched` 输出，调用 `ToolExecutor.trackExternalBackgroundTask`（与 dwf resume 重臂同一条追踪路径）。`backgroundForegroundAgents()` 因此同时返回 `agentType`、`childSessionId`、`outputFile`、`parentToolCallId`。追踪 fire-and-forget，不阻塞、不延后随后的 abort；tracker 按 taskId 去重。
+- 冷投影保鲜（2026-11-01）：`refreshColdProjection` 保鲜的是「事件由别的进程追加」的会话。本进程 runtime 仍有 running 后台任务时，事件源就在本进程，跳过保鲜（`isSessionDrivingTurn` 对此返回 true）；否则父会话空闲期间 GPUI 3 s 尾部轮询会在 store 每次增长时强制重物化，用冷查询的 subagent 种子覆盖 live 的 `subagents.running`。空闲且无后台任务的只读会话仍照旧保鲜。
 
-验收：主 agent 运行前台 subagent 时点「立即发送」，subagent 不被取消，新消息立即开始处理；subagent 完成后主会话收到 task notification；Stop 仍取消前台 subagent。
+验收：主 agent 运行前台 subagent 时点「立即发送」，subagent 不被取消，新消息立即开始处理；父会话空闲期间 Agents 面板持续把它列为 running 且可停止；subagent 完成后主会话收到 task notification；Stop 仍取消前台 subagent。
 
 ### SendMessage 与 TaskStop display projection
 

@@ -231,7 +231,8 @@ export interface V4GatewayHost {
   /** 会话是否在宿主注册表中活跃（inbox 的 sessionNotFound 裁决依据）。 */
   sessionExists(sessionId: string): boolean;
   /**
-   * 当前进程是否正在驱动该会话的活动轮次（active turn / prompt in flight）。
+   * 当前进程是否正在驱动该会话的活动轮次（active turn / prompt in flight），或仍有
+   * running 后台任务（后台 subagent/Bash/workflow 的事件同样由本进程产生）。
    * 只有正在产生 live 事件的会话才跳过冷投影保鲜；只读 resume 挂在 context.sessions
    * 但没有运行中 turn 的会话，当外部进程（如桌面 Electron）向 store 追加事件时，
    * 必须通过 refreshColdProjection 重新保鲜。
