@@ -371,7 +371,7 @@ fn a_wheel_on_one_pane_takes_the_other_along(cx: &mut TestAppContext) {
         .expect("the right pane")
         .origin
         .y;
-    cx.simulate_event(gpui::ScrollWheelEvent {
+    cx.simulate_event(gpui::ScrollEvent {
         position: at(80.0, 100.0),
         delta: gpui::ScrollDelta::Pixels(point(px(0.0), px(-300.0))),
         modifiers: Modifiers::none(),

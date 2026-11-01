@@ -41,6 +41,7 @@ impl HotkeyInput {
 
 impl RenderOnce for HotkeyInput {
     fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
+        let os = cx.platform_info().os;
         let focus = window
             .use_keyed_state(self.id.clone(), cx, |_, cx| {
                 cx.focus_handle().tab_stop(true)
@@ -85,7 +86,7 @@ impl RenderOnce for HotkeyInput {
                 log::info!(
                     "hotkey input: {}",
                     next.as_ref()
-                        .map_or("cleared".into(), |stroke| stroke.unparse())
+                        .map_or("cleared".into(), |stroke| stroke.unparse(cx.platform_info().os))
                 );
                 window.blur(cx);
                 if let Some(on_change) = &on_change {
@@ -98,7 +99,7 @@ impl RenderOnce for HotkeyInput {
                         .text_color(colors.fg_subtle)
                         .child("Press a shortcut…"),
                 ),
-                (Some(stroke), false) => field.child(KbdCombo::new(&stroke.unparse())),
+                (Some(stroke), false) => field.child(KbdCombo::new(&stroke.unparse(os))),
                 (None, false) => field.child(div().text_color(colors.fg_subtle).child("None")),
             })
             .child(

@@ -11,6 +11,18 @@ use super::{
 };
 use crate::forms::structure::FORM_CONTEXT;
 
+// gpui (Zed c408f8e) requires `&'static str` keystrokes in KeyBinding::new;
+// the word modifier is a compile-time choice, so build the strings with concat!.
+macro_rules! word {
+    ($key:literal) => {
+        if cfg!(target_os = "macos") {
+            concat!("alt-", $key)
+        } else {
+            concat!("ctrl-", $key)
+        }
+    };
+}
+
 actions!(
     ely_input,
     [
@@ -50,15 +62,10 @@ const CONTEXT: &str = "ElyInput";
 
 /// Binds the text keys. `init` calls it.
 pub(crate) fn bind_keys(cx: &mut App) {
-    let word = if cfg!(target_os = "macos") {
-        "alt"
-    } else {
-        "ctrl"
-    };
     let mut bindings = vec![
         KeyBinding::new("backspace", Backspace, Some(CONTEXT)),
         KeyBinding::new("delete", Delete, Some(CONTEXT)),
-        KeyBinding::new(&format!("{word}-backspace"), DeleteWordLeft, Some(CONTEXT)),
+        KeyBinding::new(word!("backspace"), DeleteWordLeft, Some(CONTEXT)),
         KeyBinding::new("left", Left, Some(CONTEXT)),
         KeyBinding::new("right", Right, Some(CONTEXT)),
         KeyBinding::new("up", Up, Some(CONTEXT)),
@@ -67,11 +74,11 @@ pub(crate) fn bind_keys(cx: &mut App) {
         KeyBinding::new("shift-right", SelectRight, Some(CONTEXT)),
         KeyBinding::new("shift-up", SelectUp, Some(CONTEXT)),
         KeyBinding::new("shift-down", SelectDown, Some(CONTEXT)),
-        KeyBinding::new(&format!("{word}-left"), WordLeft, Some(CONTEXT)),
-        KeyBinding::new(&format!("{word}-right"), WordRight, Some(CONTEXT)),
-        KeyBinding::new(&format!("{word}-shift-left"), SelectWordLeft, Some(CONTEXT)),
+        KeyBinding::new(word!("left"), WordLeft, Some(CONTEXT)),
+        KeyBinding::new(word!("right"), WordRight, Some(CONTEXT)),
+        KeyBinding::new(word!("shift-left"), SelectWordLeft, Some(CONTEXT)),
         KeyBinding::new(
-            &format!("{word}-shift-right"),
+            word!("shift-right"),
             SelectWordRight,
             Some(CONTEXT),
         ),
@@ -79,19 +86,19 @@ pub(crate) fn bind_keys(cx: &mut App) {
         KeyBinding::new("end", End, Some(CONTEXT)),
         KeyBinding::new("shift-home", SelectHome, Some(CONTEXT)),
         KeyBinding::new("shift-end", SelectEnd, Some(CONTEXT)),
-        KeyBinding::new("secondary-a", SelectAll, Some(CONTEXT)),
-        KeyBinding::new("secondary-c", Copy, Some(CONTEXT)),
-        KeyBinding::new("secondary-x", Cut, Some(CONTEXT)),
-        KeyBinding::new("secondary-z", Undo, Some(CONTEXT)),
-        KeyBinding::new("secondary-shift-z", Redo, Some(CONTEXT)),
+        KeyBinding::new(secondary!("a"), SelectAll, Some(CONTEXT)),
+        KeyBinding::new(secondary!("c"), Copy, Some(CONTEXT)),
+        KeyBinding::new(secondary!("x"), Cut, Some(CONTEXT)),
+        KeyBinding::new(secondary!("z"), Undo, Some(CONTEXT)),
+        KeyBinding::new(secondary!("shift-z"), Redo, Some(CONTEXT)),
         KeyBinding::new("enter", Enter, Some(CONTEXT)),
         KeyBinding::new("shift-enter", Newline, Some(CONTEXT)),
-        KeyBinding::new("secondary-enter", Submit, Some(CONTEXT)),
-        KeyBinding::new("secondary-enter", Submit, Some(FORM_CONTEXT)),
+        KeyBinding::new(secondary!("enter"), Submit, Some(CONTEXT)),
+        KeyBinding::new(secondary!("enter"), Submit, Some(FORM_CONTEXT)),
     ];
     // The browser's paste event reaches the input handler.
     if !cfg!(target_family = "wasm") {
-        bindings.push(KeyBinding::new("secondary-v", Paste, Some(CONTEXT)));
+        bindings.push(KeyBinding::new(secondary!("v"), Paste, Some(CONTEXT)));
     }
     if cfg!(target_os = "macos") {
         bindings.extend([

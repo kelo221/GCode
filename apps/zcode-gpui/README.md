@@ -10,7 +10,7 @@ GCode is a native Rust/GPUI frontend for the existing ZCode CLI app-server. The 
 cargo run --release --manifest-path apps/zcode-gpui/Cargo.toml -- --workspace <absolute_project_path>
 ```
 
-GPUI and `gpui_platform` are git-pinned to Zed revision `1a28cff4b409169bac058bca40dfbfeb7621d19b`; Ely components are vendored at `2f8b2f687cd1e9b98a7cd29d4e882d09406fc547` in `vendor/ely-gpui-component`, because their git repository is no longer reachable. The crate uses Rust edition 2024. Dependency versions and platform features are authoritative in `Cargo.toml` and `Cargo.lock`.
+GPUI and `gpui_platform` are git-pinned to Zed revision `c408f8efc41e51099a031d98190be773d7a5e713` (the Android app pins the same revision); Ely components are vendored at `2f8b2f687cd1e9b98a7cd29d4e882d09406fc547` in `vendor/ely-gpui-component`, because their git repository is no longer reachable, with small API ports listed in `vendor/ely-gpui-component/VENDORED.md`. The crate uses Rust edition 2024. Dependency versions and platform features are authoritative in `Cargo.toml` and `Cargo.lock`.
 
 ## Implemented surfaces
 

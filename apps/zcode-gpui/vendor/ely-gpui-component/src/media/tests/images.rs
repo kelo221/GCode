@@ -2,7 +2,7 @@ use std::{cell::Cell, path::PathBuf, rc::Rc};
 
 use gpui::{
     Bounds, Context, InteractiveElement, IntoElement, Modifiers, MouseButton, MouseDownEvent,
-    MouseUpEvent, ParentElement, Pixels, Render, ScrollDelta, ScrollWheelEvent, Styled,
+    MouseUpEvent, ParentElement, Pixels, Render, ScrollDelta, ScrollEvent, Styled,
     TestAppContext, TouchPhase, VisualTestContext, Window, div, point, px,
 };
 
@@ -148,7 +148,7 @@ fn a_double_press_toggles_actual_size_and_cmd_scroll_zooms_about_the_pointer(
     press_twice(stage.center(), cx);
     assert_eq!(shown(cx), fitted, "and another fits it again");
     let pointer = point(stage.left() + px(100.0), stage.center().y);
-    cx.simulate_event(ScrollWheelEvent {
+    cx.simulate_event(ScrollEvent {
         position: pointer,
         delta: ScrollDelta::Pixels(point(px(0.0), px(-100.0))),
         modifiers: Modifiers::command(),
@@ -200,7 +200,7 @@ impl Render for Scrolled {
             .id("page")
             .w(px(400.0))
             .h(px(300.0))
-            .on_scroll_wheel(move |_, _, _| heard.set(heard.get() + 1))
+            .on_scroll(move |_, _, _| heard.set(heard.get() + 1))
             .child(ImageViewer::new("viewer", self.0.clone()))
     }
 }
@@ -216,7 +216,7 @@ fn a_scroll_pans_an_overhanging_picture_and_passes_on_otherwise(cx: &mut TestApp
         .debug_bounds("image-viewer-stage")
         .expect("the stage draws");
     let scroll = |cx: &mut VisualTestContext| {
-        cx.simulate_event(ScrollWheelEvent {
+        cx.simulate_event(ScrollEvent {
             position: stage.center(),
             delta: ScrollDelta::Pixels(point(px(-50.0), px(0.0))),
             modifiers: Modifiers::none(),

@@ -41,7 +41,7 @@ use android_activity::AndroidApp;
 use android_activity::input::{MetaState, MotionAction, MotionEvent};
 use gpui::{
     MouseButton, MouseDownEvent, MouseUpEvent, PlatformInput, Pixels, Point, ScrollDelta,
-    ScrollWheelEvent, TouchPhase, point, px,
+    ScrollEvent, TouchPhase, point, px,
 };
 
 use crate::events::MotionInputs;
@@ -642,7 +642,8 @@ impl TouchState {
                                 let delta = cur - prev;
                                 if delta.magnitude() > 0.0 {
                                     self.scroll_samples.push((event.time_ms, delta));
-                                    out.push(PlatformInput::ScrollWheel(ScrollWheelEvent {
+                                    out.push(PlatformInput::Scroll(ScrollEvent {
+                                        source: gpui::ScrollSource::Touch,
                                         position: primary_anchor,
                                         delta: ScrollDelta::Pixels(delta),
                                         modifiers,
@@ -713,7 +714,8 @@ impl TouchState {
                         out.push(cancel_left(modifiers));
                         if delta.magnitude() > 0.0 {
                             self.scroll_samples.push((event.time_ms, delta));
-                            out.push(PlatformInput::ScrollWheel(ScrollWheelEvent {
+                            out.push(PlatformInput::Scroll(ScrollEvent {
+                                source: gpui::ScrollSource::Touch,
                                 position: anchor,
                                 delta: ScrollDelta::Pixels(delta),
                                 modifiers,
@@ -750,7 +752,8 @@ impl TouchState {
                         let anchor = pstate.down_pos;
                         if delta.magnitude() > 0.0 {
                             self.scroll_samples.push((event.time_ms, delta));
-                            out.push(PlatformInput::ScrollWheel(ScrollWheelEvent {
+                            out.push(PlatformInput::Scroll(ScrollEvent {
+                                source: gpui::ScrollSource::Touch,
                                 position: anchor,
                                 delta: ScrollDelta::Pixels(delta),
                                 modifiers,
@@ -898,7 +901,8 @@ impl TouchState {
             self.fling = None;
         }
         (step.magnitude() > 0.0).then(|| {
-            PlatformInput::ScrollWheel(ScrollWheelEvent {
+            PlatformInput::Scroll(ScrollEvent {
+                source: gpui::ScrollSource::Touch,
                 position: anchor,
                 delta: ScrollDelta::Pixels(step),
                 modifiers,
@@ -1223,7 +1227,8 @@ impl TrackpadTouchState {
                     }
 
                     if self.phase == TrackpadGesturePhase::MultiFingerScroll {
-                        out.push(PlatformInput::ScrollWheel(ScrollWheelEvent {
+                        out.push(PlatformInput::Scroll(ScrollEvent {
+                            source: gpui::ScrollSource::Touch,
                             position: self.cursor,
                             delta: crate::ime::invert_scroll_delta(ScrollDelta::Pixels(delta)),
                             modifiers,

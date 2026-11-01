@@ -9,7 +9,10 @@ use crate::shared::shortcut_runtime::{SUPPORTED, bindings};
 use crate::shared::shortcuts::ShortcutCommandId as Command;
 use ely_gpui_component::buttons::{Button, ButtonVariant};
 use ely_gpui_component::forms::HotkeyInput;
-use gpui::{AnyElement, App, Context, Entity, IntoElement, Keystroke, Window, div, prelude::*};
+use gpui::{
+    AnyElement, App, Context, Entity, IntoElement, Keystroke, OperatingSystem, Window, div,
+    prelude::*,
+};
 
 fn binding_stroke(binding: &str) -> Option<Keystroke> {
     let binding = binding
@@ -26,7 +29,20 @@ fn binding_stroke(binding: &str) -> Option<Keystroke> {
         .replace("Shift", "shift")
         .replace("Alt", "alt")
         .replace('+', "-");
-    Keystroke::parse(&binding).ok()
+    Keystroke::parse_with_os(&binding, host_os()).ok()
+}
+
+/// gpui needs the host OS to parse dynamic keystrokes and to label them.
+fn host_os() -> OperatingSystem {
+    if cfg!(target_os = "macos") {
+        OperatingSystem::Mac
+    } else if cfg!(target_os = "windows") {
+        OperatingSystem::Windows
+    } else if cfg!(target_os = "android") {
+        OperatingSystem::Android
+    } else {
+        OperatingSystem::Linux
+    }
 }
 
 fn stroke_binding(stroke: &Keystroke) -> String {
@@ -120,7 +136,10 @@ fn recorder(
         // Ely recorder 没有 disabled API；禁用态使用同库 Button，完全移除可录制的焦点目标。
         return Button::new(
             id,
-            stroke.map_or_else(|| label("Disabled", "已禁用").into(), |s| s.unparse()),
+            stroke.map_or_else(
+                || label("Disabled", "已禁用").into(),
+                |s| s.unparse(host_os()),
+            ),
         )
         .disabled(true)
         .into_any_element();

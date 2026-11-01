@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use gpui::{
     App, Bounds, Div, Entity, HoverListenerMode, InteractiveElement, MouseButton, MouseDownEvent,
-    MouseMoveEvent, MouseUpEvent, Pixels, Point, ScrollWheelEvent, Stateful,
+    MouseMoveEvent, MouseUpEvent, Pixels, Point, ScrollEvent, Stateful,
     StatefulInteractiveElement, Styled, Subscription, Window,
 };
 
@@ -150,7 +150,7 @@ impl Steering {
                     on_draw(drawn, window, cx);
                 }
             })
-            .on_scroll_wheel(move |event: &ScrollWheelEvent, _, cx| {
+            .on_scroll(move |event: &ScrollEvent, _, cx| {
                 let delta = event
                     .delta
                     .pixel_delta(Pixels::from(across.1 / visible.count as f32));

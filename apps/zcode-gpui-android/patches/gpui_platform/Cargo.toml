@@ -23,21 +23,21 @@ x11 = ["gpui_linux/x11"]
 
 [dependencies]
 anyhow = "1"
-gpui = { git = "https://github.com/zed-industries/zed", rev = "1a28cff4b409169bac058bca40dfbfeb7621d19b" }
+gpui = { git = "https://github.com/zed-industries/zed", rev = "c408f8efc41e51099a031d98190be773d7a5e713" }
 
 [target.'cfg(target_os = "macos")'.dependencies]
-gpui_macos = { git = "https://github.com/zed-industries/zed", rev = "1a28cff4b409169bac058bca40dfbfeb7621d19b" }
+gpui_macos = { git = "https://github.com/zed-industries/zed", rev = "c408f8efc41e51099a031d98190be773d7a5e713" }
 
 [target.'cfg(target_os = "windows")'.dependencies]
-gpui_windows = { git = "https://github.com/zed-industries/zed", rev = "1a28cff4b409169bac058bca40dfbfeb7621d19b" }
-gpui = { git = "https://github.com/zed-industries/zed", rev = "1a28cff4b409169bac058bca40dfbfeb7621d19b", features = ["windows-manifest"] }
+gpui_windows = { git = "https://github.com/zed-industries/zed", rev = "c408f8efc41e51099a031d98190be773d7a5e713" }
+gpui = { git = "https://github.com/zed-industries/zed", rev = "c408f8efc41e51099a031d98190be773d7a5e713", features = ["windows-manifest"] }
 
 [target.'cfg(any(target_os = "linux", target_os = "freebsd"))'.dependencies]
-gpui_linux = { git = "https://github.com/zed-industries/zed", rev = "1a28cff4b409169bac058bca40dfbfeb7621d19b" }
+gpui_linux = { git = "https://github.com/zed-industries/zed", rev = "c408f8efc41e51099a031d98190be773d7a5e713" }
 
 [target.'cfg(target_os = "linux")'.dependencies]
-gpui_wgpu = { git = "https://github.com/zed-industries/zed", rev = "1a28cff4b409169bac058bca40dfbfeb7621d19b", optional = true }
+gpui_wgpu = { git = "https://github.com/zed-industries/zed", rev = "c408f8efc41e51099a031d98190be773d7a5e713", optional = true }
 
 [target.'cfg(target_family = "wasm")'.dependencies]
-gpui_web = { git = "https://github.com/zed-industries/zed", rev = "1a28cff4b409169bac058bca40dfbfeb7621d19b" }
+gpui_web = { git = "https://github.com/zed-industries/zed", rev = "c408f8efc41e51099a031d98190be773d7a5e713" }
 console_error_panic_hook = "0.1"

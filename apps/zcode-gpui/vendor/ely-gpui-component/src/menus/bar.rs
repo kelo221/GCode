@@ -1,6 +1,7 @@
 use std::rc::Rc;
 
 use gpui::{
+    OperatingSystem,
     Action, App, Bounds, ElementId, Entity, InteractiveElement, IntoElement, MouseButton,
     OwnedMenu, OwnedMenuItem, ParentElement, Pixels, RenderOnce, StatefulInteractiveElement,
     Styled, Window, canvas, div, prelude::*,
@@ -23,12 +24,12 @@ struct Titles {
 }
 
 /// gpui's menu model as rows: actions run through dispatch and show the keys bound to them.
-fn rows(items: &[OwnedMenuItem], window: &Window) -> Menu {
+fn rows(items: &[OwnedMenuItem], window: &Window, os: OperatingSystem) -> Menu {
     items.iter().fold(Menu::new(), |menu, item| match item {
         OwnedMenuItem::Separator => menu.separator(),
         OwnedMenuItem::Submenu(sub) => menu.item(MenuItem::submenu(
             sub.name.clone(),
-            rows(&sub.items, window),
+            rows(&sub.items, window, os),
         )),
         OwnedMenuItem::SystemMenu(os) => menu.item(MenuItem::new(os.name.clone()).disabled(true)),
         OwnedMenuItem::Action { name, action, .. } => {
@@ -38,7 +39,7 @@ fn rows(items: &[OwnedMenuItem], window: &Window) -> Menu {
                     let strokes: Vec<String> = binding
                         .keystrokes()
                         .iter()
-                        .map(|stroke| stroke.unparse())
+                        .map(|stroke| stroke.unparse(os))
                         .collect();
                     strokes.join(" ")
                 });
@@ -105,7 +106,7 @@ impl RenderOnce for MenuBar {
         let menus: Rc<Vec<Menu>> = Rc::new(
             self.menus
                 .iter()
-                .map(|menu| rows(&menu.items, window))
+                .map(|menu| rows(&menu.items, window, cx.platform_info().os))
                 .collect(),
         );
         let open = state.read(cx).is_open();

@@ -3,7 +3,7 @@ use std::{cell::Cell, rc::Rc, time::Duration};
 use gpui::{
     AppContext as _, Bounds, Context, Entity, FocusHandle, InteractiveElement, IntoElement,
     KeyBinding, KeyUpEvent, Keystroke, Modifiers, ParentElement, Pixels, Render, ScrollDelta,
-    ScrollWheelEvent, Styled, TestAppContext, TouchPhase, VisualTestContext, Window, canvas, div,
+    ScrollEvent, Styled, TestAppContext, TouchPhase, VisualTestContext, Window, canvas, div,
     point, px,
 };
 
@@ -413,7 +413,7 @@ fn a_tall_dialog_body_keeps_its_height_and_scrolls(cx: &mut TestAppContext) {
     let middle = cx
         .update(|window, _| window.viewport_size())
         .map(|side| side / 2.0);
-    cx.simulate_event(ScrollWheelEvent {
+    cx.simulate_event(ScrollEvent {
         position: point(middle.width, middle.height),
         delta: ScrollDelta::Pixels(point(px(0.0), px(-300.0))),
         modifiers: Modifiers::none(),

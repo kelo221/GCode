@@ -1,6 +1,6 @@
 use gpui::{
     AnyElement, Context, Entity, IntoElement, Modifiers, MouseButton, ParentElement, Render,
-    ScrollDelta, ScrollWheelEvent, Styled, TestAppContext, TouchPhase, VisualTestContext, Window,
+    ScrollDelta, ScrollEvent, Styled, TestAppContext, TouchPhase, VisualTestContext, Window,
     div, point, px,
 };
 
@@ -87,7 +87,7 @@ fn plane(_: &Stage, owner: Entity<Stage>) -> AnyElement {
 #[gpui::test]
 fn command_and_the_wheel_zoom_about_the_pointer(cx: &mut TestAppContext) {
     let (host, cx) = stage(plane, cx);
-    cx.simulate_event(ScrollWheelEvent {
+    cx.simulate_event(ScrollEvent {
         position: point(px(100.0), px(50.0)),
         delta: ScrollDelta::Pixels(point(px(0.0), px(-240.0))),
         modifiers: Modifiers::command(),
@@ -176,8 +176,8 @@ fn a_press_on_the_map_centers_the_view_there(cx: &mut TestAppContext) {
     );
 }
 
-fn wheel(at: (f32, f32), dy: f32, modifiers: Modifiers) -> ScrollWheelEvent {
-    ScrollWheelEvent {
+fn wheel(at: (f32, f32), dy: f32, modifiers: Modifiers) -> ScrollEvent {
+    ScrollEvent {
         position: point(px(at.0), px(at.1)),
         delta: ScrollDelta::Pixels(point(px(0.0), px(dy))),
         modifiers,

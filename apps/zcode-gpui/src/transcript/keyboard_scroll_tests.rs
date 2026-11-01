@@ -15,7 +15,7 @@ use std::sync::{Arc, mpsc::Receiver};
 
 #[test]
 fn keys_map_to_transcript_scrolls() {
-    let key = |s: &str| transcript_key(&Keystroke::parse(s).unwrap());
+    let key = |s: &'static str| transcript_key(&Keystroke::parse(s).unwrap());
     assert_eq!(key("pageup"), Some(TranscriptKey::PageUp));
     assert_eq!(key("pagedown"), Some(TranscriptKey::PageDown));
     assert_eq!(key("home"), Some(TranscriptKey::Top));
@@ -154,11 +154,12 @@ fn page_keys_scroll_the_transcript_from_the_composer() {
 }
 
 fn wheel(window: &mut TestAppWindow<RootView>, dx: f32, dy: f32) {
-    window.simulate_event(gpui::ScrollWheelEvent {
+    window.simulate_event(gpui::ScrollEvent {
         position: point(px(760.), px(300.)),
         delta: gpui::ScrollDelta::Pixels(point(px(dx), px(dy))),
         modifiers: Default::default(),
         touch_phase: gpui::TouchPhase::Moved,
+        source: gpui::ScrollSource::Pointer,
     });
     window.draw();
 }

@@ -1,3 +1,16 @@
+// gpui (Zed c408f8e): `KeyBinding::new` no longer resolves `secondary-`, and takes
+// only `&'static str`. Command on the Mac, Control elsewhere, picked at compile time.
+// Defined before the modules so every module can use it.
+macro_rules! secondary {
+    ($key:literal) => {
+        if cfg!(target_os = "macos") {
+            concat!("cmd-", $key)
+        } else {
+            concat!("ctrl-", $key)
+        }
+    };
+}
+
 pub mod account;
 pub mod agent;
 mod assets;

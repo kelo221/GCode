@@ -394,6 +394,8 @@ impl AndroidWindowStatePtr {
             callback(RequestFrameOptions {
                 require_presentation: false,
                 force_render,
+                // No frame-request timestamps (they only feed gpui's profiler).
+                ..Default::default()
             });
             self.callbacks.borrow_mut().request_frame = Some(callback);
         }
@@ -724,6 +726,9 @@ impl PlatformWindow for AndroidWindow {
     fn on_resize(&self, callback: Box<dyn FnMut(Size<Pixels>, f32)>) {
         self.ptr.callbacks.borrow_mut().resize = Some(callback);
     }
+
+    // The window lives on the one display for its whole life.
+    fn on_display_changed(&self, _callback: Box<dyn FnMut()>) {}
 
     fn on_moved(&self, callback: Box<dyn FnMut()>) {
         self.ptr.callbacks.borrow_mut().moved = Some(callback);

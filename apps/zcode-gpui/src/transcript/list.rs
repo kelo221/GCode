@@ -5,8 +5,8 @@
 use crate::app::root::RootView;
 use gpui::{
     AnyElement, Context, CursorStyle, InteractiveElement, IntoElement, ListAlignment, ListOffset,
-    ListSizingBehavior, ListState, MouseButton, MouseDownEvent, ParentElement, ScrollWheelEvent,
-    Styled, div, px,
+    ListSizingBehavior, ListState, MouseButton, MouseDownEvent, ParentElement, ScrollEvent, Styled,
+    div, px,
 };
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -207,7 +207,7 @@ impl RootView {
             )
             // Move/release/cancel for autoscroll are bound on the root view so
             // they still fire once the pointer leaves the transcript.
-            .on_scroll_wheel(cx.listener(|this, ev: &ScrollWheelEvent, _window, _cx| {
+            .on_scroll(cx.listener(|this, ev: &ScrollEvent, _window, _cx| {
                 this.sync_follow_after_wheel(ev.delta.pixel_delta(px(20.)).y);
             }))
             .child(

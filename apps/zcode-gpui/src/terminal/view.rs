@@ -83,8 +83,8 @@ impl RootView {
                     cx.stop_propagation();
                 }),
             )
-            .on_scroll_wheel(
-                cx.listener(move |this, ev: &gpui::ScrollWheelEvent, _window, cx| {
+            .on_scroll(
+                cx.listener(move |this, ev: &gpui::ScrollEvent, _window, cx| {
                     if !this.terminal_owner_current(&scroll_owner, cx) {
                         return;
                     }

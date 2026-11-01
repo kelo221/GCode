@@ -24,6 +24,12 @@ impl PlatformDisplay for AndroidDisplay {
         // landscape-tablet-sized default so windowing math doesn't divide by zero.
         Bounds::new(point(px(0.0), px(0.0)), size(px(1920.0), px(1080.0)))
     }
+
+    fn refresh_interval(&self) -> Option<std::time::Duration> {
+        // We ask for 120 Hz (`set_native_window_frame_rate`), but the panel may
+        // deliver less and we never read the real rate back, so report unknown.
+        None
+    }
 }
 
 impl fmt::Debug for AndroidDisplay {

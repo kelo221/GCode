@@ -69,7 +69,7 @@ use std::time::{Duration, Instant};
 use futures::channel::mpsc;
 use gpui::{
     Modifiers, MouseButton, MouseDownEvent, MouseMoveEvent, MouseUpEvent, NavigationDirection,
-    Pixels, PlatformInput, Point, ScrollDelta, ScrollWheelEvent, TouchPhase, point, px,
+    Pixels, PlatformInput, Point, ScrollDelta, ScrollEvent, TouchPhase, point, px,
 };
 use jni::objects::{JFloatArray, JObject, JString};
 
@@ -634,7 +634,8 @@ pub(crate) fn translate(
                         }
                         if dx != 0.0 || dy != 0.0 {
                             state.last_motion_at = Some(Instant::now());
-                            out.push(PlatformInput::ScrollWheel(ScrollWheelEvent {
+                            out.push(PlatformInput::Scroll(ScrollEvent {
+                                source: gpui::ScrollSource::Pointer,
                                 position: cursor,
                                 delta: crate::ime::invert_scroll_delta(ScrollDelta::Pixels(
                                     point(px(dx), px(dy)),
@@ -918,7 +919,8 @@ pub(crate) fn translate(
                 let dx = event.hscroll * MOUSE_WHEEL_LINES_PER_NOTCH;
                 let dy = event.vscroll * MOUSE_WHEEL_LINES_PER_NOTCH;
                 if dx != 0.0 || dy != 0.0 {
-                    out.push(PlatformInput::ScrollWheel(ScrollWheelEvent {
+                    out.push(PlatformInput::Scroll(ScrollEvent {
+                        source: gpui::ScrollSource::Pointer,
                         position: cursor,
                         delta: crate::ime::invert_scroll_delta(ScrollDelta::Lines(point(dx, dy))),
                         modifiers,

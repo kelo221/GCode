@@ -13,8 +13,8 @@ default-run = "zcode-gpui"
 # of the same crate, and the platform backends only exist in the zed repo). The
 # previous crates.io 0.2.2 pin (2025-10) was a year behind zed main, which made
 # third-party gpui component libraries impossible to mount.
-gpui = { git = "https://github.com/zed-industries/zed", rev = "1a28cff4b409169bac058bca40dfbfeb7621d19b" }
-gpui_platform = { git = "https://github.com/zed-industries/zed", rev = "1a28cff4b409169bac058bca40dfbfeb7621d19b" }
+gpui = { git = "https://github.com/zed-industries/zed", rev = "c408f8efc41e51099a031d98190be773d7a5e713" }
+gpui_platform = { git = "https://github.com/zed-industries/zed", rev = "c408f8efc41e51099a031d98190be773d7a5e713" }
 # UI component library (MIT / Apache-2.0) driving the visual language; see
 # THIRD-PARTY-NOTICES.md. Vendored at rev 2f8b2f6 (vendor/ely-gpui-component/VENDORED.md)
 # because its git repository is no longer reachable.
@@ -64,7 +64,7 @@ windows = { version = "0.62", features = [
 ] }
 
 [dev-dependencies]
-gpui = { git = "https://github.com/zed-industries/zed", rev = "1a28cff4b409169bac058bca40dfbfeb7621d19b", features = ["test-support"] }
+gpui = { git = "https://github.com/zed-industries/zed", rev = "c408f8efc41e51099a031d98190be773d7a5e713", features = ["test-support"] }
 
 [build-dependencies]
 serde_json = "1"

@@ -1100,6 +1100,13 @@ impl AndroidPlatform {
 }
 
 impl Platform for AndroidPlatform {
+    fn platform_info(&self) -> gpui::PlatformInfo {
+        gpui::PlatformInfo {
+            os: gpui::OperatingSystem::Android,
+            target: gpui::PlatformTarget::Native,
+        }
+    }
+
     fn background_executor(&self) -> BackgroundExecutor {
         self.common.borrow().background_executor.clone()
     }
@@ -1263,6 +1270,9 @@ impl Platform for AndroidPlatform {
     fn primary_display(&self) -> Option<Rc<dyn PlatformDisplay>> {
         Some(Rc::new(AndroidDisplay::new()))
     }
+
+    // One fixed display whose properties we never change, so there is nothing to report.
+    fn on_displays_changed(&self, _callback: Box<dyn FnMut()>) {}
 
     fn active_window(&self) -> Option<AnyWindowHandle> {
         self.common.borrow().active_window

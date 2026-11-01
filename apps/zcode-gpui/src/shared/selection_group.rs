@@ -316,7 +316,7 @@ pub(crate) fn selection_owner(
                 }
                 return;
             }
-            if !stroke.modifiers.secondary() {
+            if !stroke.modifiers.secondary(cx) {
                 return;
             }
             match stroke.key.as_str() {

@@ -5,7 +5,7 @@ use std::{
 
 use gpui::{
     Context, Entity, InteractiveElement, IntoElement, Modifiers, ParentElement, Pixels, Point,
-    Render, ScrollDelta, ScrollWheelEvent, SharedString, StatefulInteractiveElement, Styled,
+    Render, ScrollDelta, ScrollEvent, SharedString, StatefulInteractiveElement, Styled,
     TestAppContext, TouchPhase, VisualTestContext, Window, div, point, px,
 };
 
@@ -183,7 +183,7 @@ impl Render for Swiped {
 }
 
 fn scroll(cx: &mut VisualTestContext, phase: TouchPhase, x: f32, y: f32) {
-    cx.simulate_event(ScrollWheelEvent {
+    cx.simulate_event(ScrollEvent {
         position: point(px(160.0), px(20.0)),
         delta: ScrollDelta::Pixels(point(px(x), px(y))),
         modifiers: Modifiers::none(),
