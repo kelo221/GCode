@@ -199,6 +199,42 @@ fn ack_moves_sent_to_running_and_rejection_ends_the_flight() {
 }
 
 #[test]
+fn the_compactions_own_trailing_running_frame_does_not_rearm_it() {
+    let t0 = Instant::now();
+    let mut c = idle(t0);
+    c.begin_auto_compact();
+    c.auto_compact = running("cmd-5");
+    c.apply_control(&json!({ "phase": "running" }));
+    c.note_compact_marker(&marker("cmd-5", "success"));
+    assert_eq!(c.auto_compact, Some(AutoCompactFlight::Settling));
+    // Still the compaction's turn, not new activity.
+    c.apply_control(&json!({ "phase": "running" }));
+    assert!(c.auto_compacted);
+    c.apply_control(&json!({ "phase": "idle" }));
+    assert_eq!(c.auto_compact, None);
+    assert!(!c.auto_compact_due(ON, later(t0, 600)));
+}
+
+#[test]
+fn not_due_again_until_rows_are_appended() {
+    let t0 = Instant::now();
+    let mut c = idle(t0);
+    c.begin_auto_compact();
+    c.auto_compact = running("cmd-6");
+    c.apply_deltas(&[json!({ "op": "row.appended", "row": marker("cmd-6", "success") })]);
+    assert_eq!(c.compacted_through, Some(9));
+    // Activity that adds no rows (e.g. another compaction) doesn't count.
+    c.note_control(true, later(t0, 1));
+    c.note_control(false, later(t0, 2));
+    assert!(!c.auto_compact_due(ON, later(t0, 120)));
+    c.apply_deltas(&[json!({
+        "op": "row.appended",
+        "row": { "rowId": 10, "kind": "userInput", "text": "next" },
+    })]);
+    assert!(c.auto_compact_due(ON, later(t0, 120)));
+}
+
+#[test]
 fn a_run_starting_while_resuming_cancels_the_compaction() {
     let t0 = Instant::now();
     let mut c = idle(t0);

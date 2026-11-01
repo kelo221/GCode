@@ -258,3 +258,42 @@ fn edit_diagnostics_show_on_the_card_and_in_the_fold_line() {
         "the expanded Edit card shows its diagnostics chip"
     );
 }
+
+fn header(row_id: u64, state: &str) -> Row {
+    Row::TurnHeader {
+        row_id,
+        entity_id: format!("turn{row_id}"),
+        state: state.into(),
+        active_ms: Some(20),
+        file_changes: None,
+        can_rewind: false,
+    }
+}
+
+#[test]
+fn only_finished_turns_without_visible_rows_hide_their_header() {
+    let rows: std::collections::BTreeMap<u64, Row> = [
+        // Compaction turn: header plus an unrendered marker row.
+        (1, header(1, "completed")),
+        (2, Row::Other),
+        // Real turn.
+        (3, header(3, "completed")),
+        (4, text(4, "done")),
+        // Compaction still running.
+        (5, header(5, "running")),
+        (6, Row::Other),
+        (7, header(7, "failed")),
+        (8, header(8, "completed")),
+    ]
+    .into_iter()
+    .collect();
+    assert!(is_empty_finished_turn(&rows, 1));
+    assert!(!is_empty_finished_turn(&rows, 3));
+    assert!(!is_empty_finished_turn(&rows, 5));
+    assert!(!is_empty_finished_turn(&rows, 7), "failures stay visible");
+    assert!(
+        is_empty_finished_turn(&rows, 8),
+        "last turn, nothing after it"
+    );
+    assert!(!is_empty_finished_turn(&rows, 4), "not a header");
+}

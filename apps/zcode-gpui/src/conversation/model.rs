@@ -87,6 +87,8 @@ pub struct ConversationState {
     pub(crate) auto_compact: Option<crate::conversation::auto_compact::AutoCompactFlight>,
     /// Terminal marker status of the last auto-compaction; the maintenance tick logs and clears it.
     pub(crate) auto_compact_outcome: Option<String>,
+    /// Last row id when the last auto-compaction ended; the next one waits for newer rows.
+    pub(crate) compacted_through: Option<u64>,
 }
 
 /// V4 `sessionPhaseSchema` phases during which a turn is live.

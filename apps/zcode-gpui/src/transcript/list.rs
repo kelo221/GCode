@@ -276,6 +276,13 @@ impl RootView {
         else {
             return div().into_any_element();
         };
+        if matches!(row, crate::conversation::model::Row::TurnHeader { .. })
+            && state.active_conversation().is_some_and(|c| {
+                crate::transcript::noise_free::is_empty_finished_turn(&c.rows, row_id)
+            })
+        {
+            return div().into_any_element();
+        }
         let row_actions = !state.is_read_only_view()
             && state
                 .active_conversation()

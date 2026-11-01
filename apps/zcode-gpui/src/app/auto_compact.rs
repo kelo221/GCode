@@ -137,6 +137,15 @@ impl AppState {
                 self.give_up_auto_compact(sid, "conversation unsubscribed mid-compaction");
             }
             Some(AutoCompactFlight::Running { .. }) => {}
+            // Already finished; only the idle frame is missing, and it can't
+            // arrive without the subscription.
+            Some(AutoCompactFlight::Settling) if !subscribed => {
+                if let Some(c) = self.conversations.get_mut(sid) {
+                    c.auto_compact = None;
+                    c.compacted_through = c.rows.keys().next_back().copied();
+                }
+            }
+            Some(AutoCompactFlight::Settling) => {}
         }
     }
 

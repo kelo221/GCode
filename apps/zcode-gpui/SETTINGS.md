@@ -377,16 +377,28 @@ release sweep. Each mirrored `ConversationState` carries:
   when it becomes active.
 - `auto_compacted`: set when an auto-compaction starts; cleared when a new run starts (phase becomes
   active while no auto-compaction is in flight). So it fires once per idle stretch.
-- `auto_compact`: the in-flight auto-compaction, if any (`Resuming` → `Sent` → `Running`).
+- `auto_compact`: the in-flight auto-compaction, if any (`Resuming` → `Sent` → `Running` →
+  `Settling`).
+- `compacted_through`: the last row id when the last auto-compaction ended.
 
 A conversation is eligible when its model's entry is enabled, `idle_since` is at least `minutes`
 old, `auto_compacted` is false, `usage.contextWindow.usedTokens` ≥ 20 000, it has no live work
-(pending interactions, queued input, running activity) and it is not a subagent child. Only
-conversations GPUI has mirrored in this run are considered: a session never opened since GPUI
-started has no `idle_since`.
+(pending interactions, queued input, running activity), a row newer than `compacted_through`
+exists, and it is not a subagent child. Only conversations GPUI has mirrored in this run are
+considered: a session never opened since GPUI started has no `idle_since`.
 
-Manual compaction does not change the phase, so the compaction itself never counts as new
-activity. Its completion signal is the compact `timelineMarker` row: the CLI tags it with
+The compaction runs as its own CLI turn, so the phase goes active while it runs, and its
+terminal marker can arrive before the turn's last active `control` frame. The flight therefore
+stays in flight (`Settling`) until the phase is next seen idle; ending it at the marker let that
+trailing active frame reset `auto_compacted`, and the session was compacted again every
+`minutes` (2026-11-01: eight empty compactions overnight). The row check is the second guard:
+with nothing appended since the last compaction there is nothing to compact.
+
+A finished turn with no visible rows (no user input, text, thinking or tool rows; GPUI draws no
+compact marker) and no file changes renders no turn header, so compactions leave no bare
+"Worked for 0s" divider. Running and failed turns keep their header.
+
+Its completion signal is the compact `timelineMarker` row: the CLI tags it with
 `sourceCommandId` = the `commandId` of our `compact` envelope (`product-projection.ts`
 `onCompactLifecycle`), and every accepted manual compact ends in exactly one terminal status
 (`success`, `noop`, `failed`, `cancelled`). Core `executeManualCompact` guarantees this through
@@ -402,7 +414,10 @@ maintenance tick (AppState)
        └─ subscribed → v4/command compact {commandId} (Pending::AutoCompact) → Sent{commandId}
 CLI ack ok → Running{commandId} | ack error/rejected → auto_compact = None, warn
 compact marker row (delta or resync snapshot) with sourceCommandId == commandId and a terminal
-  status → auto_compact = None; the next tick logs "finished (<status>)" (may precede the ack)
+  status → phase active: Settling | phase idle: auto_compact = None, compacted_through = last row;
+  the next tick logs "finished (<status>)" (may precede the ack)
+Settling and control phase idle → auto_compact = None, compacted_through = last row
+Settling and unsubscribed → auto_compact = None (already finished)
 Sent and the pending ack vanished (agent connection lost) → give up, warn
 Running and the conversation unsubscribed (agent exited) → give up, warn
 release sweep / reaper: auto_compact.is_some() counts as live work, so neither drops it mid-flight
@@ -416,7 +431,8 @@ Acceptance tests: idle-state transitions (phase idle → `idle_since`, active �
 `auto_compacted` reset, active during an in-flight compaction keeps the flag); eligibility (disabled,
 below minutes, below the token floor, already compacted, running, live work); the in-flight steps
 (ack; only our terminal marker ends the flight, also before the ack or from a snapshot; no
-timeout across many ticks); core: setup failures settle with one `CompactFailed`; the setting round-trips through `gpui_settings.json` with
+timeout across many ticks; the compaction turn's own trailing active frame does not re-arm it;
+not due again until a row is appended); empty finished turns hide their header; core: setup failures settle with one `CompactFailed`; the setting round-trips through `gpui_settings.json` with
 clamping. Live behaviour against a real CLI is a manual check.
 
 ## Voice (desktop only)

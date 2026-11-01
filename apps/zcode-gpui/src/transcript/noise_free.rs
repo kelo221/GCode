@@ -71,6 +71,33 @@ pub(crate) fn kind(row: &Row) -> Kind {
     }
 }
 
+/// A finished turn that drew nothing (a compaction, which GPUI renders no
+/// marker for): its header would be a bare "Worked for 0s" divider.
+/// Desktop shows the work status only above assistant content.
+pub(crate) fn is_empty_finished_turn(
+    rows: &std::collections::BTreeMap<u64, Row>,
+    header_id: u64,
+) -> bool {
+    let Some(Row::TurnHeader {
+        state,
+        file_changes,
+        ..
+    }) = rows.get(&header_id)
+    else {
+        return false;
+    };
+    if matches!(
+        state.as_str(),
+        "running" | "failed" | "completedInterrupted"
+    ) || file_changes.is_some()
+    {
+        return false;
+    }
+    rows.range(header_id + 1..)
+        .take_while(|(_, r)| !matches!(r, Row::TurnHeader { .. }))
+        .all(|(_, r)| kind(r) == Kind::Transparent)
+}
+
 fn edit_errors(display: Option<&serde_json::Value>) -> Option<(u64, u32)> {
     let diagnostics = crate::transcript::edit_diagnostics::edit_diagnostics(display)?;
     if !diagnostics.available {
