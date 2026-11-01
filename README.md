@@ -1,6 +1,6 @@
-# ZCode fork: native GPUI client and agent improvements
+# GCode: a ZCode fork with a native GPUI client and agent improvements
 
-> **Unofficial.** This is a personal fork of [zai-org/ZCode](https://github.com/zai-org/ZCode). It is not an official ZCode product and is not supported by the ZCode team.
+> **Unofficial.** GCode is a personal fork of [zai-org/ZCode](https://github.com/zai-org/ZCode). It is not an official ZCode product and is not supported by the ZCode team.
 
 This README only covers what the fork adds. For ZCode itself (the Electron desktop app, the Web client, the CLI distribution, packaging, configuration and the project notice), see the [upstream repository](https://github.com/zai-org/ZCode) and its README.
 
@@ -8,9 +8,9 @@ The fork tracks upstream releases (currently v3.16.2) and keeps its changes on `
 
 ## What the fork adds
 
-### A native desktop client: `apps/zcode-gpui`
+### A native desktop client: GCode (`apps/zcode-gpui`)
 
-A Rust frontend built with GPUI (Zed's UI framework) that talks to the unchanged ZCode CLI app-server over stdio. It does not need Electron, so it uses about 300 MB less memory than the Electron desktop app and less CPU. See [apps/zcode-gpui/README.md](apps/zcode-gpui/README.md) for setup, features and current gaps compared with the desktop app.
+GCode is a Rust frontend built with GPUI (Zed's UI framework) that talks to the unchanged ZCode CLI app-server over stdio. It does not need Electron, so it uses about 300 MB less memory than the Electron desktop app and less CPU. See [apps/zcode-gpui/README.md](apps/zcode-gpui/README.md) for setup, features and current gaps compared with the desktop app.
 
 Highlights beyond a plain port:
 
@@ -62,7 +62,7 @@ These apply to every client:
 
 ## Download (Windows)
 
-Windows x64 builds are on the [Releases page](https://github.com/kelo221/ZCode/releases). Unzip anywhere and run `zcode-gpui.exe`. The zip includes the compiled CLI backend, the browser extension and native host, and the voice program, so no checkout, Node or Bun is needed. The executables are not code-signed.
+Windows x64 builds are on the [Releases page](https://github.com/kelo221/ZCode/releases). Unzip anywhere and run `zcode-gpui.exe` (GCode). The zip includes the compiled CLI backend, the browser extension and native host, and the voice program, so no checkout, Node or Bun is needed. The executables are not code-signed.
 
 Releases are built by [gpui-release.yml](.github/workflows/gpui-release.yml). Pushing a tag such as `gpui-v3.16.2-1` (upstream version, then the fork's build number) publishes one; running the workflow by hand only produces a downloadable artifact.
 
