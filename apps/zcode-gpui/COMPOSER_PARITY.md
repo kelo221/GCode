@@ -113,6 +113,9 @@ an old rendered preference. Refused routing leaves the composer replacement gene
 and explicit temporary-file ownership untouched; failed enqueue restores that ownership.
 Rejected admission merges attachment references into the originating draft without
 reclaiming already-retired local files or automatically replaying the delivery override.
+The banner names the ACK status and `reasonCode` (and the CLI message, when present), and
+the same line goes to the in-memory log (Export logs), because the CLI does not log
+guard/stale refusals itself (e.g. `guard.runtimeInitializing`, `proto.sessionNotFound`).
 
 ```text
 Enter / modified Enter / Send click → typed one-shot trigger → current projection gate

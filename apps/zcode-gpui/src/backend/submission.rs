@@ -86,7 +86,10 @@ impl AppState {
     ) {
         match ack.and_then(|a| a.get("status")).and_then(Value::as_str) {
             Some("rejected" | "failed" | "stale") => {
-                self.push_error("Message was not accepted; draft restored".into());
+                // CLI 的 guard/stale 拒绝不写日志；之前横幅丢掉 reasonCode，事后无法判断原因。
+                let line = rejection_line(ack);
+                self.push_log(format!("submission {line}"));
+                self.push_error(line);
                 self.recover_submission(submission, cx);
             }
             Some("accepted" | "noop" | "duplicate") if create => {
@@ -184,6 +187,23 @@ impl AppState {
     }
 }
 
+/// "Message was not accepted (rejected: guard.runtimeInitializing — msg); draft restored".
+fn rejection_line(ack: Option<&Value>) -> String {
+    let field = |key| {
+        ack.and_then(|a| a.get(key))
+            .and_then(Value::as_str)
+            .filter(|s| !s.is_empty())
+    };
+    let mut why = field("status").unwrap_or("rejected").to_owned();
+    if let Some(code) = field("reasonCode") {
+        why = format!("{why}: {code}");
+    }
+    if let Some(message) = field("message") {
+        why = format!("{why} — {message}");
+    }
+    format!("Message was not accepted ({why}); draft restored")
+}
+
 fn merge_text(recovered: &str, current: &str) -> String {
     if current.is_empty() {
         recovered.to_owned()
@@ -206,5 +226,23 @@ mod tests {
         assert!(!ack_succeeded(None));
         assert!(ack_succeeded(Some(&json!({"status":"accepted"}))));
         assert_eq!(merge_text("old", "new"), "old\nnew");
+    }
+
+    #[test]
+    fn rejection_line_names_status_reason_and_message() {
+        let ack = json!({"status": "rejected", "reasonCode": "guard.runtimeInitializing"});
+        assert_eq!(
+            rejection_line(Some(&ack)),
+            "Message was not accepted (rejected: guard.runtimeInitializing); draft restored"
+        );
+        let ack = json!({"status": "failed", "reasonCode": "fault.command.executionFailed", "message": "boom"});
+        assert_eq!(
+            rejection_line(Some(&ack)),
+            "Message was not accepted (failed: fault.command.executionFailed — boom); draft restored"
+        );
+        assert_eq!(
+            rejection_line(Some(&json!({"status": "stale", "message": ""}))),
+            "Message was not accepted (stale); draft restored"
+        );
     }
 }
