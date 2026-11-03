@@ -85,12 +85,15 @@ export function isThinkingSignatureRejection(error: unknown): boolean {
 
   // Provider 没有为该 400 提供独立错误码；这里只匹配已确认的窄化文案，
   // 避免把其他 invalid_request 误当成可修改历史并重试。
-  const message = errorMessage(unwrapped).toLowerCase();
+  // Anthropic 新文案用反引号包裹字段名（"Invalid `signature` in `thinking` block"），
+  // 压缩后前缀变化触发该 400 时旧匹配漏判，导致不剥离 thinking 重试、直接失败；
+  // 去掉反引号后再匹配同一组窄化短语。
+  const message = errorMessage(unwrapped).toLowerCase().replaceAll("`", "");
   if (message.includes("signature in thinking block")) return true;
 
   const namesThinkingBlock =
     message.includes("thinking block") ||
-    message.includes("`thinking`") ||
+    message.includes("thinking has") ||
     message.includes("redacted_thinking");
   const namesSignatureFailure =
     message.includes("cannot be modified") || message.includes("invalid signature");

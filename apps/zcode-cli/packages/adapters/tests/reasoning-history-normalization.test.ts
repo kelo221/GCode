@@ -404,6 +404,7 @@ describe("thinking signature rejection", () => {
     "thinking block cannot be modified",
     "`thinking` has an invalid signature",
     "redacted_thinking cannot be modified",
+    "messages.1.content.0: Invalid `signature` in `thinking` block. The block is bound to a different conversation.",
   ])("accepts the supported HTTP 400 message: %s", (message) => {
     expect(isThinkingSignatureRejection(apiError(message, 400))).toBe(true);
   });
