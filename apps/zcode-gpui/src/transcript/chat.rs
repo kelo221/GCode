@@ -141,6 +141,23 @@ impl crate::app::root::RootView {
                     },
                     cx,
                 );
+                // Speak 的句子以前只藏在折叠的工具行里；按回复文本显示在工具行上方。
+                if let Some(message) =
+                    crate::transcript::speak_text::spoken_message(tool_name, input_text)
+                {
+                    return Some(
+                        div()
+                            .w_full()
+                            .flex()
+                            .flex_col()
+                            .gap_1()
+                            .child(crate::transcript::speak_text::spoken_message_view(
+                                &message, *row_id,
+                            ))
+                            .child(tool_el)
+                            .into_any_element(),
+                    );
+                }
                 if let Some(subagent_row) = maybe_subagent {
                     let subagent_el = self.render_subagent_card(&subagent_row, true, cx);
                     Some(

@@ -30,8 +30,8 @@ pub(crate) enum Kind {
 }
 
 /// Tools whose cards carry what the user is following: the todo list, the
-/// questions asked of them and the plan.
-const KEPT_TOOLS: [&str; 3] = ["TodoWrite", "AskUserQuestion", "ExitPlanMode"];
+/// questions asked of them, the plan, and the sentence the agent said aloud.
+const KEPT_TOOLS: [&str; 4] = ["TodoWrite", "AskUserQuestion", "ExitPlanMode", "Speak"];
 
 pub(crate) fn kind(row: &Row) -> Kind {
     match row {

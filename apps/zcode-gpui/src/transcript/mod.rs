@@ -13,6 +13,7 @@ pub(crate) mod reasoning;
 pub(crate) mod scroll;
 #[cfg(test)]
 mod scroll_tests;
+pub(crate) mod speak_text;
 pub(crate) mod subagent_card;
 #[cfg(test)]
 mod subagent_card_tests;

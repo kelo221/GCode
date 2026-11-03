@@ -11,6 +11,11 @@ Status: spec for the 2026-10-16 slice. GPUI-only feature; Electron does not enab
   never forwarded to a phone (`remote/gateway.rs` `route_cli_line_to_phone` only forwards
   responses and owned `v4/conversation/frame` lines), so a turn started from the phone still
   speaks on the PC and the phone stays silent.
+- **The spoken sentence is also shown as text (2026-11-03).** The transcript renders a Speak
+  call's `message` like agent reply text, with a speaker icon in front, above the (collapsed)
+  Speak tool row. It is shown whatever the call's result was, so a muted PC or the phone still
+  sees what the agent said. Noise-free mode keeps it (Speak is not folded). The text appears
+  once the tool input parses, not while it is still streaming.
 - **Subagents never get the tool**, so parallel workers can't talk over each other.
 - **Speak never asks for permission**, in any mode. It is read-only with side-effect scope
   `session` (it only hands a line back to the client). It must not use `userInteraction`: the

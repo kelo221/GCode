@@ -86,6 +86,12 @@ fn tool_runs_fold_between_text_and_keep_todos_and_prompts() {
 }
 
 #[test]
+fn speak_stays_visible_because_its_sentence_is_shown_as_text() {
+    assert_eq!(kind(&tool(1, "Speak", "success")), Kind::Keep);
+    assert_eq!(kind(&tool(1, "Speak", "error")), Kind::Keep);
+}
+
+#[test]
 fn thinking_with_text_splits_runs_and_empty_rows_do_not() {
     assert_eq!(kind(&thinking(1, "")), Kind::Transparent);
     assert_eq!(kind(&thinking(1, "plan")), Kind::Keep);

@@ -45,6 +45,7 @@ fn tool_icon(label: &str) -> IconName {
         "TodoWrite" | "TodoRead" => IconName::ListTodo,
         "AskUserQuestion" => IconName::CircleHelp,
         "ExitPlanMode" => IconName::ListChecks,
+        "Speak" => IconName::Volume2,
         _ => IconName::Wrench,
     }
 }
