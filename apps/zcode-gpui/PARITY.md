@@ -36,6 +36,41 @@ limits below take precedence over the retained historical milestone requirements
 - Not ported: menu row descriptions, and the warning colour on the Full access trigger (the
   vendored ely menu host has neither).
 
+## Prompt cache lifetime (GPUI-only, 2026-11-03)
+
+- **What already happens.** The CLI marks the system prompt blocks and the newest
+  conversation message with Anthropic `cache_control: {type: "ephemeral"}` on every
+  request (`core/src/context/builder.ts`, `runtime/helpers/provider-request-messages.ts`),
+  which means the default 5-minute cache. This setting only changes those markers.
+- **Setting (per provider).** Each provider card in Settings › Models whose API format is
+  Anthropic Messages has a "Prompt cache" row: 5 minutes (default), 1 hour, Off. Other
+  formats hide the row (the AI SDK never sends Anthropic cache settings to them). One
+  provider can be the real Anthropic API while another is a proxy that rejects `ttl` or
+  `cache_control`, so the value is per provider ID. It is stored as
+  `gpuiPromptCacheByProvider: {providerId: mode}` in `gpui_settings.json` (Electron drops
+  unknown keys from `setting.json`), so it saves while the desktop runs. A missing entry or
+  unknown value means 5 minutes; choosing 5 minutes removes the entry. Desktop only; the
+  phone has no agents of its own. (The first, global version used `gpuiPromptCache`; that
+  key is ignored.)
+- **Runtime.** GPUI answers `session/requestRuntimePreferences` with `promptCacheModes`
+  (`{[providerId]: "5m" | "1h" | "off"}`, optional; Electron never sends it, which means
+  `5m` everywhere). The CLI reads it when a session is created or cold-resumed and hands the
+  map to that session's model adapter. Running sessions keep their map. In-process
+  subagents and workflow children share the parent's adapter, and protocol child sessions
+  inherit the parent's map.
+- **Wire.** Applied once per logical request in the adapter's Anthropic history projection
+  (`adapters/src/model/runner.ts` `projectRequestHistory`), using the entry for the
+  request's provider ID, so every marker in a request gets the same lifetime (Anthropic
+  requires longer TTLs to come before shorter ones).
+  `5m` leaves the markers untouched, so the request bytes match the old behavior. `1h`
+  sets `ttl: "1h"` on every marker (writes cost 2× input instead of 1.25×; reads 0.1×
+  either way). `Off` removes every marker, for proxies that reject `cache_control`.
+  Non-Anthropic providers are unaffected.
+- **Acceptance.** Adapter tests check the sent body for each mode and that one provider's
+  entry never applies to another; the GPUI reverse-RPC test checks the map; a render test
+  checks the row shows only for Anthropic Messages providers; a live check reads `cache_creation` in the model-io log after a
+  1-hour turn.
+
 ## Load MCP tools on demand (ToolSearch setting, 2026-10-30)
 
 - **Setting.** Settings › MCP Servers has a "Load MCP tools on demand" select with Auto, Local and

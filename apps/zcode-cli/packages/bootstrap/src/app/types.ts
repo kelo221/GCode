@@ -1,4 +1,4 @@
-import type { AiSdkModelAdapter } from "@zcode/adapters/model";
+import type { AiSdkModelAdapter, PromptCacheModes } from "@zcode/adapters/model";
 import type {
   AgentTelemetryRuntimeOwner,
   AutomationPort,
@@ -169,6 +169,8 @@ export interface ZCodeAppOptions {
   /** 新 Session 使用的 Environment 默认选择；仅在没有显式 runtime modelSelection 时参与初始化。 */
   configuredDefaultModelSelection?: ModelSelection;
   modelIoFullRetentionEnabled?: boolean;
+  /** Anthropic prompt cache 生命周期，按 providerId（GPUI 专属偏好）；缺省条目即 5m，即 runtime 原有 marker。 */
+  promptCacheModes?: PromptCacheModes;
   /** 同进程嵌入宿主可注入完整的 borrowed 进程级 Owner；Endpoint 配置不得覆盖它。 */
   telemetryOwner?: AgentTelemetryRuntimeOwner;
   providerEndpointRoutingPort?: ProviderEndpointRoutingPort;

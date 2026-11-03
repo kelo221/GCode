@@ -86,6 +86,8 @@ pub(crate) enum PreferenceChange {
     ),
     /// `auto` | `local` | `off` (shared `toolSearchMode`).
     ToolSearchMode(String),
+    /// Provider ID and `5m` | `1h` | `off` (GPUI-only `gpuiPromptCacheByProvider`).
+    PromptCache(String, String),
     Shortcut(String, Option<Vec<String>>),
     RecentProject(String),
     /// Forget a project (canonical key) from every persisted project list.
@@ -110,6 +112,7 @@ impl PreferenceChange {
             }
             Self::AutoCompact(key, entry) => settings.set_auto_compact(key, *entry),
             Self::ToolSearchMode(mode) => settings.tool_search_mode = Some(mode.clone()),
+            Self::PromptCache(provider, mode) => settings.set_prompt_cache_mode(provider, mode),
             Self::Shortcut(id, bindings) => {
                 let overrides = settings.shortcut_bindings.get_or_insert_with(HashMap::new);
                 if let Some(bindings) = bindings {
@@ -148,6 +151,13 @@ impl PreferenceChange {
                     .contains(&mode.as_str()) =>
             {
                 Err(format!("Unknown tool search mode: {mode}"))
+            }
+            Self::PromptCache(provider, mode)
+                if provider.is_empty()
+                    || !crate::shared::prompt_cache_setting::PROMPT_CACHE_MODES
+                        .contains(&mode.as_str()) =>
+            {
+                Err(format!("Unknown prompt cache mode: {provider}/{mode}"))
             }
             Self::Shortcut(_, _) => {
                 let mut candidate = settings.clone();

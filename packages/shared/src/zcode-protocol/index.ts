@@ -2161,6 +2161,10 @@ export const zcodeSessionRuntimePreferencesResultSchema = z
     // GPUI-only language-server diagnostics after Edit/Write plus the Diagnostics tool
     // (apps/zcode-cli/docs/design/v2/tool/lsp-diagnostics.md). Electron never sends it.
     lspDiagnosticsEnabled: z.boolean().optional(),
+    // GPUI-only Anthropic prompt cache lifetime per provider ID (apps/zcode-gpui/PARITY.md
+    // "Prompt cache lifetime"). A missing map or entry means "5m", the markers the runtime
+    // already places.
+    promptCacheModes: z.record(nonEmptyString, z.enum(["5m", "1h", "off"])).optional(),
   })
   .strict();
 export type ZCodeSessionRuntimePreferencesResult = z.infer<
@@ -2720,6 +2724,19 @@ export const zcodeProviderSettingsOperationSchema = z.discriminatedUnion("type",
       // 与 Desktop 新增模型弹窗同一语义：推荐模式下为稀疏 Overlay，固定模式下为物化配置。
       config: modelConfigDataSchema.optional(),
       useRecommendedConfig: z.boolean().optional(),
+    })
+    .strict(),
+  // GPUI 编辑模型弹窗（Desktop ProviderModelMetadataDialog mode="edit"）：
+  // Facade.savePersonalModelDraft，basedOnRevision 防止覆盖弹窗打开后的并发修改。
+  z
+    .object({
+      type: z.literal("updateModel"),
+      providerId: providerIdString,
+      modelId: modelIdString,
+      nextModelId: modelIdString.optional(),
+      config: modelConfigDataSchema.optional(),
+      useRecommendedConfig: z.boolean().optional(),
+      basedOnRevision: z.number().int().nonnegative(),
     })
     .strict(),
   z

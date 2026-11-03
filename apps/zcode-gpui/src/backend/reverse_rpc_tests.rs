@@ -55,7 +55,15 @@ fn test_provider_runtime_headers_fast_fails() {
 fn test_runtime_preferences_served() {
     let id = serde_json::json!(42);
     let params = serde_json::json!({});
-    for (enabled, tool_search_mode) in [(false, "off"), (true, "auto"), (true, "local")] {
+    for (enabled, tool_search_mode, prompt_cache_modes) in [
+        (false, "off", serde_json::json!({})),
+        (true, "auto", serde_json::json!({ "anthropic": "1h" })),
+        (
+            true,
+            "local",
+            serde_json::json!({ "anthropic": "1h", "proxy": "off" }),
+        ),
+    ] {
         match dispatch_reverse_rpc(
             &id,
             "session/requestRuntimePreferences",
@@ -66,6 +74,7 @@ fn test_runtime_preferences_served() {
                 code_search_enabled: enabled,
                 lsp_diagnostics_enabled: enabled,
                 tool_search_mode,
+                prompt_cache_modes: prompt_cache_modes.clone(),
             },
         ) {
             ReverseRpcAction::Respond(resp) => {
@@ -78,6 +87,7 @@ fn test_runtime_preferences_served() {
                 assert_eq!(val["result"]["codeSearchEnabled"], enabled);
                 assert_eq!(val["result"]["lspDiagnosticsEnabled"], enabled);
                 assert_eq!(val["result"]["toolSearchMode"], tool_search_mode);
+                assert_eq!(val["result"]["promptCacheModes"], prompt_cache_modes);
             }
             _ => panic!("Must respond"),
         }

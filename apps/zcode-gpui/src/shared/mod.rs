@@ -26,6 +26,7 @@ mod preference_handoff_tests;
 pub(crate) mod preferences;
 pub(crate) mod profile_consent;
 pub(crate) mod project_activity;
+pub(crate) mod prompt_cache_setting;
 pub(crate) mod redact;
 pub(crate) mod saved_workflows;
 pub(crate) mod selectable;

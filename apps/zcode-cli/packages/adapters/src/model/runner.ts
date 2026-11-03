@@ -38,6 +38,11 @@ import { runGenerateText } from "./runner-generate.js";
 import { runStreamText } from "./runner-stream.js";
 import { normalizeReasoningHistory } from "./reasoning-history-normalization.js";
 import {
+  applyPromptCacheMode,
+  promptCacheModeFor,
+  type PromptCacheModes,
+} from "./prompt-cache-mode.js";
+import {
   defaultRuntime,
   type AiSdkModelRuntime,
   type AiSdkModelTextRequest,
@@ -74,6 +79,7 @@ export interface AiSdkModelAdapterOptions {
   statusSink?: ModelStatusSink;
   streamIdleTimeoutMs?: number;
   modelIoFullRetentionEnabled?: boolean;
+  promptCacheModes?: PromptCacheModes;
 }
 
 export interface CreateAiSdkModelOptions {
@@ -96,6 +102,7 @@ export class AiSdkModelAdapter {
   private statusSink?: ModelStatusSink;
   private readonly streamIdleTimeoutMs: number;
   private modelIoFullRetentionEnabled: boolean;
+  private promptCacheModes: PromptCacheModes;
 
   constructor(options: AiSdkModelAdapterOptions) {
     this.execution = new AiSdkModelExecution(
@@ -124,10 +131,15 @@ export class AiSdkModelAdapter {
     this.statusSink = options.statusSink;
     this.streamIdleTimeoutMs = options.streamIdleTimeoutMs ?? DEFAULT_MODEL_STREAM_IDLE_TIMEOUT_MS;
     this.modelIoFullRetentionEnabled = options.modelIoFullRetentionEnabled ?? false;
+    this.promptCacheModes = { ...options.promptCacheModes };
   }
 
   setModelIoFullRetentionEnabled(enabled: boolean): void {
     this.modelIoFullRetentionEnabled = enabled;
+  }
+
+  setPromptCacheModes(modes: PromptCacheModes): void {
+    this.promptCacheModes = { ...modes };
   }
 
   addStatusSink(sink: ModelStatusSink): void {
@@ -329,7 +341,7 @@ export class AiSdkModelAdapter {
     resolved: ResolvedAiSdkModel,
     resolveModel: () => ResolvedAiSdkModel,
   ): Promise<ModelTextResult> {
-    const projectedRequest = projectRequestHistory(request, resolved);
+    const projectedRequest = projectRequestHistory(request, resolved, this.promptCacheModes);
     return runGenerateText({
       debugDir: this.debugDir,
       env: this.env,
@@ -349,7 +361,7 @@ export class AiSdkModelAdapter {
     resolved: ResolvedAiSdkModel,
     resolveModel: () => ResolvedAiSdkModel,
   ): AsyncGenerator<ModelStreamEvent> {
-    const projectedRequest = projectRequestHistory(request, resolved);
+    const projectedRequest = projectRequestHistory(request, resolved, this.promptCacheModes);
     yield* runStreamText({
       debugDir: this.debugDir,
       env: this.env,
@@ -397,15 +409,20 @@ function assertSameBoundModel(
 function projectRequestHistory(
   request: AiSdkModelTextRequest,
   resolved: ResolvedAiSdkModel,
+  promptCacheModes: PromptCacheModes,
 ): AiSdkModelTextRequest {
   if (resolved.providerKind !== "anthropic") return request;
 
   // 结构归一化过去位于每次物理请求都会经过的 serializer，签名修复重试
   // 因而会再次删除上一轮刚补出的 assistant 占位并合并 user。逻辑请求入口只投影一次，
   // 后续 attempt 只能复用或从这份 request-local history 派生。
-  const messages = normalizeReasoningHistory(request.messages, {
-    providerId: resolved.providerId,
-    modelId: resolved.modelId,
-  });
+  // cache 生命周期也在这里统一改写：marker 由 core 多处放置，只有此处能保证整请求同一 TTL。
+  const messages = applyPromptCacheMode(
+    normalizeReasoningHistory(request.messages, {
+      providerId: resolved.providerId,
+      modelId: resolved.modelId,
+    }),
+    promptCacheModeFor(promptCacheModes, resolved.providerId),
+  );
   return messages === request.messages ? request : { ...request, messages };
 }

@@ -66,6 +66,7 @@ impl RootView {
         &mut self,
         provider: &Provider,
         busy: bool,
+        prompt_cache: Option<AnyElement>,
         cx: &mut Context<Self>,
     ) -> AnyElement {
         let theme = active_theme();
@@ -100,6 +101,9 @@ impl RootView {
                     "账号登录（请在桌面版中管理）",
                 )),
             ));
+        }
+        if let Some(control) = prompt_cache {
+            rows = rows.child(field_row(label("Prompt cache", "提示词缓存"), control));
         }
         card = card.child(rows);
         if !provider.issues.is_empty() {

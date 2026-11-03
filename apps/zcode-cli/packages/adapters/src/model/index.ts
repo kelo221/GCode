@@ -2,6 +2,7 @@
 export * from "./errors.js";
 export * from "./model-execution.js";
 export * from "./runner.js";
+export type { PromptCacheMode, PromptCacheModes } from "./prompt-cache-mode.js";
 export * from "./model.js";
 export * from "./retry-policy.js";
 export * from "./workflow-model-failure-policy.js";

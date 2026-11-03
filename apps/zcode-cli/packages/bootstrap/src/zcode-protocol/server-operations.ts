@@ -10,6 +10,7 @@ import {
   isTaskListSessionType,
 } from "../zcode-protocol-v4/task-list-session-membership.js";
 import { resolveEffectiveBashShellSelection } from "@zcode/adapters/exec";
+import type { PromptCacheModes } from "@zcode/adapters/model";
 import { inputIntentMetadata } from "../zcode-protocol-v4/commands/input-intent.js";
 import { createModelExecutionContext } from "./model-execution.js";
 import type { SendInputOptions } from "../app/types.js";
@@ -183,6 +184,8 @@ interface SessionStartupPreferences {
   // GPUI 语言服务器诊断：Host 下发 true 才注入 DiagnosticsPort；子会话沿用父值。
   lspDiagnosticsEnabled: boolean;
   toolSearchMode: AppToolSearchMode;
+  // GPUI prompt cache 生命周期（按 providerId）：交给本会话 model adapter；子会话沿用父值。
+  promptCacheModes?: PromptCacheModes;
   resolveInitialBashShellSelection: () => Promise<ExecutionShellSelection | undefined>;
 }
 
@@ -3401,6 +3404,7 @@ async function resolveSessionStartupPreferences(
       toolSearchMode: source.parent.toolSearchMode,
       codeSearchEnabled: source.parent.codeSearchEnabled === true,
       lspDiagnosticsEnabled: source.parent.lspDiagnosticsEnabled === true,
+      promptCacheModes: source.parent.promptCacheModes,
       resolveInitialBashShellSelection: async () => inheritedShellSelection,
     };
   }
@@ -3427,6 +3431,7 @@ async function resolveSessionStartupPreferences(
     codeSearchEnabled: runtimePreferences.codeSearchEnabled === true,
     lspDiagnosticsEnabled: runtimePreferences.lspDiagnosticsEnabled === true,
     toolSearchMode: runtimePreferences.toolSearchMode,
+    promptCacheModes: runtimePreferences.promptCacheModes,
     resolveInitialBashShellSelection: async () => {
       const executionPreferences = await requestSessionRuntimePreferences(
         context,
@@ -3637,6 +3642,9 @@ async function createRecord(
     traceContext,
     version: context.deps.version,
     modelIoFullRetentionEnabled: context.appRuntimePreferences.modelIoFullRetentionEnabled,
+    ...(startupPreferences.promptCacheModes
+      ? { promptCacheModes: startupPreferences.promptCacheModes }
+      : {}),
   });
   const now = Date.now();
   const record: ZCodeProtocolSessionRecord = {
@@ -3650,6 +3658,9 @@ async function createRecord(
     toolSearchMode: startupPreferences.toolSearchMode,
     codeSearchEnabled: startupPreferences.codeSearchEnabled,
     lspDiagnosticsEnabled: startupPreferences.lspDiagnosticsEnabled,
+    ...(startupPreferences.promptCacheModes
+      ? { promptCacheModes: startupPreferences.promptCacheModes }
+      : {}),
     ...(parentSessionId ? { parentSessionId } : {}),
     persistence: "persistence" in params ? (params.persistence ?? "immediate") : "immediate",
     protocolEventSequences: new Map(),

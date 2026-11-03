@@ -1531,6 +1531,11 @@ exceptions:
       - apps/zcode-cli/packages/core/src/secrets/secret-vault.ts
       - apps/zcode-cli/packages/bootstrap/src/zcode-protocol/secrets-sync.ts
     reason: Fork feature (apps/zcode-gpui/SECRETS.md). The in-memory secrets vault (env for Bash/stdio MCP and value redaction) and its `secrets/sync` protocol handler live in their own files so the upstream call-runner, event append, create-app and MCP adapter files only gain small call sites and source syncs stay mergeable.
+  - id: fork-prompt-cache-mode-cli
+    rule: unmanaged-new-file
+    paths:
+      - apps/zcode-cli/packages/adapters/src/model/prompt-cache-mode.ts
+    reason: Fork feature (apps/zcode-gpui/PARITY.md "Prompt cache lifetime"). The rewrite of Anthropic cache markers to one request-wide TTL (5m untouched, 1h, or off) lives in its own file so the upstream runner only gains one call in its history projection and source syncs stay mergeable.
   - id: workflow-mode-user-choice-unmanaged-edit
     rule: unmanaged-new-file
     paths:

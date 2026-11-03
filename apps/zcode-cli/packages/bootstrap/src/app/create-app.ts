@@ -665,6 +665,7 @@ export async function createZCodeApp(options: ZCodeAppOptions): Promise<ZCodeApp
     // 不再经 adapter 级 addStatusSink 喂信号：同一事件只能沿 ticket 喂一次。
     const workflowConcurrencyGovernor = getWorkflowConcurrencyGovernor();
     modelAdapter.setModelIoFullRetentionEnabled(options.modelIoFullRetentionEnabled ?? false);
+    modelAdapter.setPromptCacheModes(options.promptCacheModes ?? {});
     providerModelRuntime = new ApiProviderModelRuntime({
       registry: options.providerRegistry,
       modelAdapter,

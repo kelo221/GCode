@@ -290,6 +290,11 @@ impl AppState {
                     tool_search_mode: cx
                         .try_global::<crate::shared::preferences::PreferenceOwner>()
                         .map_or("off", |owner| owner.0.read(cx).snapshot.tool_search_mode()),
+                    prompt_cache_modes: cx
+                        .try_global::<crate::shared::preferences::PreferenceOwner>()
+                        .map_or(serde_json::json!({}), |owner| {
+                            owner.0.read(cx).snapshot.prompt_cache_modes_json()
+                        }),
                 };
                 let action =
                     crate::backend::reverse_rpc::dispatch_reverse_rpc(&id, &method, &params, prefs);

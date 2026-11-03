@@ -3749,6 +3749,7 @@ describe("ZCodeProtocolAgentServer", () => {
     const createdAppOptions: ZCodeAppOptions[] = [];
     let nativeSearchEnabled = false;
     let toolSearchMode: "off" | "local" = "off";
+    let promptCacheModes: Record<string, "5m" | "1h" | "off"> | undefined;
     let memoryEnabled = false;
     let modelContextBudgetStrategy: "legacy" | "preflight-v1" = "legacy";
     const server = new ZCodeProtocolAgentServer({
@@ -3762,6 +3763,7 @@ describe("ZCodeProtocolAgentServer", () => {
     const preferenceRequests = attachSessionRuntimePreferencesResponder(server, () => ({
       nativeSearchEnhancementsEnabled: nativeSearchEnabled,
       toolSearchMode,
+      ...(promptCacheModes ? { promptCacheModes } : {}),
       memoryEnabled,
       modelContextBudgetStrategy,
     }));
@@ -3775,6 +3777,7 @@ describe("ZCodeProtocolAgentServer", () => {
     );
     nativeSearchEnabled = true;
     toolSearchMode = "local";
+    promptCacheModes = { anthropic: "1h", proxy: "off" };
     memoryEnabled = true;
     modelContextBudgetStrategy = "preflight-v1";
     await requestResult(server, {
@@ -3794,6 +3797,9 @@ describe("ZCodeProtocolAgentServer", () => {
     expect(createdAppOptions).toHaveLength(2);
     expect(createdAppOptions[0]?.runtimeConfig?.toolSearch).toEqual({ mode: "off" });
     expect(createdAppOptions[1]?.runtimeConfig?.toolSearch).toEqual({ mode: "local" });
+    // Host 未下发（Electron）时不传，adapter 保持默认 5m marker。
+    expect(createdAppOptions[0]?.promptCacheModes).toBeUndefined();
+    expect(createdAppOptions[1]?.promptCacheModes).toEqual({ anthropic: "1h", proxy: "off" });
     expect(createdAppOptions[0]?.runtimeConfig?.nativeSearchEnhancementsEnabled).toBe(false);
     expect(createdAppOptions[0]?.runtimeConfig?.memory?.enabled).toBe(false);
     expect(createdAppOptions[0]?.runtimeConfig?.modelContextBudgetStrategy).toBe("preflight-v1");
@@ -8095,6 +8101,7 @@ function attachSessionRuntimePreferencesResponder(
   resolvePreferences: (scope: "runtime-materialization" | "user-execution") => {
     nativeSearchEnhancementsEnabled: boolean;
     toolSearchMode?: "auto" | "local" | "off";
+    promptCacheModes?: Record<string, "5m" | "1h" | "off">;
     memoryEnabled?: boolean;
     subagentRuntimeConfigEnabled?: boolean;
     modelContextBudgetStrategy?: "legacy" | "preflight-v1";

@@ -300,3 +300,50 @@ fn voice_section_renders_on_desktop_and_is_hidden_on_the_phone() {
     assert!(!phone.contains(&"settings-browser".to_string()));
     assert!(!dir.exists());
 }
+
+#[test]
+fn prompt_cache_row_shows_only_on_desktop_anthropic_provider_cards() {
+    let _guard = RUNTIME_TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    let dir = std::env::temp_dir().join(format!("gpui-settings-cache-{}", uuid::Uuid::now_v7()));
+    let mut app = app(dir.join("setting.json"));
+    let state = app.new_entity(AppState::for_test);
+    let set_format = |app: &mut TestApp, format: &str| {
+        let mut view = crate::provider_settings::tests::sample_view();
+        view["providers"][0]["effectiveConfig"]["api"]["type"] = format.into();
+        app.update_entity(&state, |s, _| {
+            s.provider_settings.view = crate::provider_settings::ProviderView::from_value(&view);
+            s.provider_settings.selected = Some("c1".into());
+            s.provider_settings.loading = false;
+        });
+    };
+    set_format(&mut app, "anthropic-messages");
+    let mut window = app.open_window(|_, cx| RootView::new(state.clone(), cx));
+    window.simulate_resize(size(px(1280.), px(820.)));
+    let shown = |app: &mut TestApp| -> bool {
+        app.read(|cx| {
+            cx.global::<TestTargets>()
+                .0
+                .contains_key("provider-prompt-cache")
+        })
+    };
+    let redraw = |app: &mut TestApp, window: &mut gpui::TestAppWindow<RootView>| {
+        app.update(|cx| cx.set_global(TestTargets::default()));
+        window.draw();
+    };
+    window
+        .update(|view, window, cx| view.open_settings_section(SettingsSection::Models, window, cx));
+    set_format(&mut app, "anthropic-messages");
+    redraw(&mut app, &mut window);
+    assert!(shown(&mut app), "Anthropic Messages provider shows the row");
+
+    // OpenAI formats never receive Anthropic cache settings.
+    set_format(&mut app, "openai-chat-completions");
+    redraw(&mut app, &mut window);
+    assert!(!shown(&mut app));
+
+    set_format(&mut app, "anthropic-messages");
+    app.update_entity(&state, |s, _| s.phone_client.enabled = true);
+    redraw(&mut app, &mut window);
+    assert!(!shown(&mut app), "the phone has no agents of its own");
+    assert!(!dir.exists());
+}

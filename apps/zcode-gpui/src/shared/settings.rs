@@ -113,6 +113,13 @@ pub struct AppSettings {
         rename = "gpuiAutoCompact"
     )]
     pub gpui_auto_compact: Option<crate::shared::auto_compact_settings::AutoCompactMap>,
+    /// GPUI-only Anthropic prompt cache lifetime per provider ID (`1h` | `off`); absent means `5m`.
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        rename = "gpuiPromptCacheByProvider"
+    )]
+    pub gpui_prompt_cache_by_provider: Option<std::collections::BTreeMap<String, String>>,
     #[serde(flatten)]
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
@@ -201,6 +208,12 @@ struct GpuiOnlySettings {
         rename = "gpuiAutoCompact"
     )]
     auto_compact: Option<crate::shared::auto_compact_settings::AutoCompactMap>,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        rename = "gpuiPromptCacheByProvider"
+    )]
+    prompt_cache: Option<std::collections::BTreeMap<String, String>>,
 }
 
 impl GpuiOnlySettings {
@@ -213,6 +226,7 @@ impl GpuiOnlySettings {
             lsp_diagnostics: settings.gpui_lsp_diagnostics.take(),
             last_composer_model: settings.gpui_last_composer_model.take(),
             auto_compact: settings.gpui_auto_compact.take(),
+            prompt_cache: settings.gpui_prompt_cache_by_provider.take(),
         }
     }
 
@@ -235,6 +249,9 @@ impl GpuiOnlySettings {
         }
         if self.auto_compact.is_some() {
             settings.gpui_auto_compact = self.auto_compact;
+        }
+        if self.prompt_cache.is_some() {
+            settings.gpui_prompt_cache_by_provider = self.prompt_cache;
         }
     }
 

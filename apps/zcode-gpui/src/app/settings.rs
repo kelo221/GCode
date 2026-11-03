@@ -258,7 +258,7 @@ impl RootView {
             SettingsSection::Shortcuts => {
                 self.render_shortcut_settings(&settings, blocked, window, cx)
             }
-            SettingsSection::Models => self.render_model_settings(window, cx),
+            SettingsSection::Models => self.render_model_settings(&settings, blocked, window, cx),
             SettingsSection::Subagents => self.render_subagents_settings(window, cx),
             SettingsSection::Plugins => self.plugins_pane(window, cx),
             SettingsSection::Mcp => self.mcp_pane(&settings, blocked, cx),

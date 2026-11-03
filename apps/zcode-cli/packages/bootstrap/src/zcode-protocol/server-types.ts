@@ -11,6 +11,7 @@ import {
   type TraceContext,
 } from "@zcode/contracts";
 import type { McpTelemetryTracker } from "@zcode/adapters";
+import type { PromptCacheModes } from "@zcode/adapters/model";
 import type { SessionDataFilesPort } from "@zcode/adapters/storage";
 import type { WorkspaceHookPolicyProvider } from "@zcode/core";
 import type { AccountProviderConfigSnapshot, ProviderSettingsFacade } from "@zcode/provider";
@@ -99,6 +100,8 @@ export interface ZCodeProtocolSessionRecord {
   codeSearchEnabled?: boolean;
   /** GPUI 语言服务器诊断；继承来源（子会话）沿用父值。 */
   lspDiagnosticsEnabled?: boolean;
+  /** GPUI prompt cache 生命周期（按 providerId）；缺省条目即 5m。继承来源（子会话）沿用父值。 */
+  promptCacheModes?: PromptCacheModes;
   modelContextBudgetStrategy: ZCodeModelContextBudgetStrategy;
   createdAt: number;
   deliveryKind?: ZCodeDeliveryKind;

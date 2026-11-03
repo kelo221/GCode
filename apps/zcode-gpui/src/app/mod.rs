@@ -104,6 +104,7 @@ mod settings_navigation;
 #[cfg(test)]
 mod settings_navigation_tests;
 mod settings_phone;
+mod settings_prompt_cache;
 mod settings_provider_add;
 mod settings_provider_card;
 pub(crate) mod settings_provider_form;

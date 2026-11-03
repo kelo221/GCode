@@ -36,10 +36,13 @@ pub(crate) fn status_dot(status: Status) -> impl IntoElement {
 impl RootView {
     pub(crate) fn render_model_settings(
         &mut self,
+        settings: &crate::shared::settings::AppSettings,
+        blocked: bool,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> AnyElement {
         let theme = active_theme();
+        let phone = self.state.read(cx).phone_client.enabled;
         let state = &self.state.read(cx).provider_settings;
         let view = state.view.clone();
         let loading = state.loading;
@@ -128,7 +131,16 @@ impl RootView {
         let detail = if adding {
             self.render_provider_add(&view, busy, cx)
         } else if let Some(provider) = selected.as_ref() {
-            self.render_provider_card(provider, busy, cx)
+            // 缓存生命周期按 Provider 存；只有 Anthropic Messages 格式会发送 cache marker。
+            // 手机端没有自己的智能体，不显示。
+            let prompt_cache = (!phone && provider.api_type == "anthropic-messages").then(|| {
+                crate::app::settings_prompt_cache::prompt_cache_control(
+                    &provider.id,
+                    settings,
+                    blocked,
+                )
+            });
+            self.render_provider_card(provider, busy, prompt_cache, cx)
         } else {
             div()
                 .text_color(theme.subtle)

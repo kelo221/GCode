@@ -63,7 +63,7 @@ fn is_host_channel_method(method: &str) -> bool {
 }
 
 /// Committed host preferences that answer `session/requestRuntimePreferences`.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub struct HostPrefs {
     pub memory_enabled: bool,
     /// Desktop with Settings › Voice on: the main session gets the Speak tool.
@@ -74,6 +74,8 @@ pub struct HostPrefs {
     pub lsp_diagnostics_enabled: bool,
     /// Settings › MCP Servers "Load MCP tools on demand": `auto` | `local` | `off`.
     pub tool_search_mode: &'static str,
+    /// Provider cards' "Prompt cache": `{providerId: "1h" | "off"}`; missing means `5m`.
+    pub prompt_cache_modes: Value,
 }
 
 impl Default for HostPrefs {
@@ -84,6 +86,7 @@ impl Default for HostPrefs {
             code_search_enabled: false,
             lsp_diagnostics_enabled: false,
             tool_search_mode: "off",
+            prompt_cache_modes: json!({}),
         }
     }
 }
@@ -120,7 +123,8 @@ pub fn dispatch_reverse_rpc(
                 "voiceEnabled": prefs.voice_enabled,
                 "codeSearchEnabled": prefs.code_search_enabled,
                 "lspDiagnosticsEnabled": prefs.lsp_diagnostics_enabled,
-                "toolSearchMode": prefs.tool_search_mode
+                "toolSearchMode": prefs.tool_search_mode,
+                "promptCacheModes": prefs.prompt_cache_modes
             }),
         ),
 
