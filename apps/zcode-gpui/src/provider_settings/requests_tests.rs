@@ -191,7 +191,7 @@ fn tagged_mutation_reports_to_its_dialog_not_the_page(cx: &mut TestAppContext) {
 fn resolve_model_config_settles_under_its_tag(cx: &mut TestAppContext) {
     let state = cx.new(AppState::for_test);
     state.update(cx, |s, cx| {
-        let tag = s.resolve_provider_model_config("c1", "m", cx);
+        let tag = s.resolve_provider_model_config("c1", "m", false, cx);
         assert!(matches!(s.provider_settings.resolved, Some((t, Err(_))) if t == tag));
         assert!(
             s.provider_settings.error.is_none(),
@@ -205,7 +205,7 @@ fn resolve_model_config_settles_under_its_tag(cx: &mut TestAppContext) {
         );
         let mutation = next(&rx);
         // 预览不与变更串行：变更在途时也立即发送。
-        let tag = s.resolve_provider_model_config("c1", "glm", cx);
+        let tag = s.resolve_provider_model_config("c1", "glm", false, cx);
         let sent = next(&rx);
         assert_eq!(sent["method"], "providerSettings/resolveModelConfig");
         assert_eq!(

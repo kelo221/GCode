@@ -26,8 +26,9 @@ impl RootView {
         }
         dialog._debounce = None;
         let provider = dialog.provider.clone();
+        let editing = dialog.editing.is_some();
         let tag = self.state.update(cx, |s, cx| {
-            s.resolve_provider_model_config(&provider, &id, cx)
+            s.resolve_provider_model_config(&provider, &id, editing, cx)
         });
         if let Some(dialog) = self.add_model_dialog_mut() {
             dialog.resolving = Some((tag, id));

@@ -74,8 +74,11 @@ impl DialogError {
     }
 }
 
+pub(crate) use edit::EditedModel;
+
 pub(crate) struct AddModelDialog {
     pub provider: String,
+    pub editing: Option<EditedModel>,
     /// Element id suffix: a reopened dialog starts with fresh focus state.
     pub instance: u64,
     pub draft: ModelDraft,
@@ -119,7 +122,11 @@ impl AddModelDialog {
     /// The model the draft edits; the baseline only counts in smart mode.
     pub(crate) fn current(&self) -> CurrentModel {
         let id = self.draft.id.trim();
-        CurrentModel::for_add(self.resolved_for(id).filter(|_| self.draft.recommended))
+        let resolved = self.resolved_for(id).filter(|_| self.draft.recommended);
+        match &self.editing {
+            Some(edit) => edit.current(resolved),
+            None => CurrentModel::for_add(resolved),
+        }
     }
 
     /// What the controls show: untouched ones follow the baseline.
@@ -165,6 +172,19 @@ impl RootView {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
+        let draft = ModelDraft::from_model(&CurrentModel::for_add(None));
+        self.open_model_dialog(provider, None, draft, window, cx);
+    }
+
+    /// Add and edit share one dialog; `editing` is the saved model in edit mode.
+    fn open_model_dialog(
+        &mut self,
+        provider: &str,
+        editing: Option<EditedModel>,
+        draft: ModelDraft,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         let Some(form) = self.settings.provider_form.as_ref() else {
             return;
         };
@@ -189,8 +209,9 @@ impl RootView {
         subscriptions.push(cx.observe(&self.state, |this, _, cx| this.sync_add_model_dialog(cx)));
         let dialog = AddModelDialog {
             provider: provider.to_owned(),
+            editing,
             instance,
-            draft: ModelDraft::from_model(&CurrentModel::for_add(None)),
+            draft,
             id,
             context_window,
             max_output,
@@ -303,9 +324,10 @@ impl RootView {
             return;
         }
         let id = dialog.draft.id.trim().to_owned();
+        let own_id = dialog.editing.as_ref().map(|e| e.id.as_str());
         let error = if id.is_empty() {
             Some(DialogError::Field(DraftField::Id))
-        } else if models.contains(&id) {
+        } else if models.contains(&id) && own_id != Some(id.as_str()) {
             Some(DialogError::Duplicate)
         } else {
             None
@@ -333,13 +355,24 @@ impl RootView {
             }
             Ok(saved) => {
                 dialog.error = None;
-                let operation = json!({
-                    "type": "addModel",
-                    "providerId": dialog.provider,
-                    "modelId": saved.model_id,
-                    "config": saved.config,
-                    "useRecommendedConfig": saved.use_recommended,
-                });
+                let operation = match &dialog.editing {
+                    Some(edit) => json!({
+                        "type": "updateModel",
+                        "providerId": dialog.provider,
+                        "modelId": edit.id,
+                        "nextModelId": saved.model_id,
+                        "config": saved.config,
+                        "useRecommendedConfig": saved.use_recommended,
+                        "basedOnRevision": edit.revision,
+                    }),
+                    None => json!({
+                        "type": "addModel",
+                        "providerId": dialog.provider,
+                        "modelId": saved.model_id,
+                        "config": saved.config,
+                        "useRecommendedConfig": saved.use_recommended,
+                    }),
+                };
                 let tag = self
                     .state
                     .update(cx, |s, cx| s.mutate_provider_settings_tagged(operation, cx));

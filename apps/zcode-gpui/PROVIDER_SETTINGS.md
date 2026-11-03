@@ -60,8 +60,30 @@ Mirrors desktop `ProviderModelMetadataDialog` in `mode="add"`
 - Enter in a single-line field saves, Escape / Cancel closes. The dialog closes
   only when the agent accepted the mutation; an agent error stays in the dialog.
 
+### Edit-model dialog (2026-11-03)
+
+Desktop `ProviderModelMetadataDialog` in `mode="edit"`. Every model row has a
+settings button (gear, tooltip "Model settings") that opens the same dialog,
+titled "Edit model".
+
+- Prefill: the ID is the model's ID; Smart configuration follows the view's
+  `useRecommendedConfig` (missing means on). Text inputs show the model's
+  `personalExactConfig` values (desktop `createProviderModelDraftValues`), and
+  toggles / levels show its `effectiveConfig`.
+- Baseline: smart mode resolves with `personalConfig: {}`, so `inheritedConfig`
+  is the built-in recommendation only, not the model's own saved overrides.
+  The resolve is sent as soon as the dialog opens.
+- Built-in models keep their ID (the input is disabled); custom models may be
+  renamed. The duplicate-ID check ignores the model's own ID.
+- Save sends `updateModel { providerId, modelId, nextModelId, config,
+  useRecommendedConfig, basedOnRevision }`, where `basedOnRevision` is the view
+  revision the dialog opened on. The agent calls
+  `ProviderSettingsFacade.savePersonalModelDraft`; if the config changed
+  meanwhile, the revision conflict comes back as the dialog error.
+- The row's enable switch stays the owner of `enabled`; the dialog never writes it.
+
 Not in scope (still desktop-only): Z.ai / BigModel account sign-in, coding-plan
-status/quota/purchase panels, and editing an existing model's metadata.
+status/quota/purchase panels.
 
 ## Ownership and protocol
 
@@ -73,9 +95,12 @@ agent CLI through two methods:
 - `providerSettings/read { refresh?: boolean }` → `{ view }`
 - `providerSettings/mutate { operation }` → `{ view, providerId? }` where
   `operation.type` is `createProvider`, `updateProvider`, `deleteProvider`,
-  `reorderProviders`, `addModel`, `deleteModel`, `setModelEnabled`,
-  `reorderModels`. `addModel` takes optional `config` (model config object,
-  `modelConfigDataSchema`) and `useRecommendedConfig` (default `true`).
+  `reorderProviders`, `addModel`, `updateModel`, `deleteModel`,
+  `setModelEnabled`, `reorderModels`. `addModel` takes optional `config` (model
+  config object, `modelConfigDataSchema`) and `useRecommendedConfig` (default
+  `true`). `updateModel` takes `modelId` (current ID), optional `nextModelId`
+  (rename), `config`, `useRecommendedConfig` (missing keeps the model's mode) and
+  the required `basedOnRevision`.
 - `providerSettings/resolveModelConfig { providerId, modelId, personalConfig? }`
   → `{ inheritedConfig, effectiveConfig, issues }` (read-only; wraps
   `ProviderSettingsFacade.resolveModelConfig`, a `personalConfig` previews that

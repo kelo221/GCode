@@ -62,7 +62,11 @@ export async function mutateProviderSettings(
     case "updateProvider":
       return { view: toWire(await updateProvider(facade, operation)) };
     case "deleteProvider":
-      requireCustomProvider(facade.getView(), operation.providerId, "Only custom providers can be deleted");
+      requireCustomProvider(
+        facade.getView(),
+        operation.providerId,
+        "Only custom providers can be deleted",
+      );
       return { view: toWire(await facade.deletePersonalProvider(operation.providerId)) };
     case "reorderProviders":
       return { view: toWire(await facade.reorderPersonalProviders(operation.providerIds)) };
@@ -77,6 +81,23 @@ export async function mutateProviderSettings(
             (operation.config ?? {}) as ModelConfigObject,
             operation.useRecommendedConfig ?? true,
           ),
+        ),
+      };
+    case "updateModel":
+      // 编辑弹窗的唯一写入边界：改名、成员与精确 Rule 由 Facade 在同一次写入中提交；
+      // basedOnRevision 过期时 Facade 抛出冲突，原样回到弹窗。
+      return {
+        view: toWire(
+          await facade.savePersonalModelDraft({
+            providerId: operation.providerId,
+            originalModelId: operation.modelId,
+            nextModelId: operation.nextModelId ?? operation.modelId,
+            personalConfig: (operation.config ?? {}) as ModelConfigObject,
+            ...(operation.useRecommendedConfig === undefined
+              ? {}
+              : { useRecommendedConfig: operation.useRecommendedConfig }),
+            basedOnRevision: operation.basedOnRevision,
+          }),
         ),
       };
     case "deleteModel": {
@@ -123,8 +144,10 @@ export async function resolveProviderModelConfig(
         },
   );
   return {
-    inheritedConfig: resolution.inheritedConfig as ZCodeProviderSettingsResolveModelConfigResult["inheritedConfig"],
-    effectiveConfig: resolution.effectiveConfig as ZCodeProviderSettingsResolveModelConfigResult["effectiveConfig"],
+    inheritedConfig:
+      resolution.inheritedConfig as ZCodeProviderSettingsResolveModelConfigResult["inheritedConfig"],
+    effectiveConfig:
+      resolution.effectiveConfig as ZCodeProviderSettingsResolveModelConfigResult["effectiveConfig"],
     issues: [...resolution.issues],
   };
 }
@@ -144,7 +167,12 @@ export function resolveProviderUpdate(
   | undefined {
   const effective = provider.effectiveConfig;
   const custom = effective.group === CUSTOM_PROVIDER_GROUP;
-  if (!custom && (operation.providerName !== undefined || operation.apiType !== undefined || operation.baseUrl !== undefined)) {
+  if (
+    !custom &&
+    (operation.providerName !== undefined ||
+      operation.apiType !== undefined ||
+      operation.baseUrl !== undefined)
+  ) {
     throw new ProtocolRequestError(
       INVALID_PARAMS,
       "Preset provider name and endpoint are read-only",
@@ -159,15 +187,19 @@ export function resolveProviderUpdate(
   }
 
   const currentType = effective.api?.type ?? "anthropic-messages";
-  const baseUrl = operation.baseUrl === undefined ? undefined : normalizeConfiguredBaseUrl(operation.baseUrl);
+  const baseUrl =
+    operation.baseUrl === undefined ? undefined : normalizeConfiguredBaseUrl(operation.baseUrl);
   const typeChanged = operation.apiType !== undefined && operation.apiType !== currentType;
   const urlChanged = baseUrl !== undefined && baseUrl !== (effective.api?.baseUrl ?? "");
   const keyChanged =
-    operation.apiKey !== undefined && isApiKeyAccess(access) && operation.apiKey !== (access.apiKey ?? "");
+    operation.apiKey !== undefined &&
+    isApiKeyAccess(access) &&
+    operation.apiKey !== (access.apiKey ?? "");
   const nameChanged =
     operation.providerName !== undefined && operation.providerName !== provider.providerName;
   const enabledChanged = operation.enabled !== undefined && operation.enabled !== provider.enabled;
-  if (!typeChanged && !urlChanged && !keyChanged && !nameChanged && !enabledChanged) return undefined;
+  if (!typeChanged && !urlChanged && !keyChanged && !nameChanged && !enabledChanged)
+    return undefined;
 
   const {
     builtinModelIds: _builtinModelIds,

@@ -94,10 +94,16 @@ impl AppState {
         &mut self,
         provider: &str,
         model: &str,
+        builtin_only: bool,
         cx: &mut Context<Self>,
     ) -> u64 {
         let tag = self.next_provider_settings_tag();
-        let params = json!({ "providerId": provider, "modelId": model });
+        let mut params = json!({ "providerId": provider, "modelId": model });
+        // 编辑已有模型：带空 personalConfig 时 inheritedConfig 只含内置推荐，
+        // 否则会把该模型自己已保存的覆盖当成推荐基线。
+        if builtin_only {
+            params["personalConfig"] = json!({});
+        }
         let previous = self.provider_settings.error.clone();
         if !self.send_provider_settings(
             Request::Resolve { tag },

@@ -94,6 +94,11 @@ pub(crate) struct Model {
     pub context_window: Option<u64>,
     pub vision: bool,
     pub issues: Vec<String>,
+    /// What the edit-model dialog starts from: `effectiveConfig`,
+    /// `personalExactConfig` (empty object when absent) and the smart switch.
+    pub effective: Value,
+    pub personal: Value,
+    pub use_recommended: bool,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -291,6 +296,13 @@ fn model(value: &Value) -> Option<Model> {
             .and_then(Value::as_bool)
             == Some(true),
         issues: issues(value),
+        effective: config.cloned().unwrap_or(Value::Object(Default::default())),
+        personal: value
+            .get("personalExactConfig")
+            .filter(|v| v.is_object())
+            .cloned()
+            .unwrap_or(Value::Object(Default::default())),
+        use_recommended: value.get("useRecommendedConfig").and_then(Value::as_bool) != Some(false),
     })
 }
 

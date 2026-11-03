@@ -1,11 +1,79 @@
-//! Add-model dialog toggles: smart mode, capabilities, input types and the
-//! ordered reasoning levels (desktop `updateModelDraft`).
+//! Model dialog edit mode (desktop `mode="edit"`, PROVIDER_SETTINGS.md
+//! "Edit-model dialog") and the draft toggles: smart mode, capabilities,
+//! input types and the ordered reasoning levels (desktop `updateModelDraft`).
 
 use super::AddModelDialog;
 use crate::app::root::RootView;
-use gpui::Context;
+use crate::provider_settings::model_draft::{CurrentModel, ModelDraft};
+use gpui::{Context, Window};
+use serde_json::Value;
+
+/// The saved model an edit-mode dialog opened on.
+pub(crate) struct EditedModel {
+    pub id: String,
+    pub effective: Value,
+    pub personal: Value,
+    /// View revision at open; sent as `basedOnRevision` so a concurrent change
+    /// is reported instead of overwritten.
+    pub revision: u64,
+}
+
+impl EditedModel {
+    /// The saved model with the built-in recommendation as its smart baseline.
+    pub(crate) fn current(&self, inherited: Option<&Value>) -> CurrentModel {
+        CurrentModel {
+            config: self.effective.clone(),
+            personal: self.personal.clone(),
+            inherited: inherited.cloned(),
+        }
+    }
+}
 
 impl RootView {
+    /// The model row's settings button: the add dialog, prefilled from the
+    /// saved model.
+    pub(crate) fn open_edit_model_dialog(
+        &mut self,
+        provider: &str,
+        model: &crate::provider_settings::Model,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        let state = &self.state.read(cx).provider_settings;
+        let Some(revision) = state.view.as_ref().map(|v| v.revision) else {
+            return;
+        };
+        let edit = EditedModel {
+            id: model.id.clone(),
+            effective: model.effective.clone(),
+            personal: model.personal.clone(),
+            revision,
+        };
+        let draft = ModelDraft::for_edit(&edit.current(None), &edit.id, model.use_recommended);
+        self.open_model_dialog(provider, Some(edit), draft.clone(), window, cx);
+        let Some(dialog) = self.add_model_dialog() else {
+            return;
+        };
+        for (input, text) in [
+            (&dialog.id, draft.id),
+            (&dialog.context_window, draft.context_window),
+            (&dialog.max_output, draft.max_output),
+            (&dialog.level_map, draft.level_map),
+            (&dialog.max_output_map, draft.max_output_map),
+        ] {
+            input.update(cx, |input, cx| input.set_text(text, cx));
+        }
+        dialog
+            .max_output
+            .update(cx, |input, cx| input.set_disabled(false, cx));
+        // 内置模型不能改名（Facade 会拒绝）；直接锁定输入，不让用户填了再报错。
+        dialog
+            .id
+            .update(cx, |input, cx| input.set_disabled(model.builtin, cx));
+        self.refresh_model_placeholders(cx);
+        self.request_model_resolution(None, cx);
+    }
+
     fn edit_model_dialog(
         &mut self,
         cx: &mut Context<Self>,

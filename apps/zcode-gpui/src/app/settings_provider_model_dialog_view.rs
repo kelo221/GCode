@@ -155,13 +155,22 @@ impl RootView {
             div().child(body),
             vec!["provider-model-dialog-body".into()],
         );
-        let id_focus = gpui::Focusable::focus_handle(dialog.id.read(cx), cx);
+        let focus_input = match &dialog.editing {
+            Some(_) => &dialog.context_window,
+            None => &dialog.id,
+        };
+        let first_focus = gpui::Focusable::focus_handle(focus_input.read(cx), cx);
+        let title = if dialog.editing.is_some() {
+            label("Edit model", "编辑模型")
+        } else {
+            label("Add model", "添加模型")
+        };
         let element = Dialog::new(
             gpui::ElementId::Name(format!("provider-model-dialog-{}", dialog.instance).into()),
-            label("Add model", "添加模型"),
+            title,
             on_close,
         )
-        .focus_first(id_focus)
+        .focus_first(first_focus)
         .child(body)
         .action(move |_| {
             let button = Button::new("provider-model-dialog-cancel", label("Cancel", "取消"))

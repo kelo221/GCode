@@ -220,6 +220,84 @@ fn manual_mode_requires_limits_and_escape_cancels() {
 }
 
 #[test]
+fn settings_button_edits_the_saved_model_against_the_open_revision() {
+    let _guard = RUNTIME_TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    let dir = std::env::temp_dir().join(format!("gpui-model-edit-{}", uuid::Uuid::now_v7()));
+    let mut app = app(dir.join("setting.json"));
+    let state = app.new_entity(AppState::for_test);
+    let (mut window, key, rx) = open(&mut app, &state);
+    window.update(|view, _, cx| {
+        view.settings.provider_form.as_mut().unwrap().add_model = None;
+        cx.notify();
+    });
+    // m1 carries a saved context-window override on top of a complete baseline.
+    let baseline = |context: u64| {
+        json!({
+            "properties": {
+                "contextWindow": context,
+                "inputFormat": { "supportsText": true, "supportsImage": true,
+                    "supportsVideo": false, "supportsPdf": false },
+                "supportsJsonSchemaOutput": false,
+                "supportsNativeWebSearch": false,
+                "supportsMidConversationSystem": false
+            },
+            "optionSpecs": { "reasoningLevel": { "values": ["low"], "map": "{}" } }
+        })
+    };
+    app.update_entity(&state, |s, _| {
+        let mut view = crate::provider_settings::tests::sample_view();
+        let model = &mut view["providers"][0]["models"][0];
+        model["effectiveConfig"] = baseline(200000);
+        model["personalExactConfig"] = json!({ "properties": { "contextWindow": 200000 } });
+        s.provider_settings.view = crate::provider_settings::ProviderView::from_value(&view);
+    });
+    window.draw();
+    let edit = target(&mut app, "provider-model-edit-m1");
+    window.simulate_click(edit, MouseButton::Left);
+    window.draw();
+    window.read(|view, cx| {
+        let dialog = view
+            .add_model_dialog()
+            .expect("the settings button opens the dialog");
+        assert_eq!(dialog.editing.as_ref().unwrap().id, "m1");
+        assert_eq!(dialog.id.read(cx).text(), "m1");
+        assert_eq!(dialog.context_window.read(cx).text(), "200000");
+    });
+    // 编辑模式的推荐基线只取内置推荐（personalConfig: {}），打开即请求。
+    let resolve = sent(&rx);
+    assert_eq!(resolve.len(), 1);
+    assert_eq!(
+        resolve[0]["params"],
+        json!({ "providerId": "c1", "modelId": "m1", "personalConfig": {} })
+    );
+    app.update_entity(&state, |s, cx| {
+        let id = resolve[0]["id"].as_u64().unwrap();
+        let result =
+            json!({ "inheritedConfig": baseline(128000), "effectiveConfig": {}, "issues": [] });
+        s.handle_response(&key, id, Some(result), None, cx);
+    });
+
+    // Its own ID is not a duplicate; the save targets the revision it opened on.
+    window.update(|view, _, cx| view.save_add_model_dialog(cx));
+    assert_eq!(error(&mut window), None);
+    let ops = sent(&rx);
+    assert_eq!(ops.len(), 1);
+    assert_eq!(
+        ops[0]["params"]["operation"],
+        json!({
+            "type": "updateModel",
+            "providerId": "c1",
+            "modelId": "m1",
+            "nextModelId": "m1",
+            "config": { "properties": { "contextWindow": 200000 } },
+            "useRecommendedConfig": true,
+            "basedOnRevision": 7,
+        })
+    );
+    assert!(!dir.exists());
+}
+
+#[test]
 fn id_typing_resolves_after_idle_and_drops_stale_answers() {
     let _guard = RUNTIME_TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     let dir = std::env::temp_dir().join(format!("gpui-model-idle-{}", uuid::Uuid::now_v7()));

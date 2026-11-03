@@ -106,6 +106,30 @@ impl ModelDraft {
         }
     }
 
+    /// Edit mode (desktop `mode="edit"`): starts from the saved model. Leaves
+    /// the personal overlay already sets count as touched, so smart mode keeps
+    /// showing and re-saving them instead of the recommended baseline.
+    pub(crate) fn for_edit(model: &CurrentModel, id: &str, recommended: bool) -> Self {
+        let mut draft = Self::from_model(model);
+        draft.id = id.to_owned();
+        draft.recommended = recommended;
+        let personal = &model.personal;
+        for key in CAPABILITIES {
+            if at(personal, &["properties", key]).is_some() {
+                draft.overridden.insert(format!("{key}Value"));
+            }
+        }
+        for key in INPUT_KEYS {
+            if at(personal, &["properties", "inputFormat", key]).is_some() {
+                draft.overridden.insert(format!("inputFormatValue.{key}"));
+            }
+        }
+        if at(personal, &["optionSpecs", "reasoningLevel", "values"]).is_some() {
+            draft.overridden.insert(LEVELS_KEY.into());
+        }
+        draft
+    }
+
     pub(crate) fn input_flag(&self, key: &str) -> bool {
         self.input
             .iter()

@@ -218,6 +218,23 @@ impl RootView {
                 })),
             );
         }
+        // 模型配置原先只在添加时可见；这里重开同一弹窗（编辑模式），对应 Desktop 的模型编辑入口。
+        let (pid, edited) = (provider.id.clone(), model.clone());
+        let edit = div().child(
+            IconButton::new(format!("provider-model-edit-{slug}"), IconName::Settings)
+                .size(ControlSize::Sm)
+                .tooltip(label("Model settings", "模型设置"))
+                .disabled(busy)
+                .on_click(cx.listener(move |this, _, window, cx| {
+                    this.open_edit_model_dialog(&pid, &edited, window, cx)
+                })),
+        );
+        #[cfg(test)]
+        let edit = crate::app::test_support::track_children(
+            edit,
+            vec![format!("provider-model-edit-{slug}")],
+        );
+        actions = actions.child(edit);
         if !model.builtin {
             let (pid, mid) = key.clone();
             actions = actions.child(

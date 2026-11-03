@@ -205,3 +205,55 @@ fn placeholders_follow_the_baseline_only_in_smart_mode() {
     draft.recommended = false;
     assert_eq!(placeholders(&draft, &model), Placeholders::default());
 }
+
+#[test]
+fn editing_a_smart_model_keeps_its_saved_overrides() {
+    let baseline = inherited();
+    let personal = json!({
+        "properties": {
+            "contextWindow": 1000000,
+            "supportsNativeWebSearch": true,
+            "inputFormat": { "supportsVideo": true }
+        },
+        "optionSpecs": { "reasoningLevel": { "values": ["max"] } }
+    });
+    let mut effective = baseline.clone();
+    effective["properties"]["contextWindow"] = json!(1000000);
+    effective["properties"]["supportsNativeWebSearch"] = json!(true);
+    effective["properties"]["inputFormat"]["supportsVideo"] = json!(true);
+    effective["optionSpecs"]["reasoningLevel"]["values"] = json!(["max"]);
+    let model = CurrentModel {
+        config: effective,
+        personal: personal.clone(),
+        inherited: Some(baseline),
+    };
+
+    let draft = ModelDraft::for_edit(&model, "claude-opus-5-5", true);
+    assert_eq!(draft.context_window, "1000000");
+    let shown = draft.project(&model);
+    // 已保存的覆盖在智能模式下不能被推荐基线顶掉。
+    assert!(shown.capabilities[1], "native web search override kept");
+    assert!(shown.input_flag("supportsVideo"), "video override kept");
+    assert_eq!(shown.levels, vec!["max".to_string()]);
+
+    let saved = commit(&shown, &model).unwrap();
+    assert_eq!(saved.model_id, "claude-opus-5-5");
+    assert!(saved.use_recommended);
+    assert_eq!(saved.config["properties"]["contextWindow"], json!(1000000));
+    assert_eq!(
+        saved.config["properties"]["supportsNativeWebSearch"],
+        json!(true)
+    );
+    assert_eq!(
+        saved.config["properties"]["inputFormat"]["supportsVideo"],
+        json!(true)
+    );
+    assert_eq!(
+        saved.config["optionSpecs"]["reasoningLevel"]["values"],
+        json!(["max"])
+    );
+    assert!(
+        saved.config.get("enabled").is_none(),
+        "the row switch owns enabled"
+    );
+}

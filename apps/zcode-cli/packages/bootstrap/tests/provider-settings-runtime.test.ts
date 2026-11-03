@@ -28,7 +28,10 @@ describe("providerSettings protocol over the real provider runtime", () => {
       personalPollingIntervalMs: false,
     });
     await runtime.start();
-    cleanups.push(() => rm(dir, { recursive: true, force: true }), () => runtime.dispose());
+    cleanups.push(
+      () => rm(dir, { recursive: true, force: true }),
+      () => runtime.dispose(),
+    );
     const providerSettings = new ProviderSettingsFacade(
       runtime.registryService,
       createProviderSettingsMutationTarget({
@@ -71,7 +74,9 @@ describe("providerSettings protocol over the real provider runtime", () => {
       baseUrl: "https://gateway.test/v1",
     });
     expect(provider.effectiveConfig.access.apiKey).toBe("sk-test");
-    expect(provider.models.map((model: { modelId: string }) => model.modelId)).toContain("my-model");
+    expect(provider.models.map((model: { modelId: string }) => model.modelId)).toContain(
+      "my-model",
+    );
 
     const disabled = await mutateProviderSettings(context, {
       operation: { type: "setModelEnabled", providerId, modelId: "my-model", enabled: false },
@@ -136,9 +141,55 @@ describe("providerSettings protocol over the real provider runtime", () => {
       modelId: "custom-unknown",
       personalConfig: { properties: { contextWindow: 32000 } },
     });
-    expect(
-      (preview.effectiveConfig.properties as { contextWindow?: number }).contextWindow,
-    ).toBe(32000);
+    expect((preview.effectiveConfig.properties as { contextWindow?: number }).contextWindow).toBe(
+      32000,
+    );
+  });
+
+  it("edits and renames a model, rejecting a stale revision", async () => {
+    const { context } = await setup();
+    const { providerId } = await mutateProviderSettings(context, {
+      operation: { type: "createProvider", providerName: "Edit Gateway" },
+    });
+    const added = await mutateProviderSettings(context, {
+      operation: {
+        type: "addModel",
+        providerId: providerId!,
+        modelId: "edit-me",
+        config: { properties: { contextWindow: 64000 } },
+      },
+    });
+    const opened = added.view.revision;
+    const modelOf = (view: typeof added.view, id: string) =>
+      (view.providers as Array<Record<string, any>>)
+        .find((item) => item.providerId === providerId)!
+        .models.find((item: { modelId: string }) => item.modelId === id);
+    expect(modelOf(added.view, "edit-me").personalExactConfig.properties.contextWindow).toBe(64000);
+
+    const edited = await mutateProviderSettings(context, {
+      operation: {
+        type: "updateModel",
+        providerId: providerId!,
+        modelId: "edit-me",
+        nextModelId: "edited",
+        config: { properties: { contextWindow: 128000 } },
+        basedOnRevision: opened,
+      },
+    });
+    expect(modelOf(edited.view, "edit-me")).toBeUndefined();
+    expect(modelOf(edited.view, "edited").effectiveConfig.properties.contextWindow).toBe(128000);
+
+    await expect(
+      mutateProviderSettings(context, {
+        operation: {
+          type: "updateModel",
+          providerId: providerId!,
+          modelId: "edited",
+          config: {},
+          basedOnRevision: opened,
+        },
+      }),
+    ).rejects.toThrow("revision conflict");
   });
 
   it("rejects invalid addModel config and unknown providers on resolve", async () => {
