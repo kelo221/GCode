@@ -9,5 +9,6 @@ mod ended_agents;
 pub(crate) mod git;
 pub(crate) mod git_state;
 mod git_summary;
+mod nested_agents;
 pub(crate) mod pane;
 pub(crate) mod rows;

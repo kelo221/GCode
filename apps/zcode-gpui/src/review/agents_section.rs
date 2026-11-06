@@ -7,6 +7,7 @@ use crate::shared::theme::ui_size;
 use crate::shared::theme::{ACCENT, BORDER, HOVER, MUTED, TEXT};
 use crate::shared::theme_colors::color as rgb;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div, prelude::*, px};
+use std::collections::HashMap;
 
 /// Format title or type fallback for an agent item.
 pub fn format_agent_title<'a>(title: &'a str, subagent_type: &'a str) -> &'a str {
@@ -30,6 +31,26 @@ impl RootView {
     /// Render the collapsible Agents section for the review dock pane.
     pub(crate) fn render_agents_section(&mut self, cx: &mut Context<Self>) -> AnyElement {
         let ended = self.render_ended_agents(cx);
+        // Main view only: inside a subagent the running list already is its
+        // nested children (from the subagent's own projection).
+        let running_ids: Vec<String> = {
+            let state = self.state.read(cx);
+            match state.active_conversation() {
+                Some(conv) if self.agents_expanded && !state.is_read_only_view() => conv
+                    .running_subagents()
+                    .into_iter()
+                    .filter(|a| crate::review::nested_agents::may_nest(&a.subagent_type))
+                    .map(|a| a.child_session_id)
+                    .collect(),
+                _ => Vec::new(),
+            }
+        };
+        let mut nested: HashMap<String, AnyElement> = HashMap::new();
+        for sid in running_ids {
+            if let Some(rows) = self.nested_agent_rows(&sid, true, cx) {
+                nested.insert(sid, rows);
+            }
+        }
         let state = self.state.read(cx);
         let conv = state.active_conversation();
         let mut running = conv.map(|c| c.running_subagents()).unwrap_or_default();
@@ -38,7 +59,8 @@ impl RootView {
                 .cmp(&b.started_at)
                 .then(a.child_session_id.cmp(&b.child_session_id))
         });
-        let owner = state.active_ws_key().zip(state.active.clone());
+        // While viewing a subagent, these cards are its nested Explore children.
+        let owner = state.subagent_open_owner();
         let models: Vec<ModelOption> = state
             .active_ws_key()
             .and_then(|k| state.workspace_configs.get(&k))
@@ -112,7 +134,15 @@ impl RootView {
                 .pb_1p5();
 
             for (idx, agent) in running.iter().enumerate() {
-                list = list.child(self.running_agent_card(idx, agent, owner.clone(), &models, cx));
+                let rows = nested.remove(&agent.child_session_id);
+                list = list.child(self.running_agent_card(
+                    idx,
+                    agent,
+                    owner.clone(),
+                    &models,
+                    rows,
+                    cx,
+                ));
             }
 
             if let Some(ended_msg) = format_ended_summary(ended_count) {

@@ -20,6 +20,23 @@ impl RootView {
         self.state.update(cx, |state, cx| {
             state.ensure_subagent_directory(false, false, cx)
         });
+        let nestable: Vec<String> = {
+            let state = self.state.read(cx);
+            let (workspace, parent) = state.active_ws_key().zip(state.active.clone())?;
+            let cache = state.ws(&workspace)?.subagent_directories.get(&parent)?;
+            cache
+                .items
+                .iter()
+                .filter(|a| crate::review::nested_agents::may_nest(&a.subagent_type))
+                .map(|a| a.child_session_id.clone())
+                .collect()
+        };
+        let mut nested = std::collections::HashMap::new();
+        for sid in nestable {
+            if let Some(rows) = self.nested_agent_rows(&sid, false, cx) {
+                nested.insert(sid, rows);
+            }
+        }
         let state = self.state.read(cx);
         let (workspace, parent) = state.active_ws_key().zip(state.active.clone())?;
         let cache = state.ws(&workspace)?.subagent_directories.get(&parent)?;
@@ -92,6 +109,9 @@ impl RootView {
             );
             row = row.child(open);
             rows = rows.child(row);
+            if let Some(children) = nested.remove(&agent.child_session_id) {
+                rows = rows.child(div().pl(px(6.)).child(children));
+            }
         }
         let empty = cache.items.is_empty();
         Some(

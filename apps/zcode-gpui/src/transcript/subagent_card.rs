@@ -148,11 +148,9 @@ impl RootView {
             None
         };
 
-        let owner = self
-            .state
-            .read(cx)
-            .active_ws_key()
-            .zip(self.state.read(cx).active.clone());
+        // Inside a subagent's transcript this card is its nested Explore, owned by
+        // the viewed subagent rather than the main session.
+        let owner = self.state.read(cx).subagent_open_owner();
         let open_button = child_session_id.as_ref().map(|sid| {
             let sid_clone = sid.clone();
             div()
@@ -271,12 +269,17 @@ impl RootView {
         let parent_title = state
             .parent_of_viewing_child()
             .and_then(|psid| {
-                state.workspaces.iter().find_map(|w| {
-                    w.sessions
-                        .iter()
-                        .find(|s| s.session_id == psid)
-                        .map(|s| s.title.clone())
-                })
+                state
+                    .workspaces
+                    .iter()
+                    .find_map(|w| {
+                        w.sessions
+                            .iter()
+                            .find(|s| s.session_id == psid)
+                            .map(|s| s.title.clone())
+                    })
+                    // A nested Explore's parent is a subagent, not a listed session.
+                    .or_else(|| state.known_subagent_title(&psid))
             })
             .unwrap_or_else(|| "Parent conversation".into());
 

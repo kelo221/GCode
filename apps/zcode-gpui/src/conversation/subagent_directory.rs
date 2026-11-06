@@ -37,6 +37,14 @@ pub(crate) struct SubagentDirectory {
     pub observed_revision: Option<u64>,
     pub revision: Option<u64>,
     pub items: Vec<DirectoryAgent>,
+    /// Running children from the latest page. Only rendered for nested
+    /// directories (a subagent's own children); the main session's running
+    /// list comes from the live V4 projection instead.
+    pub running: Vec<DirectoryAgent>,
+    /// Nested directories only: when the last fetch was sent, and whether the
+    /// parent subagent was still running then (so its end triggers one refetch).
+    pub fetched_at: Option<std::time::Instant>,
+    pub fetched_while_running: bool,
     pub next_cursor: Option<String>,
     pub loading: bool,
     pub error: Option<String>,

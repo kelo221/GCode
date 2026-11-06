@@ -151,6 +151,7 @@ impl RootView {
         agent: &JoinedRunningSubagent,
         owner: Option<(String, String)>,
         models: &[ModelOption],
+        nested: Option<AnyElement>,
         cx: &mut Context<Self>,
     ) -> AnyElement {
         let title = format_agent_title(&agent.title, &agent.subagent_type);
@@ -314,6 +315,7 @@ impl RootView {
             )
             .children(todo.map(|row| div().pl(px(12.5)).child(row)))
             .children(summary.map(|node| node.pl(px(12.5))))
+            .children(nested.map(|rows| div().pl(px(6.5)).child(rows)))
             .into_any_element()
     }
 }

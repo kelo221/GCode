@@ -226,7 +226,10 @@ impl RootView {
 
     pub(crate) fn close_child_conversation(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         self.state.update(cx, |state, cx| state.close_subagent(cx));
-        self.return_focus_to_composer(window, cx);
+        // Back from a nested Explore lands in its (read-only) parent subagent.
+        if !self.state.read(cx).is_read_only_view() {
+            self.return_focus_to_composer(window, cx);
+        }
         cx.notify();
     }
 }

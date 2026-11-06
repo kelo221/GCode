@@ -96,6 +96,75 @@ fn switching_child_releases_only_previous_child(cx: &mut TestAppContext) {
     });
 }
 
+#[gpui::test]
+fn nested_explore_opens_under_its_subagent_and_back_goes_up_one_level(cx: &mut TestAppContext) {
+    let state = cx.new(AppState::for_test);
+    state.update(cx, |s, cx| {
+        let key = s.workspaces[0].key.clone();
+        s.active_workspace = Some(key.clone());
+        s.active = Some("parent".into());
+        s.conversations.insert("parent".into(), parent("x"));
+        s.conversations.insert("x".into(), parent("g"));
+        assert_eq!(
+            s.subagent_open_owner(),
+            Some((key.clone(), "parent".into()))
+        );
+
+        s.open_subagent_for(&key, "parent", "x", cx);
+        assert_eq!(s.viewing_child.as_deref(), Some("x"));
+        // Inside X, Open buttons are owned by X.
+        assert_eq!(s.subagent_open_owner(), Some((key.clone(), "x".into())));
+
+        // A parent that is not the active session or one of its subagents is refused.
+        s.open_subagent_for(&key, "stranger", "g", cx);
+        assert_eq!(s.viewing_child.as_deref(), Some("x"));
+
+        s.open_subagent_for(&key, "x", "g", cx);
+        assert_eq!(s.viewing_child.as_deref(), Some("g"));
+        assert_eq!(s.parent_of_viewing_child().as_deref(), Some("x"));
+        assert_eq!(s.known_subagent_title("x").as_deref(), Some("Research"));
+
+        s.close_subagent(cx);
+        assert_eq!(s.viewing_child.as_deref(), Some("x"));
+        s.close_subagent(cx);
+        assert!(s.viewing_child.is_none());
+    });
+}
+
+#[gpui::test]
+fn nested_explore_opens_from_main_view_via_the_nested_directory(cx: &mut TestAppContext) {
+    use crate::conversation::subagent_directory::DirectoryAgent;
+    let state = cx.new(AppState::for_test);
+    state.update(cx, |s, cx| {
+        let key = s.workspaces[0].key.clone();
+        s.active_workspace = Some(key.clone());
+        s.active = Some("parent".into());
+        s.conversations.insert("parent".into(), parent("x"));
+        // Main view: G is only known from the polled directory of X.
+        s.workspaces[0]
+            .subagent_directories
+            .entry("x".into())
+            .or_default()
+            .running
+            .push(DirectoryAgent {
+                child_session_id: "g".into(),
+                agent_id: None,
+                tool_call_id: None,
+                subagent_type: "Explore".into(),
+                title: "Find".into(),
+                summary: None,
+                status: "running".into(),
+                started_at: Some(1),
+                ended_at: None,
+            });
+        s.open_subagent_for(&key, "x", "g", cx);
+        assert_eq!(s.viewing_child.as_deref(), Some("g"));
+        assert_eq!(s.parent_of_viewing_child().as_deref(), Some("x"));
+        s.close_subagent(cx);
+        assert_eq!(s.viewing_child.as_deref(), Some("x"));
+    });
+}
+
 #[test]
 fn background_counts_join_subagents_without_double_counting() {
     use crate::app::activity::ActivityCounts;

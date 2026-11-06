@@ -92,26 +92,44 @@ impl AppState {
         self.open_subagent_for(&ws_key, &parent_sid, child_sid, cx);
     }
 
-    pub(crate) fn open_subagent_for(
-        &mut self,
-        ws_key: &str,
-        parent_sid: &str,
-        child_sid: &str,
-        cx: &mut Context<Self>,
-    ) {
-        // 旧面板按钮不能把别的父会话的 child 重新归属；先核验捕获的 owner 与投影。
-        if self.active_ws_key().as_deref() != Some(ws_key)
-            || self.active.as_deref() != Some(parent_sid)
-            || child_sid.trim().is_empty()
-            || child_sid == parent_sid
-            || self
-                .child_owner
-                .get(child_sid)
-                .is_some_and(|(ws, parent)| ws != ws_key || parent != parent_sid)
-        {
-            return;
-        }
-        let known = self.child_owner.contains_key(child_sid)
+    /// Owner to record when an Open button is pressed in the current view: the
+    /// viewed subagent when inside one (its nested Explore children), else the
+    /// active session.
+    pub fn subagent_open_owner(&self) -> Option<(String, String)> {
+        self.active_ws_key()
+            .zip(self.viewing_child.clone().or_else(|| self.active.clone()))
+    }
+
+    /// Title of a subagent of the active session, from its live running list or
+    /// the ended directory.
+    pub fn known_subagent_title(&self, child_sid: &str) -> Option<String> {
+        let active = self.active.as_deref()?;
+        let running = self
+            .conversations
+            .get(active)
+            .and_then(|c| c.subagents.as_ref())
+            .and_then(|s| s.running.iter().find(|r| r.child_session_id == child_sid))
+            .map(|r| r.title.clone());
+        running
+            .or_else(|| {
+                let ws = self.ws(&self.active_ws_key()?)?;
+                let cache = ws.subagent_directories.get(active)?;
+                cache
+                    .items
+                    .iter()
+                    .chain(&cache.running)
+                    .find(|a| a.child_session_id == child_sid)
+                    .map(|a| a.title.clone())
+            })
+            .filter(|t| !t.trim().is_empty())
+    }
+
+    /// Whether `child_sid` is a known subagent of `parent_sid` in `ws_key`, from
+    /// the owner map, the subagent directory cache, or a loaded conversation.
+    fn is_known_child_of(&self, ws_key: &str, parent_sid: &str, child_sid: &str) -> bool {
+        self.child_owner
+            .get(child_sid)
+            .is_some_and(|(ws, parent)| ws == ws_key && parent == parent_sid)
             || self
                 .ws(ws_key)
                 .and_then(|ws| ws.subagent_directories.get(parent_sid))
@@ -119,6 +137,7 @@ impl AppState {
                     cache
                         .items
                         .iter()
+                        .chain(&cache.running)
                         .any(|agent| agent.child_session_id == child_sid)
                 })
             || self.conversations.get(parent_sid).is_some_and(|conv| {
@@ -131,8 +150,38 @@ impl AppState {
                     crate::conversation::model::Row::Subagent { child_session_id: Some(sid), .. }
                     if sid == child_sid
                 ))
-            });
-        if !known {
+            })
+    }
+
+    pub(crate) fn open_subagent_for(
+        &mut self,
+        ws_key: &str,
+        parent_sid: &str,
+        child_sid: &str,
+        cx: &mut Context<Self>,
+    ) {
+        // 旧面板按钮不能把别的父会话的 child 重新归属；先核验捕获的 owner 与投影。
+        let Some(active) = self.active.clone() else {
+            return;
+        };
+        if self.active_ws_key().as_deref() != Some(ws_key)
+            || child_sid.trim().is_empty()
+            || child_sid == parent_sid
+            || child_sid == active
+            || self
+                .child_owner
+                .get(child_sid)
+                .is_some_and(|(ws, parent)| ws != ws_key || parent != parent_sid)
+        {
+            return;
+        }
+        // 修复原因：subagent 派发的嵌套 Explore（孙会话）的父是该 subagent 而非主会话，
+        // 旧校验要求 parent == active，导致孙会话的 Open 被静默丢弃。父可以是主会话，
+        // 或主会话已知的 subagent（嵌套深度仍为 2，与 CLI 只允许一层嵌套一致）。
+        if parent_sid != active && !self.is_known_child_of(ws_key, &active, parent_sid) {
+            return;
+        }
+        if !self.is_known_child_of(ws_key, parent_sid, child_sid) {
             return;
         }
         if self
@@ -160,9 +209,23 @@ impl AppState {
         cx.notify();
     }
 
-    /// Close the subagent view and return to the parent conversation.
+    /// Close the subagent view and go up one level: to the parent subagent for
+    /// a nested Explore, else back to the main conversation.
     pub fn close_subagent(&mut self, cx: &mut Context<Self>) {
+        let parent = self
+            .viewing_child
+            .as_ref()
+            .and_then(|child| self.child_owner.get(child))
+            .cloned();
         self.clear_subagent_view();
+        // 嵌套深度最多 2：非主会话的父必然是主会话的 subagent（从主视图直接打开孙会话时
+        // child_owner 里还没有它），所以回到它即可。
+        if let Some((ws_key, parent_sid)) = parent
+            && let Some(active) = self.active.clone()
+            && active != parent_sid
+        {
+            self.open_subagent_for(&ws_key, &active, &parent_sid, cx);
+        }
         cx.notify();
     }
 

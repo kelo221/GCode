@@ -248,6 +248,18 @@ limits below take precedence over the retained historical milestone requirements
   `completed/total` counter and a thin progress bar, and a one-line preview of the summary.
 - Ended agents show one line of their report (first line with text, markdown markers stripped)
   instead of the whole report.
+- Nested Explore (2026-11-05, GPUI-only UI): a non-Explore subagent X may start a foreground
+  Explore G whose spawn/stop events live on X's own event stream, so the main projection never
+  lists G. In the main view the dock polls `session/subagents {sessionId: X}` every 3 s while X runs
+  (once more after it ends; once for ended X rows; never for Explore agents, which cannot nest) into
+  `subagent_directories[X]` and shows G as indented `└ ● Explore · title  elapsed  Open` rows inside
+  X's card and under X's Ended row. The CLI answers that query for a child session by reading X's
+  and G's events from the hosting record's shared event store (walking `parentID`) and reducing
+  them with `EventReducer`, so a running G is reported as running instead of lost.
+- Open ownership: an Open button records the viewed subagent as parent when inside one
+  (`subagent_open_owner`), else the active session. `open_subagent_for` accepts a parent that is
+  the active session or a known subagent of it (depth stays 2). Back / Return to parent goes up one
+  level: from G to X, then from X to the main conversation.
 - Git (`review/git_summary.rs`): one summary row with the branch chip (click cycles branches), the
   file count, +/- totals and Refresh. Clicking the row opens the Unstaged/Staged tabs, Stage all,
   the file list and the Commit/Push bar, which then take the lower half; it starts closed and the

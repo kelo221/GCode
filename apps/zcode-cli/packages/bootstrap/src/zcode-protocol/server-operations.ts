@@ -22,6 +22,7 @@ import {
   createPartId,
   createSessionId,
   createCoreError,
+  EventReducer,
   parseRewindTriggeredPayload,
   RewindScope,
   RewindStrategy,
@@ -37,6 +38,7 @@ import {
   SessionEventType,
   type SessionId,
   type SessionInfo,
+  type SessionProjection,
   type SessionTaskType,
   type CollaborationMode,
   type TargetCompletionVerificationPayload,
@@ -1787,6 +1789,30 @@ export async function listSessions(context: ZCodeProtocolAgentServerContext, raw
   return { sessions };
 }
 
+/** Live record whose shared event store hosts a subagent child session (walks parentID). */
+async function findSubagentHostRecord(
+  context: ZCodeProtocolAgentServerContext,
+  session: SessionInfo,
+): Promise<ZCodeProtocolSessionRecord | undefined> {
+  if (session.taskType !== "subagent_child") return undefined;
+  let parentId = session.parentID ? String(session.parentID) : null;
+  for (let hop = 0; parentId && hop < 4; hop++) {
+    const record = context.sessions.get(parentId);
+    if (record) return record;
+    const parent = await context.deps.sessionStore?.getSession(parentId as SessionId);
+    parentId = parent?.parentID ? String(parent.parentID) : null;
+  }
+  return undefined;
+}
+
+async function reduceHostedSessionEvents(
+  host: ZCodeProtocolSessionRecord,
+  sessionId: string,
+): Promise<SessionProjection | undefined> {
+  const events = await host.eventStore.getEvents(sessionId as SessionId).catch(() => []);
+  return events.length > 0 ? new EventReducer().reduce(events) : undefined;
+}
+
 export async function listSessionSubagents(
   context: ZCodeProtocolAgentServerContext,
   rawParams: unknown,
@@ -1822,8 +1848,14 @@ export async function listSessionSubagents(
     );
   }
   const messages = persistedMessages ?? (await store.messages({ sessionID: parentSession.id }));
-  const parentEvents = liveParent
-    ? await liveParent.eventStore.getEvents(parentSession.id).catch(() => [])
+  // 修复原因：subagent 内派发的嵌套 Explore（孙会话）的 SubagentSpawned/Stopped 只写入
+  // 子会话自己的事件流；子会话没有独立 record，旧实现查询子会话时拿不到事件与投影，
+  // 运行中的孙会话被误判为 ended/lost。子会话事件与父 record 共享同一个 event store
+  // （同 resolveConversationBackingRecord），所以沿 parentID 找到托管 record，
+  // 显式按子会话 id 读事件，并像 TUI 的 subagent-observation 一样用 EventReducer 归约投影。
+  const hostRecord = liveParent ?? (await findSubagentHostRecord(context, parentSession));
+  const parentEvents = hostRecord
+    ? await hostRecord.eventStore.getEvents(parentSession.id).catch(() => [])
     : [];
   const childSessionIds = collectSubagentChildSessionIds(parentSession, messages, parentEvents);
   const childEntries = await Promise.all(
@@ -1836,7 +1868,9 @@ export async function listSessionSubagents(
       const liveChild = context.sessions.get(childSessionId);
       const childProjection = liveChild
         ? await liveChild.app.runtime.getProjection().catch(() => undefined)
-        : undefined;
+        : !liveParent && hostRecord
+          ? await reduceHostedSessionEvents(hostRecord, childSessionId)
+          : undefined;
       return { childMessages, childProjection, childSession, childSessionId };
     }),
   );
@@ -1845,7 +1879,9 @@ export async function listSessionSubagents(
   );
   const parentProjection = liveParent
     ? await liveParent.app.runtime.getProjection().catch(() => undefined)
-    : undefined;
+    : parentEvents.length > 0
+      ? new EventReducer().reduce(parentEvents)
+      : undefined;
   const projection = projectSessionSubagents({
     revision: liveParent?.stateRevision ?? parentSession.time.updated,
     parentSession,
