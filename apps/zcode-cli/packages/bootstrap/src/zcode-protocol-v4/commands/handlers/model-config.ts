@@ -158,10 +158,15 @@ async function switchCollaborationMode(
   const record = requireRecord(host, envelope.sessionId);
   const mode = payload.mode as CollaborationMode;
   const previousMode = record.app.getMode();
-  if (previousMode === mode && !record.app.runtime.getPlanEnabled()) {
+  const planEnabled = payload.planEnabled;
+  // 修复原因：计划模式下改权限原先只能写进草稿，后端仍是旧模式，子代理继续按 build 请求批准。
+  // 带 planEnabled 时基础权限立即生效，计划模式保持不变。
+  const expectedPlan = planEnabled ?? false;
+  if (previousMode === mode && record.app.runtime.getPlanEnabled() === expectedPlan) {
     throw new V4CommandNoopError(CONFIG_UNCHANGED);
   }
-  await record.app.setMode(mode);
+  if (planEnabled === undefined) await record.app.setMode(mode);
+  else await record.app.setMode(mode, { planEnabled });
   return undefined;
 }
 

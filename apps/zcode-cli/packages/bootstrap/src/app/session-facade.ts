@@ -601,7 +601,7 @@ export function createSessionFacade(deps: CreateSessionFacadeDeps): SessionFacad
         },
       );
     },
-    setMode: async (mode: CollaborationMode) => {
+    setMode: async (mode: CollaborationMode, options?: { planEnabled?: boolean }) => {
       const previousMode = deps.runtime.getMode();
       const session = await deps.sessionStore.getSession(deps.sessionId);
       // 群模式属于任务授权；不能写入工作区默认模式，让其他群或私聊继承。
@@ -611,7 +611,10 @@ export function createSessionFacade(deps: CreateSessionFacadeDeps): SessionFacad
           permission: { ...session.permission, mode },
         });
       }
-      await deps.runtime.setExecutionState({ mode }, deps.traceContext);
+      await deps.runtime.setExecutionState(
+        options?.planEnabled === undefined ? { mode } : { mode, planEnabled: options.planEnabled },
+        deps.traceContext,
+      );
       if (deps.localSettingStore && session?.permission?.scope !== "session") {
         try {
           await deps.localSettingStore.saveProjectPermissionMode({

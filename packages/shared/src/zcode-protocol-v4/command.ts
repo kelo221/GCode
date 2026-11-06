@@ -262,6 +262,8 @@ export const commandPayloadSchemas = {
   // 值域 = core CollaborationMode 的可切换子集（auto 非用户可切，不进 UI 命令面）。
   switchCollaborationMode: z.object({
     mode: z.enum(["build", "edit", "plan", "yolo", "guarded"]),
+    // additive：计划模式开启时只改基础权限（缺省 = 旧语义，非 plan 值同时关闭计划模式）。
+    planEnabled: z.boolean().optional(),
   }),
   setFollowupMode: z.object({ mode: z.enum(["queue", "guide"]) }),
   pauseGoal: z.object({}),

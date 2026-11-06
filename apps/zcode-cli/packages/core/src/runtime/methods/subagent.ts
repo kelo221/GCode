@@ -20,6 +20,7 @@ import {
   CoreErrorType,
 } from "../deps.js";
 import type {
+  CollaborationMode,
   ExploreSubagentRuntimeRequest,
   McpConnectionSnapshot,
   McpPort,
@@ -33,6 +34,7 @@ import type {
 } from "../deps.js";
 import { AgentRuntime } from "../agent-runtime.js";
 import type { AgentRuntimeInternal } from "../internal.js";
+import { applyRuntimeExecutionState, onRuntimeExecutionStateChanged } from "../execution-state.js";
 import { cloneModelSelection } from "../model-selection.js";
 import { resolveSubagentSelection } from "../helpers/subagent-selection.js";
 import type { AgentRuntimeDeps } from "../types.js";
@@ -259,11 +261,19 @@ export function createDefaultSubagentPort(
           childMcpAccess.snapshot?.tools.map((descriptor) => toMcpToolName(descriptor)) ?? [],
         );
         validateSubagentMcpRequirements(request, childToolAllowlist, childMcpAccess);
-        const childMode = resolveSubagentPermissionMode(
-          this.getPlanEnabled() ? "plan" : this.config.mode,
-          request.permissionMode,
-          builtInExplore,
-        );
+        // child 执行状态只由父 runtime 当前状态派生；spawn、resume 与父切换共用这一处。
+        const deriveChildExecutionState = (): { mode: CollaborationMode; planEnabled: boolean } => {
+          const childMode = resolveSubagentPermissionMode(
+            this.getPlanEnabled() ? "plan" : this.config.mode,
+            request.permissionMode,
+            builtInExplore,
+          );
+          // 旧 plan 枚举不包含基础权限；拆分后继承完整状态，避免被构造器回退成 build。
+          return childMode === "plan"
+            ? { mode: this.config.mode ?? "build", planEnabled: true }
+            : { mode: childMode ?? "build", planEnabled: false };
+        };
+        const childExecutionState = deriveChildExecutionState();
         const childCuaPolicy = createOfficialCuaPolicy(
           officialCuaServerNames,
           childMcpAccess.parentSnapshot?.tools ?? childMcpAccess.snapshot?.tools ?? [],
@@ -342,9 +352,8 @@ export function createDefaultSubagentPort(
         const childRuntime = new AgentRuntime(
           request.sessionId,
           {
-            // 旧 plan 枚举不包含基础权限；拆分后继承完整状态，避免被构造器回退成 build。
-            mode: childMode === "plan" ? this.config.mode : childMode,
-            planEnabled: childMode === "plan",
+            mode: childExecutionState.mode,
+            planEnabled: childExecutionState.planEnabled,
             // 模型选择的影响不只在最终 request.model：MCS、内建搜索与 token/media 预算会在
             // child runtime 内按 default model 预先塑形。同步 child 因此必须把整套执行
             // 配置都指向父 turn 快照；runner 禁止它转后台，provider registry 则由父 turn
@@ -514,6 +523,16 @@ export function createDefaultSubagentPort(
 
         // 已完成的 child 仍可能拥有后台 Bash、title/MCP 等工作；父 session 关闭时仍需找到它。
         ownedRuntimes.add(childRuntime);
+        const childInternal = childRuntime as unknown as AgentRuntimeInternal;
+        const followChildExecutionState = () =>
+          applyRuntimeExecutionState(childInternal, deriveChildExecutionState(), {
+            source: "command",
+            traceContext: request.traceContext,
+          });
+        // 父会话切换模式（如运行中改为「完全访问」）同步给仍在运行的 child。
+        const stopFollowingParent = onRuntimeExecutionStateChanged(this, async () => {
+          await followChildExecutionState();
+        });
         try {
           const resumesExistingChild = request.resumeFromStore === true;
           if (childBinding)
@@ -543,6 +562,9 @@ export function createDefaultSubagentPort(
               persistedMessages,
               traceContext: request.traceContext,
             });
+            // 修复原因：resumeFromStore 恢复的是 child 自己持久化的模式（常为 spawn 时的 build），
+            // 「继续」已停止的子代理会忽略父会话当前的「完全访问」。恢复后按父状态重新派生。
+            await followChildExecutionState();
             // 恢复只导入历史；本轮 profile 选出的模型仍是执行权威，并更新冷恢复所用的选择记录。
             await persistRuntimeModelSelection(
               childRuntime as unknown as AgentRuntimeInternal,
@@ -598,6 +620,7 @@ export function createDefaultSubagentPort(
           });
           return { ...turnResult, contextWindow: childModel.properties.contextWindow };
         } finally {
+          stopFollowingParent();
           const cancelled = options?.signal?.aborted === true;
           childRuntime.sealBackgroundTaskNotifications({
             reason: cancelled ? "subagent_cancelled" : "subagent_terminal",

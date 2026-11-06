@@ -336,6 +336,25 @@ describe("v4 原生 switchCollaborationMode", () => {
     expect(app.runtime.emitModeChanged).not.toHaveBeenCalled();
   });
 
+  // docs/subagent-permission-mode-follow.md：计划模式开启时改权限，立即生效且不关闭计划模式。
+  it("planEnabled:true 随权限一起下发，基础权限生效、计划模式保持", async () => {
+    const app = makeApp();
+    app.runtime.getPlanEnabled.mockReturnValue(true);
+    const executor = new V4CommandExecutor(makeHost(makeRecord(app)));
+    const parsed = parseCommandEnvelope({
+      ...modeEnvelope("s1", { mode: "yolo", planEnabled: true }),
+      clientId: "test",
+      issuedAt: Date.now(),
+    });
+    if (!parsed.ok) throw parsed.error;
+    await executor.execute(parsed.envelope);
+    expect(app.setMode).toHaveBeenCalledWith("yolo", { planEnabled: true });
+    // 同一基础权限 + 已开启的计划模式 = noop。
+    await expect(
+      executor.execute(modeEnvelope("s1", { mode: "build", planEnabled: true })),
+    ).rejects.toThrow(V4CommandNoopError);
+  });
+
   it("session 不存在：拒绝且不触碰任何 core 方法", async () => {
     const app = makeApp();
     const record = makeRecord(app);

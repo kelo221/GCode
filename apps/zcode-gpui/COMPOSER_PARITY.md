@@ -356,6 +356,13 @@ command payload. Successful enqueue transfers the override into Pending::Submiss
 explicit rejection returns it to its origin only if no newer override exists. No
 backend config command is emitted merely to restore an item. Compact is not editable.
 
+Picking a permission mode on a live session while plan is on is not a draft edit: GPUI
+sends `switchCollaborationMode { mode, planEnabled: true }` at once, so the backend (and
+its running subagents) change mode immediately and plan stays on. A draft-only mode used
+to show "Full access" while the backend stayed in build and was dropped by an
+agent-driven ExitPlanMode (docs/subagent-permission-mode-follow.md, GCode fork divergence
+from Desktop).
+
 ````text
 Queue Edit → pending delete + captured restoration → accepted/duplicate ACK
            → matching empty composer or originating saved draft

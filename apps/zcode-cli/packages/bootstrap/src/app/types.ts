@@ -737,7 +737,10 @@ export interface ZCodeApp {
     workflowKind?: string;
   }): Promise<ExpertWorkflowCommandResult>;
   sendInput(input: PromptInput, options?: SendInputOptions): Promise<SendInputResult>;
-  setMode(mode: CollaborationMode): Promise<{
+  setMode(
+    mode: CollaborationMode,
+    options?: { planEnabled?: boolean },
+  ): Promise<{
     mode: CollaborationMode;
     previousMode: CollaborationMode;
     traceId: TraceContext["traceId"];

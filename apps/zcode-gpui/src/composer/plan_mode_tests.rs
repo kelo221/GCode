@@ -72,24 +72,19 @@ fn live_plan_toggle_keeps_the_permission_mode(cx: &mut TestAppContext) {
 }
 
 #[gpui::test]
-fn permission_pick_while_planning_only_edits_the_draft(cx: &mut TestAppContext) {
+fn permission_pick_while_planning_applies_now_and_keeps_plan(cx: &mut TestAppContext) {
     let state = cx.new(AppState::for_test);
     state.update(cx, |s, cx| {
         let rx = live(s, json!({"mode":"build","planEnabled":true}));
         s.select_permission_mode("yolo", cx);
-        assert!(
-            rx.try_recv().is_err(),
+        let request: Value = serde_json::from_str(&rx.try_recv().expect("a command")).unwrap();
+        assert_eq!(request["params"]["type"], "switchCollaborationMode");
+        assert_eq!(
+            request["params"]["payload"],
+            json!({"mode":"yolo","planEnabled":true}),
             "{{mode}} alone would also clear plan"
         );
-        assert_eq!(
-            s.submission_override(),
-            json!({"mode":"yolo","planEnabled":true})
-        );
-        let effective = s.effective_config();
-        assert_eq!(
-            (effective.mode.as_str(), effective.plan_enabled),
-            ("yolo", true)
-        );
+        assert_eq!(s.submission_override(), Value::Null, "no draft-only mode");
     });
 }
 

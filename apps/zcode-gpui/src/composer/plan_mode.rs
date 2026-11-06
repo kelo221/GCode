@@ -4,6 +4,7 @@
 //! `config.planEnabled` (overlay) apart (packages/shared/src/execution-state.ts).
 
 use crate::app::store::AppState;
+use crate::backend::workspace::CommandCtx;
 use crate::shared::i18n::t;
 use gpui::Context;
 use serde_json::json;
@@ -60,10 +61,16 @@ impl AppState {
         if let Some(config) = self.draft_submission_overrides.get_mut(&key) {
             config["mode"] = json!(mode);
         } else if effective.has_session && effective.plan_enabled {
-            // 运行中会话直接发 {mode:X} 会被 CLI 解释为同时关闭计划模式；
-            // 与 Desktop 一样只改草稿，随下一次提交以 {mode:X, planEnabled:true} 生效。
-            self.draft_submission_overrides
-                .insert(key, json!({"mode": mode, "planEnabled": true}));
+            // 修复原因：原先只写草稿，选择器已显示「完全访问」而后端仍是 build，直到下一条
+            // 消息才生效；期间派出的子代理按 build 逐次请求批准，Agent 退出计划模式时草稿还会被
+            // reconcile_plan_override 丢弃。现在立即发送并带 planEnabled:true，计划模式保持开启。
+            if let (Some(sid), Some(ws_key)) = (self.active.clone(), self.active_ws_key()) {
+                let payload = json!({ "mode": mode, "planEnabled": true });
+                self.send_session_command(
+                    &ws_key,
+                    CommandCtx::new(&sid, "switchCollaborationMode", payload).cas(),
+                );
+            }
         } else if effective.has_session {
             self.switch_mode(mode, cx);
         } else {
