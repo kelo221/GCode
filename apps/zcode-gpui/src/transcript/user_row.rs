@@ -69,6 +69,7 @@ pub(crate) fn attachment_images(session: &str, attachments: &[AttachmentRef]) ->
 fn attachment_chips(attachments: &[&AttachmentRef]) -> Option<Div> {
     (!attachments.is_empty()).then(|| {
         div()
+            .w_full()
             .flex()
             .flex_wrap()
             .justify_end()
@@ -173,16 +174,33 @@ impl crate::app::root::RootView {
             .iter()
             .filter(|a| session.is_none() || !is_image(a))
             .collect();
+        // 修复原因：外层按内容收缩宽度时，换行的缩略图行高度只按一行计算，第二张图会
+        // 压住时间戳和下一条消息。w_full 让换行在确定宽度下布局，高度随行数增长。
         let thumbnails = self.images_row(v.row_id, images, true, cx).map(|row| {
             div()
+                .w_full()
                 .max_w(px(576.))
                 .min_w_0()
                 .flex()
                 .justify_end()
                 .child(row)
         });
+        #[cfg(test)]
+        let tracked: Vec<String> = [
+            Some("bubble"),
+            thumbnails.is_some().then_some("thumbs"),
+            (!chips.is_empty()).then_some("chips"),
+            Some("footer"),
+        ]
+        .into_iter()
+        .flatten()
+        .map(|part| format!("user-{part}-{}", v.row_id))
+        .collect();
+        let column = div();
+        #[cfg(test)]
+        let column = crate::app::test_support::track_children(column, tracked);
         Some(
-            div()
+            column
                 .group(USER_GROUP)
                 .w_full()
                 .flex()

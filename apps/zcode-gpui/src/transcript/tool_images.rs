@@ -132,9 +132,15 @@ fn preview_result(preview: Preview) -> Result<ImagePreview, String> {
     }
 }
 
-/// Thumbnails fit inside this box, keeping the image's aspect ratio.
-const THUMB_MAX_W: f32 = 320.;
-const THUMB_MAX_H: f32 = 240.;
+/// Box a thumbnail fits inside, keeping the image's aspect ratio. One image
+/// gets the large box; several share a row as smaller, equal-height tiles.
+pub(crate) fn thumb_box(count: usize) -> (f32, f32) {
+    if count > 1 {
+        (240., 160.)
+    } else {
+        (320., 240.)
+    }
+}
 
 #[derive(Default)]
 pub(crate) struct ToolImageCache {
@@ -223,6 +229,7 @@ impl crate::app::root::RootView {
             .flex_wrap()
             .gap_2()
             .when(end, |el| el.justify_end());
+        let (max_w, max_h) = thumb_box(refs.len());
         for r in refs {
             let key = r.key();
             match self.tool_images.images.get(&key) {
@@ -239,7 +246,7 @@ impl crate::app::root::RootView {
                 Some(Some(Err(e))) => row = row.child(note(e)),
                 Some(Some(Ok(preview))) => {
                     let id = ElementId::Name(format!("tool-img-{row_id}-{key}").into());
-                    let (w, h) = fit(preview.width, preview.height, THUMB_MAX_W, THUMB_MAX_H);
+                    let (w, h) = fit(preview.width, preview.height, max_w, max_h);
                     row = row.child(
                         div()
                             .id(id)
@@ -351,6 +358,15 @@ mod tests {
         assert_eq!(fit(1080, 2400, 320., 240.), (108., 240.));
         assert_eq!(fit(1920, 1080, 320., 240.), (320., 180.));
         assert_eq!(fit(100, 50, 320., 240.), (100., 50.));
+    }
+
+    #[test]
+    fn several_images_get_smaller_tiles_that_fit_two_per_bubble_row() {
+        assert_eq!(thumb_box(1), (320., 240.));
+        let (w, h) = thumb_box(2);
+        assert_eq!((w, h), (240., 160.));
+        // Two widest tiles plus the 8 px gap fit the 576 px user column.
+        assert!(2. * w + 8. <= 576.);
     }
 
     #[test]

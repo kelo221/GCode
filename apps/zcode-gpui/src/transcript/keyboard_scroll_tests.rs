@@ -116,6 +116,48 @@ fn scroll(window: &mut TestAppWindow<RootView>) -> ((usize, Pixels), bool) {
 }
 
 #[test]
+fn several_attached_images_wrap_inside_the_message_and_push_the_time_down() {
+    let _guard = RUNTIME_TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    let attachment = |n: u32| {
+        json!({ "ref": format!("zcode-artifact://a/{n}"),
+        "fileName": format!("{n}.png"), "mime": "image/png", "bytes": 1 })
+    };
+    let row = json!({ "rowId": 1, "kind": "userInput", "text": "look",
+        "attachments": [attachment(1), attachment(2), attachment(3)] });
+    let (_app, _state, mut window, _rx) = open_rows(vec![row], 1);
+    window.update(|view, _, cx| {
+        // Landscape, portrait and wide screenshots, as in the bug report.
+        for (n, (w, h)) in [(1, (1600, 1000)), (2, (500, 480)), (3, (1920, 400))] {
+            view.tool_images.insert_loaded(
+                &format!("att:s:zcode-artifact://a/{n}"),
+                crate::files::image_preview::ImagePreview {
+                    image: Arc::new(gpui::RenderImage::new(vec![image::Frame::new(
+                        image::RgbaImage::new(4, 4),
+                    )])),
+                    width: w,
+                    height: h,
+                },
+            );
+        }
+        cx.notify();
+    });
+    window.draw();
+    window.draw();
+    let (thumbs, footer) = window.update(|_, _, cx| {
+        let targets = &cx.global::<TestTargets>().0;
+        (targets["user-thumbs-1"], targets["user-footer-1"])
+    });
+    // 240×150 + 240×160(→166×160) + 240×50 do not fit one 576 px line: the strip
+    // wraps, so its height covers two lines and the time row starts below it.
+    assert!(thumbs.size.height > px(160. + 8.), "{thumbs:?}");
+    assert!(thumbs.size.width <= px(576.), "{thumbs:?}");
+    assert!(
+        footer.origin.y >= thumbs.origin.y + thumbs.size.height,
+        "{footer:?} {thumbs:?}"
+    );
+}
+
+#[test]
 fn page_keys_scroll_the_transcript_from_the_composer() {
     let _guard = RUNTIME_TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     let (_app, _state, mut window, _rx) = open(1, 150);
