@@ -59,6 +59,44 @@ fn active_conversation_sid_fallback() {
     );
 }
 
+#[gpui::test]
+fn load_earlier_pages_the_viewed_subagent_not_the_parent(cx: &mut gpui::TestAppContext) {
+    use crate::app::store::AppState;
+    use crate::conversation::model::ConversationState;
+    use gpui::AppContext;
+    use serde_json::{Value, json};
+    let state = cx.new(AppState::for_test);
+    state.update(cx, |s, cx| {
+        let key = s.workspaces[0].key.clone();
+        let (tx, rx) = std::sync::mpsc::channel();
+        s.workspaces[0].started = true;
+        s.workspaces[0].pumping = true;
+        s.workspaces[0].inbound = Some(tx);
+        s.active_workspace = Some(key.clone());
+        s.active = Some("parent".into());
+        s.draft = false;
+        // Parent: its whole history is loaded. Child: older rows remain.
+        let mut parent = ConversationState::default();
+        parent.apply_snapshot(&json!({"revision":1,"rows":{"firstRowId":1,"totalCount":1,
+            "window":[{"rowId":1,"kind":"userInput","text":"p"}]}}));
+        parent.subscribed = true;
+        let mut child = ConversationState::default();
+        child.apply_snapshot(&json!({"revision":1,"rows":{"firstRowId":1,"totalCount":50,
+            "window":[{"rowId":40,"kind":"userInput","text":"c"}]}}));
+        child.subscribed = true;
+        s.conversations.insert("parent".into(), parent);
+        s.conversations.insert("child".into(), child);
+        s.child_owner
+            .insert("child".into(), (key.clone(), "parent".into()));
+        s.viewing_child = Some("child".into());
+        s.fetch_earlier_rows(cx);
+        let request: Value = serde_json::from_str(&rx.try_recv().expect("a page request")).unwrap();
+        assert_eq!(request["method"], "v4/conversation/rowsRange");
+        assert_eq!(request["params"]["sessionId"], "child");
+        assert_eq!(request["params"]["beforeRowId"], 40);
+    });
+}
+
 #[test]
 fn child_session_id_collection() {
     let mut child_owner = HashMap::new();

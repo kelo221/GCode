@@ -87,7 +87,19 @@ impl AppState {
     /// Page in history older than the oldest loaded row
     /// (`v4/conversation/rowsRange`, cursor = that row's id).
     pub fn fetch_earlier_rows(&mut self, cx: &mut Context<Self>) {
-        let (Some(sid), Some(ws_key)) = (self.active.clone(), self.active_ws_key()) else {
+        // 修复原因：按钮依据 active_conversation()（打开子代理时是 child）显示，这里却取
+        // self.active（父会话）——父会话没有更早历史时直接 return，按钮点了没反应。
+        // 与按钮同源：正在看的 child 优先，workspace 取 child_owner 登记的那个。
+        let sid = match self.viewing_child.clone() {
+            Some(child) => Some(child),
+            None => self.active.clone(),
+        };
+        let ws_key = sid
+            .as_ref()
+            .and_then(|sid| self.child_owner.get(sid))
+            .map(|(ws, _)| ws.clone())
+            .or_else(|| self.active_ws_key());
+        let (Some(sid), Some(ws_key)) = (sid, ws_key) else {
             return;
         };
         let (before, subscribed) = match self.conversations.get(&sid) {
