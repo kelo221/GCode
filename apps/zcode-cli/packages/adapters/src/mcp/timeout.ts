@@ -51,6 +51,12 @@ export function withTimeout<T>(
 ): Promise<T> {
   return new Promise((resolvePromise, rejectPromise) => {
     if (signal?.aborted) {
+      // 修复原因：2026-11-07 lazy MCP probe 刚启动就被停止，signal 已 abort，这里提前返回
+      // 却没给传入的 client.connect() promise 挂处理器；随后 closeClientAndTransport 关闭
+      // client，SDK 以 "Version negotiation failed: the transport was closed" 拒绝该 promise，
+      // 成为 unhandledRejection 并使整个 backend 以 exit code 1 退出。
+      // 放弃等待时仍需吞掉它之后的拒绝；失败本身已由调用方按 abort 处理。
+      promise.catch(() => undefined);
       rejectPromise(
         signal.reason instanceof Error ? signal.reason : new Error("Operation aborted"),
       );
