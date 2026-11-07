@@ -41,6 +41,7 @@ fn init_first_input_and_rejected_plain_submission_keep_original_command(cx: &mut
         s.conversations.insert(
             "parent".into(),
             ConversationState {
+                subscribed: true,
                 input_routing: Some(InputRouting::Enqueue),
                 ..Default::default()
             },

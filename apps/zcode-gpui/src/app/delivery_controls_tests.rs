@@ -35,7 +35,10 @@ fn delivery_keyboard_and_modifier_pointer_reach_same_sender() {
         s.active_workspace = Some(key);
         s.active = Some("session".into());
         s.draft = false;
-        let mut conv = ConversationState::default();
+        let mut conv = ConversationState {
+            subscribed: true,
+            ..Default::default()
+        };
         conv.apply_snapshot(&json!({"revision":1,"control":{"phase":"running","canStop":true},"inputRouting":{"mode":"enqueue"},"config":{"followupMode":"queue"}}));
         s.conversations.insert("session".into(), conv);
     });
@@ -182,7 +185,10 @@ fn running_session_shows_working_stop_and_hides_send_until_there_is_a_draft() {
         s.active_workspace = Some(key);
         s.active = Some("session".into());
         s.draft = false;
-        let mut conv = ConversationState::default();
+        let mut conv = ConversationState {
+            subscribed: true,
+            ..Default::default()
+        };
         conv.apply_snapshot(&json!({"revision":1,"control":{"phase":"running","canStop":true},"inputRouting":{"mode":"enqueue"}}));
         s.conversations.insert("session".into(), conv);
     });
@@ -240,7 +246,10 @@ fn context_ring_leads_the_composer_controls_only_with_usage() {
         s.active_workspace = Some(key);
         s.active = Some("session".into());
         s.draft = false;
-        let mut conv = ConversationState::default();
+        let mut conv = ConversationState {
+            subscribed: true,
+            ..Default::default()
+        };
         conv.apply_snapshot(&usage(Value::Null));
         s.conversations.insert("session".into(), conv);
     });

@@ -217,6 +217,7 @@ impl RootView {
             .children(self.image_upload_feedback(cx))
             .children(self.reference_feedback(cx))
             .children(self.slash_catalog_feedback(cx))
+            .children(self.waking_send_feedback(cx))
             .children(popup)
             .child(
                 div()

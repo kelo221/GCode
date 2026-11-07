@@ -16,6 +16,10 @@ fn setup(cx: &mut TestAppContext) -> (gpui::Entity<AppState>, String, Receiver<S
         s.workspaces[0].started = true;
         s.active_workspace = Some(key.clone());
         s.active = Some("parent".into());
+        s.conversations
+            .entry("parent".into())
+            .or_default()
+            .subscribed = true;
         s.draft = false;
         key
     });

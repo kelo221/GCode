@@ -99,6 +99,13 @@ impl AppState {
             return false;
         };
         self.ensure_spawned(&ws_key, cx);
+        // A sleeping agent is woken and the send parked (WAKING_SEND.md); held
+        // decisions need a live run, so they keep the old refusal.
+        if held.is_none() && self.send_needs_wake(&ws_key) {
+            self.park_waking_send(ws_key, recovery_text, attachments, delivery, cx);
+            cx.notify();
+            return true;
+        }
         if !self
             .ws(&ws_key)
             .is_some_and(|w| w.started && w.inbound.is_some())

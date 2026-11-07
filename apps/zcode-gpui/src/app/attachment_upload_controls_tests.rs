@@ -33,6 +33,10 @@ fn clipboard_upload_cancel_retry_and_ready_send_are_reachable() {
         s.workspaces[0].pumping = true;
         s.active_workspace = Some(key.clone());
         s.active = Some("parent".into());
+        s.conversations
+            .entry("parent".into())
+            .or_default()
+            .subscribed = true;
         s.draft = false;
         s.composer
             .update(cx, |composer, _| composer.set_text("keep this draft"));
@@ -170,6 +174,10 @@ fn undecodable_clipboard_bitmap_is_refused_before_upload() {
         s.workspaces[0].pumping = true;
         s.active_workspace = Some(key);
         s.active = Some("parent".into());
+        s.conversations
+            .entry("parent".into())
+            .or_default()
+            .subscribed = true;
         s.draft = false;
     });
     let mut window = app.open_window(|_, cx| RootView::new(state.clone(), cx));

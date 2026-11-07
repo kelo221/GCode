@@ -36,13 +36,18 @@ fn slash_catalog_queries_use_exact_scope_and_never_session_workspace_fallback(
         s.active = Some("parent".into());
         s.draft = false;
         assert!(s.active_slash_commands().is_none());
+        // Not yet loaded on the agent (e.g. right after a wake): no doomed session/read.
+        s.ensure_slash_catalog(false, cx);
+        assert!(rx.try_recv().is_err());
+        assert!(s.active_slash_query().is_none());
+        s.conversations.entry("parent".into()).or_default().subscribed = true;
         s.ensure_slash_catalog(false, cx);
         let request: Value = serde_json::from_str(&rx.try_recv().unwrap()).unwrap();
         assert_eq!(request["method"], "session/read");
         assert_eq!(request["params"], json!({"sessionId":"parent","messageLimit":1}));
         s.handle_response(&key, request["id"].as_u64().unwrap(), Some(response(s, Some("parent"), json!([]))), None, cx);
         assert!(s.active_slash_commands().unwrap().is_empty());
-        assert!(s.conversations.is_empty());
+        assert!(s.conversations["parent"].rows.is_empty());
         assert_eq!(s.composer.read(cx).text(), "/in");
         s.ensure_slash_catalog(false, cx);
         assert!(rx.try_recv().is_err());
@@ -66,6 +71,10 @@ fn slash_catalog_rejects_wrong_scope_and_retires_reconnect_reads(cx: &mut TestAp
         s.workspaces[0].started = true;
         s.workspaces[0].inbound = Some(tx);
         s.active_workspace = Some(key.clone());
+        s.conversations
+            .entry("parent".into())
+            .or_default()
+            .subscribed = true;
         for session in [None, Some("parent")] {
             s.active = session.map(str::to_owned);
             s.ensure_slash_catalog(true, cx);

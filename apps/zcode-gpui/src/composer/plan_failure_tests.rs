@@ -44,6 +44,7 @@ fn plan_failed_enqueue_and_late_rejection_do_not_lose_original_or_newer_override
         s.conversations.insert(
             "parent".into(),
             ConversationState {
+                subscribed: true,
                 input_routing: Some(InputRouting::Enqueue),
                 ..Default::default()
             },

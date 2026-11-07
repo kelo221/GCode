@@ -14,7 +14,10 @@ fn setup(s: &mut AppState, parent: bool) -> std::sync::mpsc::Receiver<String> {
     s.active = parent.then(|| "parent".into());
     s.draft = !parent;
     if parent {
-        let mut conv = ConversationState::default();
+        let mut conv = ConversationState {
+            subscribed: true,
+            ..Default::default()
+        };
         conv.apply_snapshot(&json!({"revision":1,"config":{"mode":"edit","followupMode":"queue"},"inputRouting":{"mode":"enqueue"}}));
         s.conversations.insert("parent".into(), conv);
     }

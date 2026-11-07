@@ -38,3 +38,4 @@ pub(crate) mod submission_config;
 pub(crate) mod text_view;
 pub(crate) mod thought_cycle;
 pub(crate) mod tray;
+pub(crate) mod waking_send;

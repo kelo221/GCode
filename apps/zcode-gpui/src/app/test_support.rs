@@ -47,6 +47,7 @@ impl AppState {
             navigation_generation: 0,
             plugin_prompt_applied: 0,
             held_confirmation: None,
+            waking_send: None,
             conversations: Default::default(),
             workflow_navigation_generation: 0,
             workflow_focus: None,

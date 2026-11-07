@@ -29,9 +29,9 @@ pub struct AppState {
     /// Workspace key of the context used for "New chat" (last selected).
     pub active_workspace: Option<String>,
     pub(crate) navigation_generation: u64,
-    /// Bumped each time a plugin example prompt is prefilled; the view closes
-    /// Settings (where the store lives) so the prefilled draft is visible.
+    /// Bumped per plugin example prefill; the view then closes Settings to show the draft.
     pub(crate) plugin_prompt_applied: u64,
+    pub(crate) waking_send: Option<crate::composer::waking_send::WakingSend>,
     pub(crate) held_confirmation:
         Option<std::sync::Arc<crate::composer::held_queue::HeldConfirmation>>,
     pub(crate) workflow_navigation_generation: u64,
@@ -137,6 +137,7 @@ impl AppState {
             navigation_generation: 0,
             plugin_prompt_applied: 0,
             held_confirmation: None,
+            waking_send: None,
             conversations: HashMap::new(),
             workflow_navigation_generation: 0,
             workflow_focus: None,

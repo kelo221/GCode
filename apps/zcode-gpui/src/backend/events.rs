@@ -65,7 +65,9 @@ pub(crate) fn attach_pump(
                         .ws(&ws_key)
                         .is_some_and(|w| w.generation == generation)
                     {
-                        state.handle_conn(&ws_key, ev, cx)
+                        let keep_going = state.handle_conn(&ws_key, ev, cx);
+                        state.advance_waking_send(cx);
+                        keep_going
                     } else {
                         false
                     }

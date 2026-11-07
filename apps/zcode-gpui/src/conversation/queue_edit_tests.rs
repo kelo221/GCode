@@ -14,7 +14,10 @@ fn queue_edit_waits_for_ack_and_restores_full_draft_without_config_command(
         s.active_workspace = Some(key.clone());
         s.active = Some("parent".into());
         s.draft = false;
-        let mut conv = crate::conversation::model::ConversationState::default();
+        let mut conv = crate::conversation::model::ConversationState {
+            subscribed: true,
+            ..Default::default()
+        };
         conv.apply_snapshot(&json!({"revision":7,"availability":{"queueEdit":{"allowed":true}},"queue":{"items":[{"queueItemId":"item","kind":"sendText","text":"original","attachments":[{"ref":"attachment://owned","fileName":"note.txt","mime":"text/plain","bytes":3}],"modelSelection":{"providerId":"provider","modelId":"model","options":{"reasoningLevel":"high"}},"mode":"yolo","planEnabled":false,"dispatch":{"state":"queued"}}]}}));
         s.conversations.insert("parent".into(), conv);
         s.restore_queued_input(&key, "parent", "item", cx);

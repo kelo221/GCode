@@ -136,8 +136,12 @@ impl crate::app::root::RootView {
         let query = state.active_slash_query();
         let receipt = state.slash_catalog_receipt(cx);
         let label = crate::shared::i18n::label;
+        let waking = state
+            .active_ws_key()
+            .is_some_and(|key| state.send_needs_wake(&key));
         let message = match query {
             Some(q) if q.loading => label("Loading commands…", "正在加载命令…").to_string(),
+            None if waking => label("Loading commands…", "正在加载命令…").to_string(),
             Some(q) if q.error.is_some() => label(
                 "Commands unavailable; Refresh to retry",
                 "命令不可用，请刷新重试",

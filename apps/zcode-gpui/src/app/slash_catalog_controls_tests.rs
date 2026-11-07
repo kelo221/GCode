@@ -36,7 +36,10 @@ fn slash_catalog_init_selection_refresh_and_submission_are_pointer_keyboard_reac
         s.active_workspace = Some(key.clone());
         s.active = Some("parent".into());
         s.draft = false;
-        let mut conversation = ConversationState::default();
+        let mut conversation = ConversationState {
+            subscribed: true,
+            ..Default::default()
+        };
         conversation.apply_snapshot(
             &json!({"revision":1,"inputRouting":{"mode":"startNow"},"control":{"canStop":false}}),
         );

@@ -27,7 +27,10 @@ fn one_shot_delivery_does_not_change_followup_preference(cx: &mut TestAppContext
         s.active_workspace = Some(key.clone());
         s.active = Some("session".into());
         s.draft = false;
-        let mut conv = ConversationState::default();
+        let mut conv = ConversationState {
+            subscribed: true,
+            ..Default::default()
+        };
         conv.apply_snapshot(&json!({"control":{"phase":"running","canStop":true},"inputRouting":{"mode":"enqueue"},"config":{"followupMode":"queue"}}));
         s.conversations.insert("session".into(), conv);
         for (mode, trigger, expected) in [
@@ -70,8 +73,13 @@ fn delivery_reject_choice_and_missing_modified_route_preserve_owned_draft(cx: &m
         s.active_workspace = Some(key);
         s.active = Some("session".into());
         s.draft = false;
-        s.conversations
-            .insert("session".into(), ConversationState::default());
+        s.conversations.insert(
+            "session".into(),
+            ConversationState {
+                subscribed: true,
+                ..Default::default()
+            },
+        );
         let attachment = attachment("owned-image");
         let owned = std::env::temp_dir().join(uuid::Uuid::now_v7().to_string());
         s.composer.update(cx, |c, _| {
@@ -134,6 +142,7 @@ fn delivery_new_session_and_local_action_compatibility(cx: &mut TestAppContext) 
         s.active = Some("session".into());
         s.draft = false;
         let conv = ConversationState {
+            subscribed: true,
             input_routing: Some(InputRouting::Reject),
             ..Default::default()
         };
@@ -219,7 +228,10 @@ fn failed_delivery_enqueue_and_rejected_promotion_recover_without_replay(cx: &mu
         s.active_workspace = Some(key.clone());
         s.active = Some("session".into());
         s.draft = false;
-        let mut conv = ConversationState::default();
+        let mut conv = ConversationState {
+            subscribed: true,
+            ..Default::default()
+        };
         conv.apply_snapshot(&json!({"control":{"canStop":true},"inputRouting":{"mode":"enqueue"},"config":{"followupMode":"queue"}}));
         s.conversations.insert("session".into(), conv);
         let original = attachment("original-image");
