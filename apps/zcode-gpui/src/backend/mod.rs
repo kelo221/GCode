@@ -21,6 +21,7 @@ pub(crate) mod flow_cmds;
 mod goal_submission;
 pub(crate) mod inspection;
 pub(crate) mod launcher;
+mod lifecycle_log;
 pub(crate) mod mcp_authorization;
 #[cfg(test)]
 mod mcp_authorization_tests;

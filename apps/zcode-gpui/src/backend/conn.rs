@@ -6,11 +6,12 @@ use crate::backend::backlog::{
     read_bounded_line,
 };
 use crate::backend::launcher::BackendLaunch;
+use crate::backend::lifecycle_log;
 use std::io::{BufRead, BufReader, Read, Write};
 use std::path::Path;
 use std::process::{Child, Command, Stdio};
-#[cfg(not(windows))]
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::Sender;
 
 pub enum ConnEvent {
@@ -201,29 +202,38 @@ pub fn spawn_connection(launch: &BackendLaunch, workspace: &Path) -> std::io::Re
 
     let err_tx = ev_tx.clone();
     let err_backlog = log_backlog.clone();
+    let (log_workspace, log_via) = (workspace.to_path_buf(), launch.describe.clone());
     std::thread::spawn(move || {
+        lifecycle_log::spawned(pid, &log_workspace, &log_via);
         let reader = BufReader::new(stderr);
+        // Keep draining into the lifecycle log after GPUI stops listening:
+        // the child's dying words are what BACKEND_LOG.md is for.
+        let mut forward = true;
         for line in reader.lines() {
-            match line {
-                Ok(l) => {
-                    let len = l.len();
-                    if !push_event(&err_backlog, &err_tx, ConnEvent::Log(l), len) {
-                        break;
-                    }
-                }
-                Err(_) => break,
+            let Ok(l) = line else { break };
+            lifecycle_log::stderr_line(pid, &l);
+            let len = l.len();
+            if forward && !push_event(&err_backlog, &err_tx, ConnEvent::Log(l), len) {
+                forward = false;
             }
         }
         // stderr EOF is not death; stdout's Exited event owns that signal.
     });
 
+    let started = std::time::Instant::now();
+    let killed_by_gpui = Arc::new(AtomicBool::new(false));
     #[cfg(windows)]
     let kill = make_kill(&child);
     #[cfg(windows)]
-    std::thread::spawn(move || {
-        let mut child = child;
-        let _ = child.wait();
-    });
+    {
+        let killed_by_gpui = killed_by_gpui.clone();
+        std::thread::spawn(move || {
+            let mut child = child;
+            let status = child.wait().ok();
+            let killed = killed_by_gpui.load(Ordering::SeqCst);
+            lifecycle_log::exited(pid, status.as_ref(), killed, started.elapsed());
+        });
+    }
     #[cfg(not(windows))]
     let child = Arc::new(std::sync::Mutex::new(Some(child)));
     #[cfg(not(windows))]
@@ -231,6 +241,7 @@ pub fn spawn_connection(launch: &BackendLaunch, workspace: &Path) -> std::io::Re
     #[cfg(not(windows))]
     {
         let watcher_child = child.clone();
+        let killed_by_gpui = killed_by_gpui.clone();
         std::thread::spawn(move || {
             loop {
                 std::thread::sleep(std::time::Duration::from_millis(200));
@@ -238,12 +249,27 @@ pub fn spawn_connection(launch: &BackendLaunch, workspace: &Path) -> std::io::Re
                     break;
                 };
                 match guard.as_mut().map(|c| c.try_wait()) {
-                    Some(Ok(Some(_))) | Some(Err(_)) | None => break,
                     Some(Ok(None)) => {}
+                    Some(Ok(Some(status))) => {
+                        let killed = killed_by_gpui.load(Ordering::SeqCst);
+                        lifecycle_log::exited(pid, Some(&status), killed, started.elapsed());
+                        break;
+                    }
+                    Some(Err(_)) => {
+                        let killed = killed_by_gpui.load(Ordering::SeqCst);
+                        lifecycle_log::exited(pid, None, killed, started.elapsed());
+                        break;
+                    }
+                    None => break,
                 }
             }
         });
     }
+    // Mark GPUI-initiated kills so the exit line can tell them from crashes.
+    let kill: Box<dyn FnOnce() + Send> = Box::new(move || {
+        killed_by_gpui.store(true, Ordering::SeqCst);
+        kill();
+    });
 
     Ok(Connection {
         pid,
