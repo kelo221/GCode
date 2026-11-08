@@ -323,6 +323,31 @@ OpenAI-compatible 回放一致的契约：
 - 配置只声明模型目标和 provider 连接参数，不能直接创建网络请求或 SDK 实例。
 - model capability metadata 不保存 API key，也不决定当前使用哪个模型；它只提供 provider/model 的能力元数据，用户显式配置永远优先。
 
+### 3.1.3 OpenAI-compatible 数组 content 响应兼容
+
+部分 Chat Completions 服务把 `content` 返回为 chunk 列表而不是字符串。例如 Mistral 的
+`zai-glm-5-3` / `zai-glm-5-3-flash` 无论 `reasoning_effort` 取何值都返回
+`[{type:"thinking", thinking:[{type:"text", text}]}, {type:"text", text}]`，流式过渡帧会在同一个
+`delta.content` 中先给收尾的 thinking chunk、再给第一个 text chunk。`@ai-sdk/openai-compatible`
+的 chunk / response schema 只接受字符串，会以 `AI_TypeValidationError` 拒绝整帧。
+
+- `openai-chat-completions` transport 在 SDK 解析前做 wire 归一化
+  （`adapters/src/model/openai-compatible-content-parts-compat.ts`），不修改 SDK schema。
+- 只有 `choices[i].delta.content`（流式）或 `choices[i].message.content`（非流式）为数组时才改写：
+  - `type: "text"` 的 `text` 按顺序拼接为字符串 `content`；
+  - `type: "thinking"` 的内容（嵌套 text chunk 数组或字符串）拼接后追加到该 choice 已有的
+    `reasoning_content` / `reasoning` 之后，写入 `reasoning_content`，因此只进入 reasoning，
+    不进入可见回复；
+  - 其它 chunk 类型丢弃。
+- `content` 为字符串、null 或缺失的帧与响应原样透传；SSE 帧逐字节不变，非流式 JSON 返回原
+  `Response` 对象。错误帧、`[DONE]` 和非 2xx 响应不改写。
+- 首个有效输出计时同样把非空数组 content 视为内容。
+- 请求侧：SDK 把 assistant 历史编码为字符串 `content` + `reasoning_content`。Mistral 的 schema 以
+  422 `extra_forbidden` 拒绝 `messages[i].reasoning_content`，因此请求 host 为 `mistral.ai` 或其子域时，
+  同一兼容层删除 assistant 消息上的 `reasoning_content`（历史思考不回放），其余字段与消息不变；
+  其它 host（如 DeepSeek 需要回放 reasoning）与不含该字段的请求原样传递同一个 `init`。
+- 范围外：Mistral 文档允许把 thinking chunk 放回 `content` 数组回放，这一保留思考的历史适配尚未实现。
+
 ### 3.2 Model Registry
 
 负责把 provider config 装配成 AI SDK provider 或 provider factory。

@@ -26,6 +26,10 @@ import { createAnthropicCompatFetch } from "./anthropic-stream-compat.js";
 import { createModelRequestSecurityState } from "./request-security-edition/index.js";
 import type { ModelRequestSecurityState, ModelRequestSecurityPort } from "./request-security.js";
 import { createOpenAIResponsesJsonCompatFetch } from "./openai-responses-json-compat.js";
+import {
+  createOpenAICompatibleContentPartsCompatFetch,
+  hasNonEmptyContentParts,
+} from "./openai-compatible-content-parts-compat.js";
 import { createModelOptionMapFetch, type RawRequestBodyCapture } from "./model-option-map-fetch.js";
 import { createNetworkProxyFetch } from "../network/proxy-fetch.js";
 import { createProviderEndpointRoutingFetch } from "./provider-endpoint-routing-fetch.js";
@@ -355,7 +359,7 @@ export class AiSdkModelExecution {
           name: providerConfig.name ?? providerId,
           baseURL: providerConfig.baseURL,
           apiKey,
-          fetch: optionFetch,
+          fetch: createOpenAICompatibleContentPartsCompatFetch(optionFetch),
           headers,
           // OpenAI Compatible 流式 usage 需要显式请求，Usage 是执行结果的一部分。
           includeUsage: true,
@@ -990,6 +994,8 @@ function providerSseFrameHasContent(frame: string, kind: AiSdkProviderKind): boo
       if (!delta) return false;
       return (
         nonEmpty(delta.content) ||
+        // 这一层在 content-parts 兼容层之下，看到的是原始数组 content（Mistral zai-glm 等）。
+        hasNonEmptyContentParts(delta.content) ||
         nonEmpty(delta.reasoning_content) ||
         nonEmpty(delta.reasoning) ||
         nonEmpty(asRecord(delta.function_call)?.arguments) ||

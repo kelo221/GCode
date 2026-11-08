@@ -1536,6 +1536,11 @@ exceptions:
     paths:
       - apps/zcode-cli/packages/adapters/src/model/prompt-cache-mode.ts
     reason: Fork feature (apps/zcode-gpui/PARITY.md "Prompt cache lifetime"). The rewrite of Anthropic cache markers to one request-wide TTL (5m untouched, 1h, or off) lives in its own file so the upstream runner only gains one call in its history projection and source syncs stay mergeable.
+  - id: fork-openai-compatible-content-parts-cli
+    rule: unmanaged-new-file
+    paths:
+      - apps/zcode-cli/packages/adapters/src/model/openai-compatible-content-parts-compat.ts
+    reason: Fork fix (apps/zcode-cli/docs/design/v2/model/README.md §3.1.3). The Chat Completions compat fetch that turns array `content` (Mistral zai-glm thinking/text chunks) into the string fields the AI SDK schema accepts sits beside the Anthropic and Responses compat fetches, so model-execution.ts only gains one wrapping call and one timing check and source syncs stay mergeable.
   - id: workflow-mode-user-choice-unmanaged-edit
     rule: unmanaged-new-file
     paths:

@@ -261,7 +261,7 @@ describe("provider receive timing before stream buffers", () => {
     await done;
     expect(run.completed().timeToFirstContentMs).toBeUndefined();
   });
-  it.each(["text", "reasoning", "tool"] as const)(
+  it.each(["text", "reasoning", "content parts", "tool"] as const)(
     "times compatible %s output through the real SDK",
     async (kind) => {
       const chunk = (delta: Frame, finish_reason: string | null = null) => ({
@@ -276,16 +276,23 @@ describe("provider receive timing before stream buffers", () => {
           ? { content: "answer" }
           : kind === "reasoning"
             ? { reasoning_content: "think" }
-            : {
-                tool_calls: [
-                  {
-                    index: 0,
-                    id: "call_read",
-                    type: "function",
-                    function: { name: "Read", arguments: '{"path":"example.txt"}' },
-                  },
-                ],
-              };
+            : kind === "content parts"
+              ? {
+                  content: [
+                    { type: "thinking", thinking: [{ type: "text", text: "think" }] },
+                    { type: "text", text: "answer" },
+                  ],
+                }
+              : {
+                  tool_calls: [
+                    {
+                      index: 0,
+                      id: "call_read",
+                      type: "function",
+                      function: { name: "Read", arguments: '{"path":"example.txt"}' },
+                    },
+                  ],
+                };
       const started = installTransport(() =>
         response([
           [100, chunk({ role: "assistant" })],
