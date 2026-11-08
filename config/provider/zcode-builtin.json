@@ -3643,6 +3643,31 @@
       ],
       "providerSiteRules": [
         {
+          "modelMatch": ".*",
+          "apiTypeMatch": "openai-chat-completions",
+          "baseUrlMatch": "https://api\\.mistral\\.ai/v1/?",
+          "config": {
+            "optionSpecs": {
+              "reasoningLevel": {
+                "map": "reasoningLevel == \"disabled\" ? {} : {\"reasoning_effort\": reasoningLevel == \"enabled\" ? \"high\" : reasoningLevel}"
+              }
+            }
+          }
+        },
+        {
+          "modelMatch": "zai-glm-.*",
+          "apiTypeMatch": "openai-chat-completions",
+          "baseUrlMatch": "https://api\\.mistral\\.ai/v1/?",
+          "config": {
+            "optionSpecs": {
+              "reasoningLevel": {
+                "values": ["low", "high"],
+                "map": "{\"reasoning_effort\": reasoningLevel == \"disabled\" ? \"low\" : reasoningLevel == \"enabled\" ? \"high\" : reasoningLevel}"
+              }
+            }
+          }
+        },
+        {
           "modelMatch": "glm-5\\.3-flash",
           "apiTypeMatch": "openai-chat-completions",
           "baseUrlMatch": "https://opencode\\.ai/zen/go/v1/?",
