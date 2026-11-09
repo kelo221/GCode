@@ -40,10 +40,11 @@ fn render_markdown_with_policy(
     streaming: bool,
     passive: bool,
 ) -> AnyElement {
+    let parsed = images::windows_image_paths_to_slashes(text);
     let body = if streaming {
-        format!("{text} ▍")
+        format!("{parsed} ▍")
     } else {
-        text.to_string()
+        parsed.into_owned()
     };
     MarkdownDoc {
         body,

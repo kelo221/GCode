@@ -648,6 +648,12 @@ image cache, composer selection).
   (`![alt](path)`) that point at absolute local paths or `file://` URLs with an image
   extension (2026-10-27); the inline `[image: path]` link stays. Relative paths and remote
   URLs are not loaded. The Desktop context prompt tells the model to use this syntax.
+  Windows image paths written with backslashes (`![x](C:\Users\V\.cache\x.png)`) are read
+  with `/` in their place before parsing, because CommonMark would otherwise treat `\.` as
+  an escape and drop the backslash, pointing at a file that does not exist (2026-11-09).
+  This applies only to image destinations that start with a drive letter or `\\`; code,
+  text and ordinary links are untouched, and Copy as Markdown keeps the original text.
+  The inline `[image: path]` link opens the file like any other file link.
 - **Reasoning.** Investigated: main-session Claude models return mostly signature-only
   thinking (85% empty blocks in the model-io log), while subagent models return full text.
   GPUI is correct to mirror empty rows. An expanded empty block says the model did not share

@@ -225,15 +225,20 @@ pub(crate) fn render_inlines(
             }
             Event::Start(Tag::Image { dest_url, .. }) => {
                 // v1: images render as a link to their target.
+                // 本地图片路径原先把原始路径直接当 URL，点击无效；改走与普通文件链接相同的
+                // `zcode-file:` 目标，点击后用系统默认程序打开。
                 let mut img = st.clone();
                 img.link = true;
                 let label = format!("[image: {dest_url}]");
                 push_run(&mut inline, label.len(), &img);
                 inline.text.push_str(&label);
-                inline.links.push((
-                    inline.text.len() - label.len()..inline.text.len(),
-                    dest_url.to_string(),
-                ));
+                let url = match super::file_ref::link_file_target(dest_url) {
+                    Some(path) => format!("{}{path}", super::file_ref::FILE_LINK_SCHEME),
+                    None => dest_url.to_string(),
+                };
+                inline
+                    .links
+                    .push((inline.text.len() - label.len()..inline.text.len(), url));
                 *pos += 1;
             }
             Event::InlineHtml(h) | Event::Html(h) => {
