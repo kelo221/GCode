@@ -422,7 +422,7 @@ export class Tab {
       () => capabilityDescriptors,
       readCapabilityDocumentation,
     );
-    this.playwright = createPlaywrightAPI((command) => this.run(command));
+    this.playwright = createPlaywrightAPI((command) => this.run(command), tabId ?? "default");
     this.recording = new BrowserRecordingAPI((command) => this.run(command));
     this.viewportSizeValue = summary?.viewport ? { ...summary.viewport } : null;
   }

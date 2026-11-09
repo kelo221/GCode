@@ -7,6 +7,7 @@ import type {
   BrowserPlaywrightModifier,
 } from "@zcode/contracts/browser-control";
 import { isRegExp } from "node:util/types";
+import { renderDomSnapshotDiff, swapDomSnapshotBaseline } from "./dom-snapshot-diff.js";
 import { base64ToBytes, expectOk } from "./result.js";
 
 type Run = (command: BrowserCommand) => Promise<BrowserCommandResult>;
@@ -633,7 +634,10 @@ export class PlaywrightAPI {
   private readonly owner = {};
   private wrap: ObjectWrapper = defaultObjectWrapper;
 
-  constructor(private readonly run: Run) {}
+  constructor(
+    private readonly run: Run,
+    private readonly snapshotKey = "default",
+  ) {}
 
   [setObjectWrapper](wrap: ObjectWrapper): void {
     this.wrap = wrap;
@@ -771,13 +775,18 @@ export class PlaywrightAPI {
     return base64ToBytes(result.image.base64);
   }
 
-  domSnapshot(): Promise<string> {
-    return runValue(this.run, { name: "domSnapshot" });
+  async domSnapshot(options: { diff?: boolean } = {}): Promise<string> {
+    if (options.diff !== undefined && typeof options.diff !== "boolean") {
+      throw new Error("playwright.domSnapshot diff option must be a boolean");
+    }
+    const snapshot = await runValue<string>(this.run, { name: "domSnapshot" });
+    const previous = swapDomSnapshotBaseline(this.snapshotKey, snapshot);
+    return options.diff ? renderDomSnapshotDiff(previous, snapshot) : snapshot;
   }
 }
 
-export function createPlaywrightAPI(run: Run): PlaywrightAPI {
-  return defaultObjectWrapper(new PlaywrightAPI(run), "PlaywrightAPI");
+export function createPlaywrightAPI(run: Run, snapshotKey = "default"): PlaywrightAPI {
+  return defaultObjectWrapper(new PlaywrightAPI(run, snapshotKey), "PlaywrightAPI");
 }
 
 export function configurePlaywrightObjectWrapper(

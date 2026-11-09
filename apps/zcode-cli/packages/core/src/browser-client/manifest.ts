@@ -228,7 +228,7 @@ const FALLBACK_MANIFEST: BrowserApiManifest = {
         {
           name: "domSnapshot",
           kind: "method",
-          signature: "domSnapshot(): Promise<string>",
+          signature: "domSnapshot(options?: { diff?: boolean }): Promise<string>",
           command: "playwright",
         },
         {

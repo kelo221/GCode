@@ -1541,6 +1541,11 @@ exceptions:
     paths:
       - apps/zcode-cli/packages/adapters/src/model/openai-compatible-content-parts-compat.ts
     reason: Fork fix (apps/zcode-cli/docs/design/v2/model/README.md §3.1.3). The Chat Completions compat fetch that turns array `content` (Mistral zai-glm thinking/text chunks) into the string fields the AI SDK schema accepts sits beside the Anthropic and Responses compat fetches, so model-execution.ts only gains one wrapping call and one timing check and source syncs stay mergeable.
+  - id: fork-dom-snapshot-diff-cli
+    rule: unmanaged-new-file
+    paths:
+      - apps/zcode-cli/packages/core/src/browser-client/dom-snapshot-diff.ts
+    reason: Fork feature (docs/browser-use/2026-11-09-dom-snapshot-diff-spec.md). The per-tab domSnapshot baseline cache and line diff renderer live in their own file so the upstream playwright.ts and facade.ts only gain an options check and a tab key, and source syncs stay mergeable.
   - id: workflow-mode-user-choice-unmanaged-edit
     rule: unmanaged-new-file
     paths:

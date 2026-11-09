@@ -321,7 +321,8 @@ function buildJsToolDescription(options: NodeReplToolOptions = {}): string {
     "must be the final expression or be sent through `nodeRepl.write(...)`, otherwise the model cannot see it. " +
     "Cheat sheet: `globalThis.tab = await browser.tabs.new(); await tab.goto(url)` -> use " +
     "`await tab.playwright.domSnapshot()` for AI/ARIA locator ground truth -> " +
-    "build a stable `tab.playwright.getBy*/locator(...)`, check `count()` when uniqueness is not obvious, then act. " +
+    "build a stable `tab.playwright.getBy*/locator(...)`, check `count()` when uniqueness is not obvious, then act; " +
+    "to observe the result on the same page use `await tab.playwright.domSnapshot({ diff: true })` (changed lines only). " +
     "If the latest snapshot already contains the target, use it directly; never write `evaluate()` code to rediscover " +
     "related elements, enumerate inputs, dump HTML, walk the DOM, or probe guessed selectors. " +
     "`playwright.evaluate()` and locator `evaluate()` execute JavaScript in the page context and may change page state. " +
