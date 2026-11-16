@@ -25,6 +25,11 @@ fn methods_in_calls(directory: &Path, methods: &mut HashSet<String>) {
                     name == "server.ts" || name == "automation-port.ts" || name == "offpeak-port.ts"
                 }) {
                     continue;
+                } else if path.ends_with("session-control/index.ts") {
+                    // 修复原因：v3.18.2 新增 appControl/* 反向请求（方法来自 appControlProtocol 表，
+                    // 不走 zcodeProtocolMethods）。CLI 只在宿主于 runtime preferences 声明
+                    // appControlEnabled 时注册这些工具；GPUI 从不声明，未知方法本就回错误。
+                    continue;
                 } else {
                     panic!(
                         "Reverse RPC must use explicit protocol registry method: {}: {argument}",

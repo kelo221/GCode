@@ -303,6 +303,21 @@ impl EffectiveConfig {
         }
     }
 
+    /// A session whose provider/model is missing from the loaded catalog (the
+    /// provider was removed or the id retired): the CLI rejects sends with
+    /// `modelUnavailable`, so the trigger warns before that happens.
+    /// Placeholder ids (`<synthetic>`) and an unloaded catalog never warn.
+    pub fn model_unavailable(&self, models: &[crate::composer::catalog::ModelOption]) -> bool {
+        self.has_session
+            && !models.is_empty()
+            && !self.provider.is_empty()
+            && !self.model.is_empty()
+            && !self.model.starts_with('<')
+            && !models
+                .iter()
+                .any(|o| o.provider == self.provider && o.model == self.model)
+    }
+
     pub fn thought_display(&self) -> String {
         let v = self.thought.trim().to_lowercase();
         match v.as_str() {

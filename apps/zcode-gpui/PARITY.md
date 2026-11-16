@@ -100,6 +100,60 @@ limits below take precedence over the retained historical milestone requirements
 - **Packaging.** `scripts/build_backend.ts` embeds `packages/cli/src/codemode-worker.ts` and stages
   `node_modules/quickjs-wasi/quickjs.wasm`; `scripts/backend_codemode_smoke.ts` checks both.
 
+## Upstream v3.18.2 protocol additions (2026-11-16)
+
+Source of truth: `packages/shared/src/zcode-protocol-v4/{snapshot,rows,command,transport}.ts`
+and `apps/zcode-cli/packages/bootstrap/src/zcode-protocol-v4/` at v3.18.2.
+
+- **Unknown interaction kinds.** Pending interactions are classed as permission, userInput,
+  workspaceHookReview or unsupported (`InteractionKind`). An unsupported kind (upstream
+  `pluginInstall`, or anything newer) gets a neutral card titled "Unsupported request" with
+  "This request isn't supported in GCode yet" / "GCode 暂不支持此请求", and never the
+  workspace-hook text. It shows a button only when its own payload offers a deny-kind option or one
+  whose id is decline/cancel/deny/skip/dismiss; that button sends that `optionId`. Nothing is
+  guessed: the CLI ignores `pluginInstall` answers from clients that did not opt in with
+  `pluginDiscoveryUi`, and a guessed answer would hide the card while the agent kept waiting.
+  Only permission and userInput block the composer; hook reviews and unsupported cards sit beside
+  it. GPUI does not send `pluginDiscoveryUi`, so the CLI filters `pluginInstall` out of its
+  frames today; the card covers future kinds and CLIs that send them anyway.
+- **Tolerance.** Conversation frames are read as plain JSON, never validated as a whole, so new
+  values cannot reject a frame. Golden tests cover a snapshot and deltas with `worktreeCreated`
+  timeline markers, `unreadable` and unknown row kinds (kept as non-rendered rows, the rest of the
+  window intact), new optional fields (`userInput.modelSelection/mode/planEnabled`,
+  `queueItem.editLock`, `availability.rewindFiles`, `stopControl`), a `pluginInstall`
+  interaction, an unknown delta op, and the new notifications
+  `v4/conversation/contextCompositionChanged`, `v4/telemetry/model-request-metrics` and
+  `startup/pluginsDegraded` (all ignored). New CLI-to-host requests (`appControl/*`) are only
+  registered when the host advertises them; GPUI does not, and unknown requests already get an
+  error response. Not ported: `availability.rewindFiles` (the session lock on file rewind). GPUI
+  still offers the action from the row's `canRewindFiles`, and a locked session rejects it with a
+  banner.
+- **Agent runtime exit banner.** The local backend's waiter thread passes the exit code and
+  whether GPUI killed it on `ConnEvent::Exited`; stdout EOF waits up to 2 s for that status. When
+  a started agent exits and GPUI did not kill it, a dismissible error banner says "Agent stopped
+  unexpectedly (exit code N). Running tasks and subagents were interrupted." Code `0xE0000008`
+  (native out-of-memory) says "the system ran out of memory" instead. Negative codes show as hex
+  (`0xC0000005`). Idle unloads, pre-startup failures, remote links and exits without a status
+  show nothing new. The auto-restart (up to 3) is unchanged, and the same text is not stacked
+  twice.
+- **Model unavailable.** A rejected command ack with `reasonCode: "modelUnavailable"` shows "This
+  session's model is no longer available. Pick another model." instead of the raw "Message was
+  not accepted" line. Other session commands rejected with that code (retry, edit, compact) show
+  the same text. The raw line still goes to the log, and the draft is still restored. The
+  composer shows a warning-coloured alert icon with the same tooltip left of the model trigger
+  when a session's provider/model is missing from a loaded catalog. Draft tasks, an empty catalog
+  and placeholder ids such as `<synthetic>` never warn.
+- **Stop subagent.** `runningSubagentSummary.stopControl {taskId, executionId}` is parsed. When it
+  is present, Stop (dock agent card and transcript subagent card) sends v4 `stopSubagent` with
+  exactly those ids. Otherwise it falls back to `cancelBackgroundWork {workId}` from the
+  background work join. A pending stop shows as loading and is not resent. Rejections
+  `fault.command.subagentStopRejected.not_found|not_running` show "Subagent not stopped: it
+  already finished or was replaced by a newer run." and `cancel_not_supported` shows "…this
+  subagent can't be stopped." Other codes keep the raw "Stop subagent <status>: …" banner. The phone
+  remote allowlist accepts `stopSubagent`.
+- **Bash summary.** A collapsed Bash row shows the tool input's `description` when it is
+  non-empty after trimming, else `$ command`. The expanded view still shows the command.
+
 ## New-task draft model and thinking level (2026-10-30)
 
 - **Each new-task draft keeps its own picks.** The model, thinking level, permission mode and plan

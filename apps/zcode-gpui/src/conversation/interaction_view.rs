@@ -4,8 +4,9 @@
 
 use crate::app::root::RootView;
 use crate::conversation::interactions::{
-    FULL_ACCESS_OPTION_ID, PendingInteraction, decline_answer, option_answer,
+    FULL_ACCESS_OPTION_ID, InteractionKind, PendingInteraction, decline_answer, option_answer,
 };
+use crate::shared::i18n::label;
 use crate::shared::theme::{ACCENT, AMBER, BORDER, CARD, DANGER, INVERSE, MUTED, TEXT};
 use crate::shared::theme_colors::color as rgb;
 use gpui::{AnyElement, Context, Div, FontWeight, SharedString, Stateful, div, prelude::*};
@@ -85,18 +86,20 @@ impl RootView {
             return self.plan_approval_card(pi, cx);
         }
         let iid = pi.interaction_id.as_str();
-        let title = match pi.kind.as_str() {
-            "permission" if !pi.tool_name.is_empty() => {
+        let kind = pi.kind_class();
+        let title = match kind {
+            InteractionKind::Permission if !pi.tool_name.is_empty() => {
                 format!("Permission request: {}", pi.tool_name)
             }
-            "permission" => "Permission request".to_string(),
-            "workspaceHookReview" => "Workspace hook review".to_string(),
-            _ => "Agent question".to_string(),
+            InteractionKind::Permission => "Permission request".to_string(),
+            InteractionKind::WorkspaceHookReview => "Workspace hook review".to_string(),
+            InteractionKind::UserInput => "Agent question".to_string(),
+            InteractionKind::Unsupported => label("Unsupported request", "不支持的请求").into(),
         };
         let mut actions = div().flex().flex_wrap().gap_2().pt_1();
         let mut body = div().flex().flex_col().gap_2().w_full().min_w_0();
-        match pi.kind.as_str() {
-            "permission" => {
+        match kind {
+            InteractionKind::Permission => {
                 for o in &pi.options {
                     let colors = if o.kind == "deny" {
                         (DANGER, INVERSE)
@@ -129,7 +132,7 @@ impl RootView {
                     actions = actions.child(self.typed_answer_btn(pi, "Deny with feedback", cx));
                 }
             }
-            "userInput" => {
+            InteractionKind::UserInput => {
                 if pi.questions.is_empty() {
                     for o in &pi.options {
                         let btn = self.answer_btn(
@@ -158,13 +161,32 @@ impl RootView {
                     cx,
                 ));
             }
-            _ => {
+            InteractionKind::WorkspaceHookReview => {
                 body = body.child(
                     div()
                         .text_xs()
                         .text_color(rgb(MUTED))
                         .child("Review workspace hooks in the GCode desktop app."),
                 );
+            }
+            // 修复原因：此前所有未知 kind（如上游新增的 pluginInstall）都落进
+            // workspace hook 的兜底文案，误导用户去审查 hooks。未知 kind 改为中性说明，
+            // 只有载荷自带拒绝/取消选项时才给按钮，不猜测应答形状。
+            InteractionKind::Unsupported => {
+                body = body.child(div().text_xs().text_color(rgb(MUTED)).child(label(
+                    "This request isn't supported in GCode yet",
+                    "GCode 暂不支持此请求",
+                )));
+                if let Some(o) = pi.dismiss_option() {
+                    actions = actions.child(self.answer_btn(
+                        iid,
+                        &o.option_id,
+                        &o.label,
+                        (CARD, TEXT),
+                        option_answer(&o.option_id),
+                        cx,
+                    ));
+                }
             }
         }
         div()

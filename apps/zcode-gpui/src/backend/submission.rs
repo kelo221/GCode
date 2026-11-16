@@ -89,7 +89,10 @@ impl AppState {
                 // CLI 的 guard/stale 拒绝不写日志；之前横幅丢掉 reasonCode，事后无法判断原因。
                 let line = rejection_line(ack);
                 self.push_log(format!("submission {line}"));
-                self.push_error(line);
+                // modelUnavailable 等有明确补救的 reasonCode 显示可操作的说明，原始行仍进日志。
+                self.push_error(
+                    crate::backend::ack_reasons::ack_reason_banner(ack).unwrap_or(line),
+                );
                 self.recover_submission(submission, cx);
             }
             Some("accepted" | "noop" | "duplicate") if create => {

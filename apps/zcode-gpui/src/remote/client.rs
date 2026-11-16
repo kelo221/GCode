@@ -170,7 +170,7 @@ pub(crate) fn connect(target: &RemoteTarget, ws_key: &str) -> Connection {
         let line = format!("desktop link closed: {reason}");
         let len = line.len();
         push_event(&thread_log_backlog, &ev_tx, ConnEvent::Log(line), len);
-        let _ = ev_tx.unbounded_send(ConnEvent::Exited);
+        let _ = ev_tx.unbounded_send(ConnEvent::Exited(None));
     });
     Connection {
         pid: 0,

@@ -119,3 +119,27 @@ fn test_trigger_display_falls_back_outside_catalog() {
     };
     assert_eq!(effective.trigger_display(&[]), "<synthetic>");
 }
+
+#[test]
+fn model_unavailable_only_for_a_session_model_missing_from_a_loaded_catalog() {
+    let models = vec![opt("zaiPlan", "glm-4.6", "GLM-4.6", "GLM Coding Plan")];
+    let session = |provider: &str, model: &str| EffectiveConfig {
+        provider: provider.into(),
+        model: model.into(),
+        has_session: true,
+        ..Default::default()
+    };
+    assert!(!session("zaiPlan", "glm-4.6").model_unavailable(&models));
+    // Removed provider and retired id both warn.
+    assert!(session("gone", "glm-4.6").model_unavailable(&models));
+    assert!(session("zaiPlan", "glm-3").model_unavailable(&models));
+    // No warning before the catalog loads, for placeholders, or without a session.
+    assert!(!session("gone", "x").model_unavailable(&[]));
+    assert!(!session("zaiPlan", "<synthetic>").model_unavailable(&models));
+    assert!(!session("", "").model_unavailable(&models));
+    let draft = EffectiveConfig {
+        has_session: false,
+        ..session("gone", "x")
+    };
+    assert!(!draft.model_unavailable(&models));
+}

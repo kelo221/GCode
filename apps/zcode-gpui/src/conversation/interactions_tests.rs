@@ -273,6 +273,57 @@ fn option_value_falls_back_to_label() {
 }
 
 #[test]
+fn unknown_kinds_classify_as_unsupported() {
+    assert_eq!(
+        InteractionKind::of("permission"),
+        InteractionKind::Permission
+    );
+    assert_eq!(InteractionKind::of("userInput"), InteractionKind::UserInput);
+    assert_eq!(
+        InteractionKind::of("workspaceHookReview"),
+        InteractionKind::WorkspaceHookReview
+    );
+    for kind in ["pluginInstall", "somethingNew", ""] {
+        assert_eq!(InteractionKind::of(kind), InteractionKind::Unsupported);
+    }
+}
+
+/// Upstream v3.18.2 `pluginInstall` payload: parsed (not dropped), classed as
+/// unsupported, and offers no guessed dismiss answer — it carries no options.
+#[test]
+fn plugin_install_is_unsupported_without_dismiss() {
+    let v = json!({
+        "interactionId": "plugin-install:s1:t1", "kind": "pluginInstall",
+        "anchorRowId": null, "createdAt": 1,
+        "payload": {
+            "kind": "pluginInstall", "pluginId": "official/x", "name": "x",
+            "reason": "Needs the x tools", "action": "install", "scope": "workspace",
+            "toolCallId": "t1"
+        }
+    });
+    let pi = PendingInteraction::from_value(&v).unwrap();
+    assert_eq!(pi.kind_class(), InteractionKind::Unsupported);
+    assert!(pi.dismiss_option().is_none());
+}
+
+#[test]
+fn unsupported_kind_dismisses_with_its_own_decline_option() {
+    let v = json!({
+        "interactionId": "x1", "kind": "futureKind", "anchorRowId": null, "createdAt": 1,
+        "payload": {
+            "kind": "futureKind",
+            "options": [
+                { "optionId": "go", "label": "Go" },
+                { "optionId": "cancel", "label": "Cancel" }
+            ]
+        }
+    });
+    let pi = PendingInteraction::from_value(&v).unwrap();
+    assert_eq!(pi.kind_class(), InteractionKind::Unsupported);
+    assert_eq!(pi.dismiss_option().unwrap().option_id, "cancel");
+}
+
+#[test]
 fn stepper_clamps_to_question_range() {
     assert_eq!(step_question(0, true, 3), 1);
     assert_eq!(step_question(2, true, 3), 2);

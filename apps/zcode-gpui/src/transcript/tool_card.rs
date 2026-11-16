@@ -227,7 +227,15 @@ pub(crate) fn tool_summary(label: &str, v: &Value) -> Option<String> {
             .map(str::to_string)
     };
     match label {
-        "Bash" => str_field("command").map(|c| format!("$ {c}")),
+        // The model's own description reads better than a long command line;
+        // the command itself stays in the expanded input view.
+        "Bash" => v
+            .get("description")
+            .and_then(Value::as_str)
+            .map(str::trim)
+            .filter(|d| !d.is_empty())
+            .map(str::to_string)
+            .or_else(|| str_field("command").map(|c| format!("$ {c}"))),
         "Read" | "Write" | "Edit" | "MultiEdit" | "NotebookEdit" => str_field("file_path")
             .or_else(|| str_field("notebook_path"))
             .or_else(|| str_field("path"))

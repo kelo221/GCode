@@ -138,6 +138,14 @@ pub fn dispatch_reverse_rpc(
             respond_result(id, json!({ "accepted": false, "reason": "unavailable" }))
         }
 
+        // Served by `credential_cipher_rpc` (events.rs routes it first, off the UI
+        // thread); reaching here means no host route, so report storage unavailable.
+        "interaction/requestCredentialCipher" => respond_error(
+            id,
+            INTERNAL_ERROR,
+            "System credential storage is unavailable on this host",
+        ),
+
         // No embedded browser: discovery reports none, execution fails with
         // the schema's `backend_unavailable` code instead of hanging.
         "interaction/browserList" => respond_result(id, json!({ "browsers": [] })),

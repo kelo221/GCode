@@ -162,13 +162,9 @@ impl RootView {
                 .unwrap_or(t);
             crate::conversation::turn_meta::format_duration(now_ms.saturating_sub(t))
         });
-        let stop_button = agent
-            .work_id
-            .clone()
-            .filter(|_| agent.cancellable)
-            .and_then(|wid| {
-                self.activity_cancel_button(format!("dock-stop-subagent-{idx}"), wid, cx)
-            });
+        let stop_button = agent.stop_target().and_then(|stop| {
+            self.subagent_stop_button(format!("dock-stop-subagent-{idx}"), stop, cx)
+        });
         let open_button = (!agent.child_session_id.is_empty()).then(|| {
             let child = agent.child_session_id.clone();
             let element = div().child(

@@ -3,6 +3,8 @@
 //! (never values). `AppState.secrets` is the single writer; each workspace
 //! agent gets its in-scope secrets with `secrets/sync` (backend/secrets_cmds.rs).
 
+pub(crate) mod credential_cipher;
+mod credential_cipher_host;
 pub(crate) mod store;
 
 use serde::{Deserialize, Serialize};

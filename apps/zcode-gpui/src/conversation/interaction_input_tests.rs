@@ -182,3 +182,26 @@ fn permission_feedback_denies_with_the_typed_text() {
         [json!({ "optionId": "deny", "freeText": "use trash instead" })]
     );
 }
+
+/// Unknown kinds never take over the composer: their card has no answer
+/// input, so hiding the composer behind it would leave the user stuck.
+#[test]
+fn only_permission_and_questions_block_the_composer() {
+    let pi = |kind: &str| {
+        PendingInteraction::from_value(&json!({
+            "interactionId": kind, "kind": kind,
+            "payload": { "kind": kind, "summary": "", "prompt": "" }
+        }))
+        .unwrap()
+    };
+    let pending = [
+        pi("pluginInstall"),
+        pi("workspaceHookReview"),
+        pi("userInput"),
+    ];
+    assert_eq!(
+        crate::conversation::interaction_input::blocking(&pending).map(|p| p.kind.as_str()),
+        Some("userInput")
+    );
+    assert!(crate::conversation::interaction_input::blocking(&pending[..2]).is_none());
+}

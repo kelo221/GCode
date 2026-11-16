@@ -359,5 +359,8 @@ impl ConversationState {
 #[path = "model_history_tests.rs"]
 mod history_tests;
 #[cfg(test)]
+#[path = "protocol_tolerance_tests.rs"]
+mod protocol_tolerance_tests;
+#[cfg(test)]
 #[path = "model_tests.rs"]
 mod tests;

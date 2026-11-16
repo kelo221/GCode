@@ -13,7 +13,7 @@ use crate::composer::config_cmds::{EffectiveConfig, title_case};
 use crate::composer::plan_mode::{PERMISSION_MODES, mode_label};
 use ely_gpui_component::buttons::{Button, ButtonVariant};
 use ely_gpui_component::menus::{DropdownMenu, Menu, MenuItem};
-use ely_gpui_component::primitives::IconName;
+use ely_gpui_component::primitives::{Icon, IconName, Tooltip};
 use gpui::{Context, Entity, IntoElement, ParentElement, Styled, div, prelude::*};
 
 impl RootView {
@@ -64,6 +64,11 @@ impl RootView {
             .items_center()
             .gap_1()
             .children(context_window.map(crate::composer::context_ring::context_ring))
+            .children(
+                effective
+                    .model_unavailable(&models)
+                    .then(model_unavailable_marker),
+            )
             .children((!models.is_empty()).then(|| {
                 DropdownMenu::new(
                     "model-menu",
@@ -153,6 +158,26 @@ impl RootView {
         );
         row
     }
+}
+
+/// Warning glyph beside the model trigger when the session's model left the
+/// catalog; the tooltip says what to do (pick another model).
+fn model_unavailable_marker() -> gpui::AnyElement {
+    let tip = crate::shared::i18n::label(
+        "This session's model is no longer available. Pick another model.",
+        "此会话的模型已不可用，请选择其他模型。",
+    );
+    div()
+        .id("model-unavailable")
+        .flex_none()
+        .flex()
+        .items_center()
+        .text_color(crate::shared::theme_colors::color(
+            crate::shared::theme::WARNING,
+        ))
+        .tooltip(Tooltip::text(tip))
+        .child(Icon::new(IconName::TriangleAlert))
+        .into_any_element()
 }
 
 /// Provider-grouped model menu (desktop parity: registry groups render as

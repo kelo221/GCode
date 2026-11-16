@@ -19,9 +19,23 @@ pub enum ConnEvent {
     Line(String),
     /// Diagnostics from child stderr (never parsed as protocol).
     Log(String),
-    /// stdout EOF → child is gone.
-    Exited,
+    /// stdout EOF → child is gone. Carries the child's exit status when its
+    /// waiter reported one in time (`None` for remote links or no status).
+    Exited(Option<BackendExit>),
 }
+
+/// How a local backend child ended, from its waiter thread.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct BackendExit {
+    /// Process exit code; `None` when the wait failed or a signal ended it.
+    pub code: Option<i32>,
+    /// GPUI killed it (idle unload, restart, close): not a crash.
+    pub killed_by_gpui: bool,
+}
+
+/// How long stdout EOF waits for the waiter's exit status before reporting
+/// the exit without one.
+const EXIT_STATUS_WAIT: std::time::Duration = std::time::Duration::from_secs(2);
 
 pub struct Connection {
     pub(crate) pid: u32,
@@ -129,7 +143,12 @@ fn make_kill(child: &std::sync::Arc<std::sync::Mutex<Option<Child>>>) -> Box<dyn
 /// how far a line may grow BEFORE any large allocation happens (follow-up
 /// review finding 6 — `BufRead::lines()` would allocate a hostile
 /// unterminated line in full before any admission check could run).
-fn pump_stdout(stdout: impl Read, backlog: EventBacklog, tx: Sender2) {
+fn pump_stdout(
+    stdout: impl Read,
+    backlog: EventBacklog,
+    tx: Sender2,
+    exit_rx: std::sync::mpsc::Receiver<BackendExit>,
+) {
     let mut reader = BufReader::new(stdout);
     loop {
         match read_bounded_line(&mut reader, MAX_RAW_LINE_BYTES) {
@@ -147,7 +166,10 @@ fn pump_stdout(stdout: impl Read, backlog: EventBacklog, tx: Sender2) {
             }
         }
     }
-    let _ = tx.unbounded_send(ConnEvent::Exited);
+    // stdout EOF normally means the child is exiting; its waiter thread
+    // reports the status moments later, so wait briefly for it.
+    let exit = exit_rx.recv_timeout(EXIT_STATUS_WAIT).ok();
+    let _ = tx.unbounded_send(ConnEvent::Exited(exit));
 }
 
 type Sender2 = futures::channel::mpsc::UnboundedSender<ConnEvent>;
@@ -198,7 +220,8 @@ pub fn spawn_connection(launch: &BackendLaunch, workspace: &Path) -> std::io::Re
 
     let out_tx = ev_tx.clone();
     let out_backlog = backlog.clone();
-    std::thread::spawn(move || pump_stdout(stdout, out_backlog, out_tx));
+    let (exit_tx, exit_rx) = std::sync::mpsc::channel::<BackendExit>();
+    std::thread::spawn(move || pump_stdout(stdout, out_backlog, out_tx, exit_rx));
 
     let err_tx = ev_tx.clone();
     let err_backlog = log_backlog.clone();
@@ -232,6 +255,10 @@ pub fn spawn_connection(launch: &BackendLaunch, workspace: &Path) -> std::io::Re
             let status = child.wait().ok();
             let killed = killed_by_gpui.load(Ordering::SeqCst);
             lifecycle_log::exited(pid, status.as_ref(), killed, started.elapsed());
+            let _ = exit_tx.send(BackendExit {
+                code: status.and_then(|s| s.code()),
+                killed_by_gpui: killed,
+            });
         });
     }
     #[cfg(not(windows))]
@@ -253,11 +280,19 @@ pub fn spawn_connection(launch: &BackendLaunch, workspace: &Path) -> std::io::Re
                     Some(Ok(Some(status))) => {
                         let killed = killed_by_gpui.load(Ordering::SeqCst);
                         lifecycle_log::exited(pid, Some(&status), killed, started.elapsed());
+                        let _ = exit_tx.send(BackendExit {
+                            code: status.code(),
+                            killed_by_gpui: killed,
+                        });
                         break;
                     }
                     Some(Err(_)) => {
                         let killed = killed_by_gpui.load(Ordering::SeqCst);
                         lifecycle_log::exited(pid, None, killed, started.elapsed());
+                        let _ = exit_tx.send(BackendExit {
+                            code: None,
+                            killed_by_gpui: killed,
+                        });
                         break;
                     }
                     None => break,

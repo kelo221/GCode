@@ -149,6 +149,46 @@ impl PendingInteraction {
             && (self.schema_interaction == PLAN_APPROVAL_INTERACTION
                 || self.tool_name.eq_ignore_ascii_case("ExitPlanMode"))
     }
+
+    pub fn kind_class(&self) -> InteractionKind {
+        InteractionKind::of(&self.kind)
+    }
+
+    /// For a kind GPUI cannot render: an option the payload itself offers to
+    /// say "no" with. `None` means the card can only explain itself — a
+    /// guessed answer could be ignored by the CLI (e.g. `pluginInstall`
+    /// resolvers only listen to opted-in clients) and leave the card hidden
+    /// while the agent keeps waiting.
+    pub fn dismiss_option(&self) -> Option<&InteractionOption> {
+        self.options.iter().find(|o| {
+            o.kind == "deny"
+                || ["decline", "cancel", "deny", "skip", "dismiss"]
+                    .iter()
+                    .any(|id| o.option_id.eq_ignore_ascii_case(id))
+        })
+    }
+}
+
+/// How the card renders a pending interaction (`pendingInteractionSchema.kind`).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum InteractionKind {
+    Permission,
+    UserInput,
+    WorkspaceHookReview,
+    /// Kinds this client does not implement (upstream `pluginInstall`, future
+    /// additions): a neutral "not supported" card, never another kind's text.
+    Unsupported,
+}
+
+impl InteractionKind {
+    pub fn of(kind: &str) -> Self {
+        match kind {
+            "permission" => Self::Permission,
+            "userInput" => Self::UserInput,
+            "workspaceHookReview" => Self::WorkspaceHookReview,
+            _ => Self::Unsupported,
+        }
+    }
 }
 
 fn parse_question_option(o: &Value) -> QuestionOption {

@@ -22,6 +22,7 @@ pub(crate) mod rows;
 pub(crate) mod session_entry;
 pub(crate) mod subagent_directory;
 pub(crate) mod subagent_nav;
+pub(crate) mod subagent_stop;
 pub(crate) mod subagents;
 pub(crate) mod throughput;
 pub(crate) mod turn_meta;

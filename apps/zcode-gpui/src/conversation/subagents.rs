@@ -35,6 +35,34 @@ pub struct RunningSubagent {
     /// until the child writes its todos again).
     #[serde(default)]
     pub todos: Vec<PlanItem>,
+    /// `runningSubagentSummary.stopControl` (v3.18.2): present only for a live
+    /// execution this CLI can stop with `stopSubagent`.
+    #[serde(default)]
+    pub stop_control: Option<SubagentStopControl>,
+}
+
+/// `{ taskId, executionId }` identifying one live subagent execution; the CLI
+/// rejects a stop whose execution was replaced (SendMessage resume).
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SubagentStopControl {
+    pub task_id: String,
+    pub execution_id: String,
+}
+
+impl SubagentStopControl {
+    /// Both ids must be non-empty (`z.string().min(1)`, strict object).
+    pub fn from_value(v: &Value) -> Option<Self> {
+        let field = |k: &str| {
+            v.get(k)
+                .and_then(Value::as_str)
+                .filter(|s| !s.is_empty())
+                .map(str::to_string)
+        };
+        Some(Self {
+            task_id: field("taskId")?,
+            execution_id: field("executionId")?,
+        })
+    }
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
@@ -66,6 +94,7 @@ pub struct JoinedRunningSubagent {
     pub todos: Vec<PlanItem>,
     pub work_id: Option<String>,
     pub cancellable: bool,
+    pub stop_control: Option<SubagentStopControl>,
 }
 
 impl SubagentsState {
@@ -134,6 +163,9 @@ impl RunningSubagent {
             .and_then(Value::as_array)
             .map(|arr| arr.iter().filter_map(PlanItem::from_value).collect())
             .unwrap_or_default();
+        let stop_control = v
+            .get("stopControl")
+            .and_then(SubagentStopControl::from_value);
 
         Some(Self {
             child_session_id,
@@ -146,6 +178,7 @@ impl RunningSubagent {
             started_at,
             model,
             todos,
+            stop_control,
         })
     }
 }
@@ -236,6 +269,7 @@ pub fn join_running_subagents(
                 todos: sub.todos.clone(),
                 work_id,
                 cancellable,
+                stop_control: sub.stop_control.clone(),
             });
         }
     }
@@ -261,6 +295,7 @@ pub fn join_running_subagents(
                 todos: Vec::new(),
                 work_id: Some(work.work_id.clone()),
                 cancellable: work.cancellable != Some(false),
+                stop_control: None,
             });
         }
     }

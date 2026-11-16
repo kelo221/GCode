@@ -21,6 +21,7 @@ fn running(child: &str, started: u64) -> JoinedRunningSubagent {
         todos: vec![],
         work_id: None,
         cancellable: false,
+        stop_control: None,
     }
 }
 

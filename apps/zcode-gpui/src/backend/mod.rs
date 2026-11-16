@@ -1,6 +1,7 @@
 //! Agent backend: process launch per workspace, the V4 NDJSON wire codec,
 //! inbound event routing / response correlation and outbound commands.
 
+mod ack_reasons;
 pub(crate) mod attachment_file;
 #[cfg(test)]
 mod attachment_stage_tests;
@@ -16,7 +17,9 @@ pub(crate) mod backlog;
 pub(crate) mod commands;
 pub(crate) mod compiled_backend;
 pub(crate) mod conn;
+mod credential_cipher_rpc;
 pub(crate) mod events;
+mod exit_notice;
 pub(crate) mod flow_cmds;
 mod goal_submission;
 pub(crate) mod inspection;

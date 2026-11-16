@@ -59,6 +59,8 @@ const ALLOWED_COMMANDS: &[&str] = &[
     "pauseGoal",
     "resumeGoal",
     "cancelBackgroundWork",
+    // v3.18.2 手机端停止子代理走 stopSubagent；同会话作用域，与 cancelBackgroundWork 同档。
+    "stopSubagent",
     "renameSession",
 ];
 

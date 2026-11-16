@@ -148,6 +148,7 @@ fn command_label(ctype: &str) -> &str {
         "deleteQueueItem" => "Remove queued message",
         "setAutoDrain" => "Pause/resume queue",
         "cancelBackgroundWork" => "Cancel task",
+        "stopSubagent" => "Stop subagent",
         "compact" => "Compact session",
         "sendGoalCommand" => "Send goal",
         "resolveInteraction" => "Answer",
@@ -247,11 +248,17 @@ impl AppState {
             }
             AckAction::Fail => {
                 let reason = field("message").or(field("reasonCode")).unwrap_or("");
-                self.push_error(format!(
+                let raw = format!(
                     "{} {status}{}{reason}",
                     command_label(&ctx.ctype),
                     if reason.is_empty() { "" } else { ": " }
-                ));
+                );
+                // 有明确补救的 reasonCode（模型不可用、子代理停止被拒）显示说明，原始行进日志。
+                let banner = crate::backend::ack_reasons::ack_reason_banner(ack);
+                if banner.is_some() {
+                    self.push_log(raw.clone());
+                }
+                self.push_error(banner.unwrap_or(raw));
                 self.rollback_command(ws_key, &ctx);
             }
         }

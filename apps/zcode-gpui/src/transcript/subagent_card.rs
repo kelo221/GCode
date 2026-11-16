@@ -131,22 +131,19 @@ impl RootView {
             None
         };
 
-        let (effective_work_id, cancellable) = {
+        let stop = if is_running {
             let state = self.state.read(cx);
-            state
-                .active_conversation()
-                .map(|c| c.subagent_work_control(work_id.as_deref(), child_session_id.as_deref()))
-                .unwrap_or((work_id.clone(), true))
-        };
-
-        let stop_button = if is_running
-            && cancellable
-            && let Some(wid) = effective_work_id
-        {
-            self.activity_cancel_button(format!("stop-subagent-{r_id}"), wid, cx)
+            match state.active_conversation() {
+                Some(c) => c.subagent_stop_target(work_id.as_deref(), child_session_id.as_deref()),
+                None => {
+                    crate::conversation::subagent_stop::stop_target(None, work_id.as_deref(), true)
+                }
+            }
         } else {
             None
         };
+        let stop_button =
+            stop.and_then(|s| self.subagent_stop_button(format!("stop-subagent-{r_id}"), s, cx));
 
         // Inside a subagent's transcript this card is its nested Explore, owned by
         // the viewed subagent rather than the main session.

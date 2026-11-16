@@ -7,7 +7,7 @@
 use crate::app::root::RootView;
 use crate::composer::input::{Composer, ComposerEvent};
 use crate::conversation::interactions::{
-    PendingInteraction, free_text_answer, plan_approve_answer, questions_answer,
+    InteractionKind, PendingInteraction, free_text_answer, plan_approve_answer, questions_answer,
 };
 use crate::shared::i18n::{label, t};
 use crate::shared::theme::{BORDER, CARD};
@@ -46,8 +46,17 @@ impl InteractionInput {
 
 /// The interaction shown in the composer's slot: Desktop shows only the first
 /// permission/userInput request; hook reviews don't block the composer.
+// 修复原因：未知 kind（如 pluginInstall）此前也会被当成阻塞交互而隐藏输入框，
+// 卡片却没有可用的应答按钮，用户只能干等。现在只有权限与提问才阻塞输入框。
 pub(crate) fn blocking(pending: &[PendingInteraction]) -> Option<&PendingInteraction> {
-    pending.iter().find(|pi| pi.kind != "workspaceHookReview")
+    pending.iter().find(|pi| is_blocking(pi))
+}
+
+pub(crate) fn is_blocking(pi: &PendingInteraction) -> bool {
+    matches!(
+        pi.kind_class(),
+        InteractionKind::Permission | InteractionKind::UserInput
+    )
 }
 
 fn takes_text(pi: &PendingInteraction) -> bool {

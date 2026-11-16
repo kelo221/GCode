@@ -57,7 +57,7 @@ pub(crate) fn attach_pump(
                 });
             }
             let len = event_len(&ev);
-            let is_exit = matches!(ev, ConnEvent::Exited);
+            let is_exit = matches!(ev, ConnEvent::Exited(_));
             let is_log = matches!(ev, ConnEvent::Log(_));
             let keep_going = this
                 .update(cx, |state, cx| {
@@ -109,7 +109,7 @@ pub(crate) fn attach_pump(
 fn event_len(ev: &ConnEvent) -> usize {
     match ev {
         ConnEvent::Line(l) | ConnEvent::Log(l) => l.len(),
-        ConnEvent::Exited => 0,
+        ConnEvent::Exited(_) => 0,
     }
 }
 
@@ -131,7 +131,7 @@ impl AppState {
                 cx.notify();
                 true
             }
-            ConnEvent::Exited => self.handle_exit(ws_key, cx),
+            ConnEvent::Exited(exit) => self.handle_exit(ws_key, exit, cx),
         }
     }
 
@@ -139,7 +139,12 @@ impl AppState {
     /// auto-restart with linear backoff up to MAX_RESTARTS, then surface a
     /// reconnect error. Conversation mirrors survive — the fresh snapshot
     /// delivered on re-subscribe rebuilds them.
-    fn handle_exit(&mut self, ws_key: &str, cx: &mut Context<Self>) -> bool {
+    fn handle_exit(
+        &mut self,
+        ws_key: &str,
+        exit: Option<crate::backend::conn::BackendExit>,
+        cx: &mut Context<Self>,
+    ) -> bool {
         let Some(ws) = self.ws_mut(ws_key) else {
             return false;
         };
@@ -192,6 +197,7 @@ impl AppState {
             cx.notify();
             return true;
         }
+        self.notify_unexpected_exit(exit);
         self.reset_connection_state(ws_key);
         let attempts = self.ws(ws_key).map(|w| w.restart_attempts).unwrap_or(0);
         if attempts >= MAX_RESTARTS {
@@ -273,6 +279,7 @@ impl AppState {
             crate::backend::wire::Incoming::AgentRequest { id, method, params } => {
                 if self.route_browser_rpc(ws_key, &id, &method, &params)
                     || self.route_voice_rpc(ws_key, &id, &method, &params, cx)
+                    || self.route_credential_cipher_rpc(ws_key, &id, &method, &params, cx)
                 {
                     return true;
                 }

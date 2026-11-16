@@ -91,7 +91,9 @@ impl RootView {
             .chain(
                 pending_interactions
                     .iter()
-                    .filter(|pi| !is_read_only && pi.kind == "workspaceHookReview")
+                    .filter(|pi| {
+                        !is_read_only && !crate::conversation::interaction_input::is_blocking(pi)
+                    })
                     .cloned(),
             )
             .collect();

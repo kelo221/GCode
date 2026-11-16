@@ -44,6 +44,23 @@ fn code_search_tools_summarise_their_query() {
 }
 
 #[test]
+fn bash_summary_prefers_the_description() {
+    let input = json!({ "command": "cargo test --lib", "description": "Run the unit tests" });
+    assert_eq!(
+        tool_summary("Bash", &input).as_deref(),
+        Some("Run the unit tests")
+    );
+    for description in [json!(""), json!("   "), json!(null), json!(7)] {
+        let input = json!({ "command": "ls -la", "description": description });
+        assert_eq!(tool_summary("Bash", &input).as_deref(), Some("$ ls -la"));
+    }
+    assert_eq!(
+        tool_summary("Bash", &json!({ "command": "ls" })).as_deref(),
+        Some("$ ls")
+    );
+}
+
+#[test]
 fn tool_search_summarises_loaded_names_or_the_query() {
     assert_eq!(
         tool_summary(

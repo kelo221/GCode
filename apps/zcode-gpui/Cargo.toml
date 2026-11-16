@@ -61,6 +61,8 @@ windows = { version = "0.62", features = [
     "Win32_System_SystemInformation",
     # HKCU native messaging host registration for the browser bridge.
     "Win32_System_Registry",
+    # GetUserNameW: the account name in the legacy credential key (secrets/credential_cipher.rs).
+    "Win32_System_WindowsProgramming",
 ] }
 
 [dev-dependencies]
