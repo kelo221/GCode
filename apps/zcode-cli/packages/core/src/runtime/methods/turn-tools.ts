@@ -29,7 +29,7 @@ import {
   isOffPeakCreateRestrictedTurn,
   recordCompletedToolBatch,
 } from "./turn-loop-state.js";
-import type { ToolCallInput } from "../../agent/message-history.js";
+import { toolCallPartMetadata, type ToolCallInput } from "../../agent/message-history.js";
 import { settleToolResults, type ToolResultPart } from "./tool-result-settlement.js";
 import { SPEAK_TOOL_NAME } from "@zcode/contracts";
 import { requestedCompactFromResults } from "../../tool/handlers/compact.js";
@@ -59,6 +59,8 @@ export async function executeToolCallsForModelStep(
     name: tc.name,
     input: tc.input,
     ...(tc.modelCallWrapper ? { modelCallWrapper: tc.modelCallWrapper } : {}),
+    // 保留 provider tool-call 元数据，ToolPart 持久化后冷恢复才能回放 Gemini thought signature。
+    ...(tc.providerOptions ? { providerOptions: tc.providerOptions } : {}),
   }));
   const streamedResultsById = new Map(
     (options.streamedToolResults ?? []).map((entry) => [entry.toolCallId, entry]),
@@ -196,9 +198,7 @@ export async function executeToolCallsForModelStep(
               tool: projectedToolName.toolName,
               metadata: {
                 ...projectedToolName.metadata,
-                ...(toolCall.modelCallWrapper
-                  ? { modelCallWrapper: toolCall.modelCallWrapper }
-                  : {}),
+                ...toolCallPartMetadata(toolCall),
               },
               state: {
                 status: "running",
@@ -256,6 +256,7 @@ export async function executeToolCallsForModelStep(
     // 标记会用成模型请求阶段的文字。
     if (state.turnAbortSignal.aborted) state.interruptedDuringToolBatch = true;
   }
+  recordSpeakCadenceStep(this, coreToolCalls, options.modelTraceContext.turnId);
   const requestedCompact = requestedCompactFromResults(results);
   if (requestedCompact) {
     state.requestedCompact = {
@@ -329,6 +330,21 @@ export async function executeToolCallsForModelStep(
     reactiveCompactAttemptedInCurrentModelStep: state.reactiveCompactAttemptedInCurrentModelStep,
   });
   return "continue";
+}
+
+/** 含非 Speak 工具的步骤算一个工作步；同一步里带 info Speak 的不算，免得播报自己给自己攒名额。 */
+function recordSpeakCadenceStep(
+  runtime: AgentRuntimeInternal,
+  toolCalls: readonly ToolCall[],
+  turnId: string | undefined,
+): void {
+  if (!toolCalls.some((toolCall) => toolCall.name !== SPEAK_TOOL_NAME)) return;
+  const hadInfoSpeak = toolCalls.some(
+    (toolCall) =>
+      toolCall.name === SPEAK_TOOL_NAME &&
+      (toolCall.input as { kind?: unknown } | undefined)?.kind === "info",
+  );
+  runtime.speakCadence.recordWorkStep(turnId, hadInfoSpeak);
 }
 
 /**

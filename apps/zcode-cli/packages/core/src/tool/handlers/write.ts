@@ -5,18 +5,24 @@
 import type { ToolHandler, ToolEntry } from "../types.js";
 import {
   CoreErrorType,
+  READ_DEFAULT_MAX_LINES,
+  READ_MAX_FILE_SIZE_BYTES,
+  READ_MAX_OUTPUT_TOKENS,
   WriteInputJsonSchema,
   WriteInputSchema,
   WriteOutputJsonSchema,
   WriteOutputSchema,
   createCoreError,
   isFileSystemPortError,
+  type FileSystemPort,
   type FileSystemReadTextResult,
   type FileSystemTextEncoding,
   type WriteInput,
   type TraceContext,
 } from "@zcode/contracts";
+import { estimateTokens } from "../../context/utils.js";
 import { createStructuredPatch } from "../diff.js";
+import { addReadLineNumbers } from "./read-text.js";
 import { stampMemoryOriginSessionId } from "../../memory/origin-session.js";
 import { resolveWorkspacePath } from "../path-policy.js";
 import {
@@ -103,7 +109,15 @@ export const writeHandler: ToolHandler = async (input, context) => {
       },
       { signal: context.abortSignal },
     );
-    assertWritableExistingFileIsFresh(filePath, read, context.readFileState);
+    const rejection = checkWritableExistingFile(filePath, read, context.readFileState);
+    if (rejection) {
+      throw await createWriteRejectionError(rejection, {
+        context,
+        filePath,
+        read,
+        requestedPath: file_path,
+      });
+    }
     originalFile = read.content;
     originalEncoding = read.encoding;
     originalLineEndings = read.lineEndings;
@@ -277,32 +291,135 @@ function createWriteTrace(context: ToolExecutionContext): TraceContext {
   } as unknown as TraceContext;
 }
 
-function assertWritableExistingFileIsFresh(
+interface WriteRejection {
+  code: "write_file_not_read" | "write_file_stale";
+  message: string;
+}
+
+/**
+ * 流中截断判定（docs/design/v2/tool/17-read-file-state-resume.md「未读 Write 在流中截断」）：
+ * true 表示这次 Write 一定会以 write_file_not_read 被拒——文件已存在，本会话没有完整视图记录。
+ * 任何不确定（路径越界、stat 失败、不存在）都返回 false，让模型照常写完。
+ */
+export async function isUnreadExistingWriteTarget(input: {
+  filePath: string;
+  fileSystemPort: FileSystemPort | undefined;
+  readFileState: ReadFileStateMap;
+  signal?: AbortSignal;
+  workingDirectory: string;
+  workspaceRoot: string;
+}): Promise<boolean> {
+  if (!input.fileSystemPort) return false;
+  try {
+    const resolved = resolveWorkspacePath({
+      inputPath: input.filePath,
+      operation: "write",
+      workingDirectory: input.workingDirectory,
+      workspaceRoot: input.workspaceRoot,
+    });
+    // 与 checkWritableExistingFile 的 write_file_not_read 条件相同。
+    const lastRead = findLatestReadFileState(input.readFileState, resolved);
+    if (lastRead && !lastRead.isPartialView) return false;
+    const stat = await input.fileSystemPort.stat({ path: resolved }, { signal: input.signal });
+    return stat.kind === "file";
+  } catch {
+    return false;
+  }
+}
+
+function checkWritableExistingFile(
   filePath: string,
   currentRead: FileSystemReadTextResult,
   readFileState: ReadFileStateMap | undefined,
-): void {
+): WriteRejection | undefined {
   const lastRead = findLatestReadFileState(readFileState, filePath);
   if (!lastRead || lastRead.isPartialView) {
-    throw createCoreError(CoreErrorType.ToolExecutionFailed, WRITE_NOT_READ_MESSAGE, {
-      context: {
-        code: "write_file_not_read",
-        filePath,
-      },
-      recoverable: true,
-    });
+    return { code: "write_file_not_read", message: WRITE_NOT_READ_MESSAGE };
   }
 
-  if (!hasReadStateChanged(lastRead, currentRead)) return;
-  if (isStrictFullRead(lastRead) && lastRead.content === currentRead.content) return;
+  if (!hasReadStateChanged(lastRead, currentRead)) return undefined;
+  if (isStrictFullRead(lastRead) && lastRead.content === currentRead.content) return undefined;
 
-  throw createCoreError(CoreErrorType.ToolExecutionFailed, WRITE_STALE_MESSAGE, {
+  return { code: "write_file_stale", message: WRITE_STALE_MESSAGE };
+}
+
+async function createWriteRejectionError(
+  rejection: WriteRejection,
+  input: {
+    context: ToolExecutionContext;
+    filePath: string;
+    read: FileSystemReadTextResult;
+    requestedPath: string;
+  },
+): Promise<Error> {
+  const modelContentSuffix = await adoptCurrentContentAsRead(input);
+  return createCoreError(CoreErrorType.ToolExecutionFailed, rejection.message, {
     context: {
-      code: "write_file_stale",
-      filePath,
+      code: rejection.code,
+      filePath: input.filePath,
+      ...(modelContentSuffix === undefined ? {} : { modelContentSuffix }),
     },
     recoverable: true,
   });
+}
+
+/**
+ * 修复原因：被拒的 Write 已经读到了当前内容，原来只回一句报错，模型要再 Read 一次、再完整生成一次
+ * Write（整份文件的 output token 白付一遍，外加一个往返）。这里把正文按 Read 的格式附在 model-only
+ * 后缀里，并记成完整视图，模型可以直接重试。只在 Read 同一路径不会被拒、且文件在 Read 的上限内时这样做，
+ * 否则保持原报错（见 docs/design/v2/tool/17-read-file-state-resume.md）。
+ */
+async function adoptCurrentContentAsRead(input: {
+  context: ToolExecutionContext;
+  filePath: string;
+  read: FileSystemReadTextResult;
+  requestedPath: string;
+}): Promise<string | undefined> {
+  const { context, filePath, read, requestedPath } = input;
+  const readFileState = context.readFileState;
+  if (!readFileState || !context.areReadsDeniedWithoutPrompt) return undefined;
+
+  const sizeBytes = read.revision?.sizeBytes ?? Buffer.byteLength(read.content, "utf8");
+  if (
+    sizeBytes > READ_MAX_FILE_SIZE_BYTES ||
+    read.content.split(/\r?\n/).length > READ_DEFAULT_MAX_LINES ||
+    estimateTokens(read.content) > READ_MAX_OUTPUT_TOKENS
+  ) {
+    return undefined;
+  }
+
+  // 读权限规则按原始字符串匹配：规范化路径和原始写法各判定一次，任一 deny 就不附带。
+  const forms = requestedPath === filePath ? [filePath] : [filePath, requestedPath];
+  let denied: boolean[];
+  try {
+    denied = await context.areReadsDeniedWithoutPrompt(forms);
+  } catch {
+    return undefined;
+  }
+  if (denied.length !== forms.length || denied.includes(true)) return undefined;
+
+  setReadFileStateEntry(readFileState, {
+    path: filePath,
+    ...requestedPathField(requestedPath, filePath),
+    content: read.content,
+    offset: undefined,
+    limit: undefined,
+    isPartialView: false,
+    readAt: new Date(),
+    sourceTool: "Read",
+    revisionId: read.revision?.id,
+    mtimeMs: normalizeReadFileStateMtimeMs(read.revision?.mtimeMs),
+    sizeBytes,
+  });
+
+  if (read.content.length === 0) {
+    return "The file exists and is currently empty. It now counts as read, so you can retry Write without calling Read.";
+  }
+  return [
+    "Its current contents are below (same format as Read) and now count as read, so you can retry Write or Edit without calling Read:",
+    "",
+    addReadLineNumbers({ content: read.content, startLine: 1 }),
+  ].join("\n");
 }
 
 function hasReadStateChanged(

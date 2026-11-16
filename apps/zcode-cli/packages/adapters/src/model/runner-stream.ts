@@ -966,6 +966,31 @@ export async function* runStreamText(input: {
         attempt -= 1;
       }
     } finally {
+      const publishConsumerClosedStatus = async () => {
+        if (attemptFailed || terminalStatusPublished || emittedError) return;
+        // consumer 侧的校验异常只会触发 AsyncIteratorClose，不会回到上面的 catch；
+        // 将已启动的物理请求收口为 cancelled，避免 fallback 前遗留悬空 started 状态。
+        const completedAt = Date.now();
+        await publishModelStatus(
+          {
+            ...statusContext,
+            attempt,
+            durationMs: completedAt - startedAt,
+            message: "Model stream consumer closed before natural EOF.",
+            reason: ModelFailureReasonValue.Cancelled,
+            requestHeaderCount,
+            requestHeaders,
+            retryable: false,
+            errorCode: "model_request_cancelled",
+            errorPhase: "stream",
+            exceptionType: "AbortError",
+            streamOutputCommitted,
+            timestamp: new Date(completedAt).toISOString(),
+            type: "model_request_failed",
+          },
+          statusPublishOptions(input, admission),
+        );
+      };
       if (
         !streamReachedNaturalEnd &&
         (attemptFailed || input.request.preserveProviderStreamBoundaries === true)
@@ -978,30 +1003,7 @@ export async function* runStreamText(input: {
             new Error("Model stream attempt ended before natural EOF."),
           );
         }
-        if (!attemptFailed && !terminalStatusPublished && !emittedError) {
-          // consumer 侧的校验异常只会触发 AsyncIteratorClose，不会回到上面的 catch；
-          // 将已启动的物理请求收口为 cancelled，避免 fallback 前遗留悬空 started 状态。
-          const completedAt = Date.now();
-          await publishModelStatus(
-            {
-              ...statusContext,
-              attempt,
-              durationMs: completedAt - startedAt,
-              message: "Model stream consumer closed before natural EOF.",
-              reason: ModelFailureReasonValue.Cancelled,
-              requestHeaderCount,
-              requestHeaders,
-              retryable: false,
-              errorCode: "model_request_cancelled",
-              errorPhase: "stream",
-              exceptionType: "AbortError",
-              streamOutputCommitted,
-              timestamp: new Date(completedAt).toISOString(),
-              type: "model_request_failed",
-            },
-            statusPublishOptions(input, admission),
-          );
-        }
+        await publishConsumerClosedStatus();
         if (attemptFailed && awaitIteratorClose) {
           await closeStreamIteratorBestEffort(streamIterator, {
             attempt,
@@ -1016,6 +1018,9 @@ export async function* runStreamText(input: {
         }
       } else if (attemptAbortController.signal.aborted) {
         // 普通 main 保留既有生命周期：只有 caller/idle 已经 abort 时才 best-effort 关闭 iterator。
+        // 修复原因：core 截断未读 Write 时先 abort 再关闭迭代器，此前这里不发终态，
+        // started 一直悬空，requestObservations 也不会按 requestId 取走。
+        if (!streamReachedNaturalEnd) await publishConsumerClosedStatus();
         void closeStreamIteratorBestEffort(streamIterator, {
           attempt,
           logger: input.logger,

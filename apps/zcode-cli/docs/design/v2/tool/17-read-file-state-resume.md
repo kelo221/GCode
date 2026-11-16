@@ -61,6 +61,54 @@ same-runtime 读取语义：
 - stale fallback 只有 strict full read 可以在 mtime 前进但内容相同的情况下放行；range
   read 遇到 mtime 前进必须要求重新读取。
 
+## Write 被拒时附带当前内容
+
+2026-11-11（GCode）：`Write` 因未读（`write_file_not_read`）或 stale（`write_file_stale`）被拒时，
+handler 已经读到了磁盘上的当前内容。原来模型只拿到一句报错，要再发一次 `Read`、再完整生成一次
+`Write`，多一个往返。现在：
+
+- 满足以下条件时，报错的 model-only 后缀（`modelContentSuffix`，不进 UI 摘要和日志）附带当前内容，
+  格式与 `Read` 相同（cat -n 行号），并把它写成完整视图记录（`sourceTool: "Read"`，带 revision /
+  mtime / size），模型可以直接重试 `Write` 或 `Edit`，再 `Read` 会返回 `file_unchanged`：
+  - 执行器提供的无确认读判定（`areReadsDeniedWithoutPrompt`，与 compaction 补回相同）对规范化路径和
+    原始写法都不是 deny；判定不可用或 Read 未注册时不附带。`ask` 规则照常附带（Write 本身已获批准）。
+  - 文件不超过 `READ_MAX_FILE_SIZE_BYTES`、`READ_DEFAULT_MAX_LINES` 行、`READ_MAX_OUTPUT_TOKENS`。
+- 不满足时报错保持原样，不写记录。
+- 附带内容和 `error.message` 一样先经密钥库脱敏。
+- 这条记录只在 live 表里：失败的 tool part 不是 completed，hydrator 不恢复；重启后 Write 再次被拒并再次附带内容。
+- `Edit` 不变（它的输入很小，重试代价低）。
+
+## 未读 Write 在流中截断
+
+2026-11-14（GCode）：上一节省掉了一个往返，但被拒的那次 `Write` 仍把整份 `content` 生成了一遍，
+这些 output token 全部浪费。现在 runtime 在参数流里一看到 `file_path` 就判定，命中就立刻停止这次模型响应：
+
+- **判定**（`isUnreadExistingWriteTarget`，`tool/handlers/write.ts`）：路径按 handler 的规则解析，
+  read state 里没有完整视图记录（与 `write_file_not_read` 同一条件），且 `stat` 显示是已存在的文件。
+  解析失败、`stat` 出错、文件不存在一律视为不命中，照常让模型写完。stale 不在流中判定（需要读文件比对 revision），
+  仍由 handler 处理。
+- **不用于 Gemini**（模型 id 含 `gemini`）：它的思考签名挂在完整 `tool_call` 上（model README §3.1.4），
+  截断合成的调用没有签名，下一次请求会 400。
+- **只看** 非 provider 执行的 `Write`（`tool_input_start` 的 `toolName === "Write"`）。从参数 delta 里取
+  `file_path` 字符串（JSON 转义按 `JSON.parse` 还原）。参数前 8 KB 内还没出现完整 `file_path`（例如模型先写
+  `content`）就放弃判定。
+- **截断**（`runModelTextRequest`，`runtime/methods/model.ts`）：判定是异步的，结果到达后在下一个流事件
+  **处理之前**生效（所以不会在 `finish` 之后再补发一次 `finish`）。以下情况不截：这个 Write 的完整 `tool_call` 已到
+  或就是当前事件；还有未结束的 thinking 块（Anthropic 的签名在 `reasoning_end` 才到，截了会回放空签名）；
+  还有别的本地工具参数没收完（截了会留下悬空的工具卡）。不截时等下一个事件再试。
+  截断时先 abort 只属于这次请求的 signal（与 turn signal 联动，但不取消 turn），再退出流循环。
+  adapter（`runner-stream.ts`）对「已 abort、consumer 提前关闭」的请求补发 `model_request_failed`（`cancelled`），
+  让 started 有终态、请求观测按 requestId 释放。已收到的文本、thinking、之前完成的工具调用都保留，按正常结束收口：
+  `finishReason: "tool-calls"`，usage 为空。被截的 Write 记为一个工具调用，输入只有 `{ file_path }`，
+  结果写在 `RuntimeModelTextResult.writeCutoff` 里。
+- **结果**（`createWriteCutoffToolResult`，`streaming-tool-synthetic-result.ts`）：不执行 handler（输入里没有
+  content，执行它绝不能写出空文件），直接给失败结果，`error.message` 以 `File has not been read yet.` 开头，
+  这样 GPUI 显示为灰色的 "Read first"（PARITY.md「"Read first" rows」）。模型据此 `Read`，再 `Write`。
+  它不附带文件内容，也不写 read state：附带内容需要执行器的权限判定，留作后续。
+- 同一响应里排在被截 Write 之前、已完整收到的工具调用照常执行；之后的内容本来就没有生成。
+- 判定只依赖 live read state，所以一个只读工具在同一响应里先读了这个文件、但结果还没落到 read state 时，
+  可能误截一次，代价是多一个往返，不会写坏文件。
+
 ## Compaction 之后
 
 compaction 补回文件（`rewind-compact.md` 的“文件恢复”）重读磁盘上的当前内容，再按结果整理读取状态：
@@ -142,4 +190,6 @@ resume 恢复优先级：
 - rewind 后 `MEMORY.md` 的 context 记录仍在，`Write` `MEMORY.md` 不报未读；resume 后由
   context 初始化重新写入。
 - 同一文件多次读取只留一条记录，查找不遍历整张表。
+- 未读或 stale 的 `Write` 被拒后，模型内容带当前正文，紧接着的同内容 `Write` 成功；Read deny 规则命中或
+  文件超限时只有原报错，再 `Write` 仍被拒。
 - Windows drive-letter path normalization 保持现有行为。

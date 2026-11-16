@@ -67,6 +67,10 @@ export function createGenerateTextOptions(input: {
       providerOptions,
       providerKind: input.resolved.providerKind,
       inputFormat: input.resolved.properties?.inputFormat,
+      targetModel: {
+        providerId: String(input.resolved.providerId),
+        modelId: String(input.resolved.modelId),
+      },
     }),
     tools: toAiSdkTools(input.request.tools, {
       toolSearchEnabled: input.request.toolSearchEnabled,
@@ -130,6 +134,10 @@ export function createStreamTextOptions(input: {
       providerOptions,
       providerKind: input.resolved.providerKind,
       inputFormat: input.resolved.properties?.inputFormat,
+      targetModel: {
+        providerId: String(input.resolved.providerId),
+        modelId: String(input.resolved.modelId),
+      },
     }),
     tools: toAiSdkTools(input.request.tools, {
       toolSearchEnabled: input.request.toolSearchEnabled,

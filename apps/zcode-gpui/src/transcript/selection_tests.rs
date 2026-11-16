@@ -52,6 +52,7 @@ fn tool_card_path_can_be_drag_selected_and_copied() {
                 output_text: "[Attached image/jpeg: Read image]".into(),
                 tool_call_id: None,
                 display: None,
+                needs_read: false,
             },
         );
         s.conversations.insert("s".into(), conv);

@@ -125,6 +125,7 @@ impl crate::app::root::RootView {
                 tool_call_id,
                 tool_name,
                 display,
+                needs_read,
             } => {
                 let maybe_subagent = tool_call_id
                     .as_deref()
@@ -138,6 +139,7 @@ impl crate::app::root::RootView {
                         input_text,
                         output_text,
                         display: display.as_ref(),
+                        needs_read: *needs_read,
                     },
                     cx,
                 );

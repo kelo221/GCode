@@ -20,6 +20,7 @@ import { persistToolResultMediaAttachments } from "../helpers/tool-result-media-
 import type { AgentRuntimeInternal } from "../internal.js";
 import type { StreamedToolExecutionResult } from "../types.js";
 import { recordBrowserTurnToolResult } from "../../repl/browser-turn-state.js";
+import { toolCallPartMetadata } from "../../agent/message-history.js";
 import { completedToolPartMetadata, mcpToolPartMetadata } from "./tool-part-metadata.js";
 import { projectToolNameForNonEmptyBoundary } from "./tool-part-persistence.js";
 import type { RegularTurnLoopState } from "./turn-loop-state.js";
@@ -125,9 +126,7 @@ export async function settleToolResults(
           tool: projectedResultToolName.toolName,
           metadata: {
             ...projectedResultToolName.metadata,
-            ...(toolCallById.get(result.toolCallId)?.modelCallWrapper
-              ? { modelCallWrapper: toolCallById.get(result.toolCallId)?.modelCallWrapper }
-              : {}),
+            ...toolCallPartMetadata(toolCallById.get(result.toolCallId)),
           },
           state: result.success
             ? {

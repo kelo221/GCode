@@ -34,6 +34,7 @@ fn edit(row_id: u64, display: Value) -> Row {
         output_text: String::new(),
         tool_call_id: None,
         display: Some(display),
+        needs_read: false,
     }
 }
 

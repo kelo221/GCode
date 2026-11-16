@@ -7,6 +7,16 @@ Status: spec for the 2026-10-16 slice. GPUI-only feature; Electron does not enab
 - The main agent of a session gets a built-in **`Speak`** tool. It says one short plain
   sentence aloud on the PC, for: needing the user's attention (question, permission,
   blocker), a task being done, or a plan being ready. It is not for progress narration.
+- **Mid-turn heads-ups (2026-11-14).** The agent may also say something worth hearing now and
+  keep working (a decision the user may want to override, a long step finishing). It calls
+  Speak with `kind: "info"` in the same response as its next work tool call, so the turn
+  continues (see "Speak closes a turn"). Info heads-ups are rate-limited by the CLI: the
+  first one in a turn always goes through. After that, at least 3 finished tool steps that ran
+  a non-Speak tool and had no info Speak must pass. Otherwise the tool returns
+  `{spoken:false, reason:"tooSoon"}` without asking the client. `attention`, `done` and
+  `planReady` are never rate-limited. The counter (`SpeakCadence`, `core/src/tool/handlers/speak.ts`)
+  has one owner, the session runtime. The handler claims the slot and
+  `core/src/runtime/methods/turn-tools.ts` counts work steps. It resets when a new turn id is seen.
 - **Only the PC speaks.** The Android phone build never contains the engine. Reverse RPCs are
   never forwarded to a phone (`remote/gateway.rs` `route_cli_line_to_phone` only forwards
   responses and owned `v4/conversation/frame` lines), so a turn started from the phone still
@@ -22,9 +32,10 @@ Status: spec for the 2026-10-16 slice. GPUI-only feature; Electron does not enab
   permission service asks for every tool in that scope before checking modes or saved
   "always allow" rules, so each Speak call used to show an approval prompt.
 - **Fallback lines.** When a session shows a permission request, an AskUserQuestion, or a
-  plan approval (ExitPlanMode), and that session has not had a Speak call accepted since its
-  current turn started, GPUI itself says a fixed line: "Permission needed", "Question
-  waiting" or "Plan ready". Each interaction id is announced at most once.
+  plan approval (ExitPlanMode), and that session has not had a non-`info` Speak call accepted
+  since its current turn started, GPUI itself says a fixed line: "Permission needed", "Question
+  waiting" or "Plan ready". Each interaction id is announced at most once. An `info` heads-up
+  does not count, so a later prompt in the same turn is still announced.
 - Settings › Voice (desktop only, hidden on the phone like Browser). Stored as one
   GPUI-only object `gpuiVoice` in `gpui_settings.json`, a file Electron never rewrites
   (SETTINGS.md "GPUI-only preferences file"):
@@ -71,6 +82,8 @@ sequenceDiagram
 
 - params `{ sessionId: string, message: string (1–300 chars), kind: "attention" | "done" | "planReady" | "info" }`
 - result `{ accepted: boolean, reason?: "disabled" | "unfocusedOnly" | "unavailable" }`
+
+The tool output's `reason` adds `"tooSoon"`. The CLI decides it alone; it never goes on the wire.
 
 Hosts without the method answer `-32601`; the CLI maps that, `-32020` (no client) and
 timeouts (5 s) to `{accepted:false, reason:"unavailable"}`. The GPUI phone build and a
@@ -138,3 +151,7 @@ build only warns (`--skip-voice` skips it).
 7. eSpeak data missing: the sidecar fails at start, Settings › Voice shows the eSpeak hint,
    and later Speak calls return `unavailable` (each one retries the engine).
 8. Electron host: no `voiceEnabled` → no Speak tool; nothing changes.
+9. Long task: the agent calls Speak (info) with a Bash call; the PC speaks, the turn goes on.
+   A second info Speak one step later returns `tooSoon` and nothing plays. A closing `done`
+   Speak right after still plays.
+10. After an info heads-up, a permission prompt in the same turn still gets "Permission needed".

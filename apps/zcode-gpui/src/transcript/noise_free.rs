@@ -46,6 +46,7 @@ pub(crate) fn kind(row: &Row) -> Kind {
             tool_name,
             status,
             display,
+            needs_read,
             ..
         } => {
             if status == "pendingApproval" || KEPT_TOOLS.contains(&canonical_tool(tool_name)) {
@@ -53,7 +54,7 @@ pub(crate) fn kind(row: &Row) -> Kind {
             } else {
                 Kind::Fold {
                     running: status == "running" || status == "inputStreaming",
-                    failed: status == "error",
+                    failed: status == "error" && !needs_read,
                     diagnostics: edit_errors(display.as_ref()),
                 }
             }

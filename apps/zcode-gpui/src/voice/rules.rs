@@ -91,7 +91,13 @@ impl TurnLedger {
             .spoke_this_turn = false;
     }
 
-    pub(crate) fn spoke(&mut self, session_id: &str) {
+    /// Records an accepted Speak call. `info` heads-ups don't count.
+    pub(crate) fn spoke(&mut self, session_id: &str, kind: &str) {
+        // 修复原因：智能体可以在回合中途用 info 先打个招呼再继续干活；若它也置位
+        // spoke_this_turn，同一回合后面真正需要用户处理的权限/提问就不会再播报。
+        if kind == "info" {
+            return;
+        }
         self.sessions
             .entry(session_id.into())
             .or_default()
@@ -199,7 +205,7 @@ mod tests {
     fn speak_this_turn_suppresses_until_next_turn() {
         let mut ledger = TurnLedger::default();
         ledger.turn_started("s");
-        ledger.spoke("s");
+        ledger.spoke("s", "attention");
         let q = [interaction("q1", "userInput", "AskUserQuestion")];
         assert_eq!(ledger.fallback_for("s", &q, false), None);
         ledger.turn_started("s");
@@ -221,10 +227,22 @@ mod tests {
     #[test]
     fn sessions_are_independent() {
         let mut ledger = TurnLedger::default();
-        ledger.spoke("a");
+        ledger.spoke("a", "done");
         let p = [interaction("p", "permission", "Bash")];
         assert_eq!(
             ledger.fallback_for("b", &p, false),
+            Some(FallbackKind::Permission)
+        );
+    }
+
+    #[test]
+    fn info_heads_up_keeps_fallback() {
+        let mut ledger = TurnLedger::default();
+        ledger.turn_started("s");
+        ledger.spoke("s", "info");
+        let p = [interaction("p", "permission", "Bash")];
+        assert_eq!(
+            ledger.fallback_for("s", &p, false),
             Some(FallbackKind::Permission)
         );
     }

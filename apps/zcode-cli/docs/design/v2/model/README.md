@@ -348,6 +348,40 @@ OpenAI-compatible 回放一致的契约：
   其它 host（如 DeepSeek 需要回放 reasoning）与不含该字段的请求原样传递同一个 `init`。
 - 范围外：Mistral 文档允许把 thinking chunk 放回 `content` 数组回放，这一保留思考的历史适配尚未实现。
 
+### 3.1.4 Tool call provider 元数据回放（Gemini thought signature）
+
+Gemini 思考模型通过 Google OpenAI-compat 端点
+（`generativelanguage.googleapis.com/v1beta/openai`）返回工具调用时，会在
+`choices[i].delta.tool_calls[j].extra_content.google.thought_signature` 上附带签名。并行调用中
+**只有第一个** tool call 带签名。当前 turn 内回放 assistant `tool_calls` 时，签名必须回到收到它的那个 tool
+call 上，否则服务端返回 400 `Function call is missing a thought_signature in functionCall parts`
+（2026-11-10 已在真实端点验证：缺签名回放报 400，带签名回放成功）。
+
+`@ai-sdk/openai-compatible` 已经解析并序列化这个字段，但读写用的 key 不对称：
+
+- 解析：写入 tool-call part 的 `providerMetadata[<providerOptionsName>].thoughtSignature`，
+  key 为 provider 名称，即 GCode 的 providerId，例如 `new-provider-2`。
+- 序列化：只读取 assistant tool-call part 上的 `providerOptions.google.thoughtSignature`，
+  并输出 `extra_content.google.thought_signature`。
+
+契约：
+
+- `ModelToolCall.providerOptions` 原样保存 AI SDK final `tool-call` 的 `providerMetadata`，流式和非流式都保存。
+  字段不透明，只有 adapter 的 provider 投影读取。
+- Core 的所有 tool call 拷贝都保留该字段，与 `modelCallWrapper` 同路径。路径包括 live history、
+  request 投影、compact 保留尾部和 microcompact。
+- 持久化：本地工具 ToolPart 的 `metadata.providerOptions` 保存该字段。冷恢复经 session-history-hydrator
+  读回，因此 compact 与重启后重建的历史同样带签名。
+- 投影：`openai-compatible` 请求中，只有 assistant 消息的 `providerId` 与 `modelId` 都等于目标模型时，
+  才在对应 tool-call part 上输出 `providerOptions.google.thoughtSignature`。跨模型或跨 provider 的历史，以及缺少
+  provider 身份的旧消息，都不回放签名，避免把 `extra_content` 发给不认识它的服务（严格 schema 会拒绝未知字段，
+  见 §3.1.3）。其它 provider kind 不受影响。
+- 没有签名的 tool call，例如并行调用中第 2 个及之后的，输出不变；调用顺序与数量不变。
+- 不做自动重试、"continue" 提示或伪造签名。签名确实缺失时（如跨模型切换后的当前 turn），仍由服务端返回 400。
+
+验收：adapter 测试覆盖第一次流式响应带签名、第二次请求在同一 tool call 上回放。core 测试覆盖 history 克隆、
+ToolPart 持久化与冷恢复后保留该字段。
+
 ### 3.2 Model Registry
 
 负责把 provider config 装配成 AI SDK provider 或 provider factory。

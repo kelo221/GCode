@@ -4,6 +4,16 @@
 
 use serde_json::Value;
 
+/// Write/Edit refuse an existing file the agent hasn't read (or that changed
+/// since). The wire `error.code` is only the generic `ToolExecutionFailed`, so
+/// the row is recognized by the CLI's fixed messages (core
+/// `tool/handlers/write.ts` and `edit.ts`, `*_NOT_READ_MESSAGE` /
+/// `*_STALE_MESSAGE`).
+pub fn is_needs_read_error(message: &str) -> bool {
+    message.contains("File has not been read yet.")
+        || message.contains("File has been modified since read,")
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum Row {
     TurnHeader {
@@ -49,6 +59,9 @@ pub enum Row {
         tool_call_id: Option<String>,
         /// `display` of the row, else of `output` (toolDisplay.ts payloads).
         display: Option<Value>,
+        /// An error row that is Write/Edit's "read the file first" guard, not
+        /// a real failure (see [`is_needs_read_error`]).
+        needs_read: bool,
     },
     Subagent {
         row_id: u64,
@@ -173,6 +186,13 @@ impl Row {
                     .or_else(|| v.get("output").and_then(|o| o.get("display")))
                     .filter(|d| d.is_object())
                     .cloned();
+                let status = str_field("status");
+                let needs_read = status == "error"
+                    && matches!(str_field("toolName").as_str(), "Write" | "Edit")
+                    && v.get("error")
+                        .and_then(|e| e.get("message"))
+                        .and_then(Value::as_str)
+                        .is_some_and(is_needs_read_error);
                 Row::ToolCall {
                     row_id,
                     label: ["label", "title", "toolName", "name"]
@@ -181,11 +201,12 @@ impl Row {
                         .unwrap_or("tool")
                         .to_string(),
                     tool_name: str_field("toolName"),
-                    status: str_field("status"),
+                    status,
                     input_text,
                     output_text,
                     tool_call_id,
                     display,
+                    needs_read,
                 }
             }
             "subagent" => {

@@ -147,6 +147,9 @@ export function toModelStreamEvent(chunk: TextStreamPart<ToolSet>): ModelStreamE
           // 执行参数只取 AI SDK final tool-call，避免从展示用 delta 猜测输入，
           // 也避免 stream/model-io 多次解析并重复告警。
           input: chunk.input,
+          // 修复原因：Gemini 把 thought signature 放在 tool-call 的 providerMetadata 上，
+          // 原实现在这里丢弃它，下一轮回放缺签名被 400 拒绝；原样保存，由 transform 投影。
+          ...(isRecord(chunk.providerMetadata) ? { providerOptions: chunk.providerMetadata } : {}),
         },
       };
     }
@@ -209,6 +212,7 @@ export function normalizeToolCalls(
       input?: unknown;
       args?: unknown;
       providerExecuted?: boolean;
+      providerMetadata?: unknown;
     };
     const id = value.toolCallId ?? value.id ?? crypto.randomUUID();
     const name = normalizeModelToolName(value.toolName ?? value.name, {
@@ -229,6 +233,10 @@ export function normalizeToolCalls(
         source: "generateText",
         toolName: name,
       }),
+      // 与流式路径一致保存 tool-call providerMetadata（Gemini thought signature）。
+      ...(isRecord(value.providerMetadata)
+        ? { providerOptions: value.providerMetadata as Record<string, unknown> }
+        : {}),
     };
   });
 }

@@ -8,6 +8,7 @@ import type {
 } from "../deps.js";
 import type { AgentRuntimeInternal } from "../internal.js";
 import { requireRuntimeToolCallName } from "../helpers/index.js";
+import { toolCallPartMetadata } from "../../agent/message-history.js";
 
 const EMPTY_TOOL_NAME_PLACEHOLDER = "empty_tool_name";
 const PROVIDER_TOOL_NAME_METADATA_KEY = "providerToolName";
@@ -63,9 +64,7 @@ export async function persistPendingToolPart(
       metadata: {
         ...projected.metadata,
         ...options.metadata,
-        ...(options.toolCall.modelCallWrapper
-          ? { modelCallWrapper: options.toolCall.modelCallWrapper }
-          : {}),
+        ...toolCallPartMetadata(options.toolCall),
       },
       state: {
         status: "pending",

@@ -354,6 +354,7 @@ export function extractToolCallsFromResult(
           name: tc.name ?? tc.toolName,
           input: tc.input,
           providerExecuted: tc.providerExecuted,
+          ...(tc.providerOptions ? { providerOptions: tc.providerOptions } : {}),
         });
       }
     }
@@ -368,6 +369,7 @@ export function extractToolCallsFromResult(
           name: tc.name ?? tc.toolName,
           input: tc.input,
           providerExecuted: tc.providerExecuted,
+          ...(tc.providerOptions ? { providerOptions: tc.providerOptions } : {}),
         });
       }
     }

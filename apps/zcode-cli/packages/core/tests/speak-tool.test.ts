@@ -3,7 +3,11 @@ import type { TraceId, VoicePort } from "@zcode/contracts";
 import { createToolRegistry, registerBuiltInTools } from "../src/tool/index.js";
 import { PermissionService } from "../src/permission/service.js";
 import { resolveRuntimePermissionCapability } from "../src/tool/executor/permission-capability.js";
-import { speakToolEntry } from "../src/tool/handlers/speak.js";
+import {
+  SPEAK_INFO_MIN_WORK_STEPS,
+  SpeakCadence,
+  speakToolEntry,
+} from "../src/tool/handlers/speak.js";
 import type { ToolExecutionContext } from "../src/tool/types.js";
 
 function createContext(port?: VoicePort): ToolExecutionContext {
@@ -104,6 +108,36 @@ describe("Speak tool", () => {
       result: false,
       message: expect.stringContaining("voice_unavailable"),
     });
+  });
+
+  it("rate-limits info heads-ups within a turn but never other kinds", async () => {
+    const speak = vi.fn(async () => ({ accepted: true as const }));
+    const cadence = new SpeakCadence();
+    const ctx = { ...createContext({ speak }), speakCadence: cadence, turnId: "turn-1" as never };
+    const info = { message: "Heads up, carrying on", kind: "info" };
+
+    expect(await speakToolEntry.handler(info, ctx)).toEqual({ spoken: true });
+    const tooSoon = await speakToolEntry.handler(info, ctx);
+    expect(tooSoon).toEqual({ spoken: false, reason: "tooSoon" });
+    expect(speakToolEntry.formatModelContent?.(tooSoon)).toContain("Keep working");
+    // 收尾的 done 不受节流。
+    expect(await speakToolEntry.handler({ message: "Done", kind: "done" }, ctx)).toEqual({
+      spoken: true,
+    });
+
+    // 带 info 的步骤不攒名额；之后足够多的工作步才放行。
+    cadence.recordWorkStep("turn-1", true);
+    for (let step = 1; step < SPEAK_INFO_MIN_WORK_STEPS; step += 1) {
+      cadence.recordWorkStep("turn-1", false);
+    }
+    expect(await speakToolEntry.handler(info, ctx)).toMatchObject({ reason: "tooSoon" });
+    cadence.recordWorkStep("turn-1", false);
+    expect(await speakToolEntry.handler(info, ctx)).toEqual({ spoken: true });
+
+    // 新回合重置。
+    const nextTurn = { ...ctx, turnId: "turn-2" as never };
+    expect(await speakToolEntry.handler(info, nextTurn)).toEqual({ spoken: true });
+    expect(speak).toHaveBeenCalledTimes(4);
   });
 
   it("rejects empty, overlong or unknown-kind input", async () => {

@@ -53,7 +53,16 @@ export function createProviderToolRoundEntries(
   for (const round of rounds ?? []) {
     const reasoning = round.reasoning.filter(hasReasoningContent);
     const toolCalls = round.result
-      ? [{ id: round.toolCall.id, name: round.toolCall.name, input: round.toolCall.input }]
+      ? [
+          {
+            id: round.toolCall.id,
+            name: round.toolCall.name,
+            input: round.toolCall.input,
+            ...(round.toolCall.providerOptions
+              ? { providerOptions: round.toolCall.providerOptions }
+              : {}),
+          },
+        ]
       : undefined;
     if (round.text.length === 0 && reasoning.length === 0 && !toolCalls) continue;
     entries.push(

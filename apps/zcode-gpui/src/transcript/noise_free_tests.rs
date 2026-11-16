@@ -18,6 +18,7 @@ fn tool(row_id: u64, name: &str, status: &str) -> Row {
         output_text: String::new(),
         tool_call_id: None,
         display: None,
+        needs_read: false,
     }
 }
 
@@ -83,6 +84,46 @@ fn tool_runs_fold_between_text_and_keep_todos_and_prompts() {
             Place::Show,
         ]
     );
+}
+
+#[test]
+fn needs_read_rejection_is_not_counted_as_failed() {
+    let row = Row::from_value(&serde_json::json!({
+        "kind": "toolCall",
+        "rowId": 2,
+        "toolName": "Write",
+        "status": "error",
+        "inputText": "{\"file_path\":\"src/main.rs\"}",
+        "error": {
+            "code": "ToolExecutionFailed",
+            "message": "File has not been read yet. Read it first before writing to it."
+        }
+    }));
+    assert!(matches!(
+        row,
+        Row::ToolCall {
+            needs_read: true,
+            ..
+        }
+    ));
+    let rows = [text(1, "Writing."), row, tool(3, "Write", "error")];
+    assert!(matches!(
+        places(&rows)[1],
+        Place::Leader(Summary {
+            count: 2,
+            failed: 1,
+            ..
+        })
+    ));
+}
+
+#[test]
+fn needs_read_matches_only_the_cli_guard_messages() {
+    use crate::conversation::rows::is_needs_read_error;
+    assert!(is_needs_read_error(
+        "File has been modified since read, either by the user or by a linter. Read it again before attempting to write it."
+    ));
+    assert!(!is_needs_read_error("EACCES: permission denied"));
 }
 
 #[test]

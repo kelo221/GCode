@@ -56,6 +56,8 @@ import {
   persistOutputTokenLimitErrorCarrier,
 } from "./turn-stop.js";
 import { createStreamingToolCoordinator } from "./streaming-tool-coordinator.js";
+import { createWriteCutoffToolResult } from "./streaming-tool-synthetic-result.js";
+import { isUnreadExistingWriteTarget } from "../../tool/handlers/write.js";
 import { persistCancelledStreamSnapshot } from "./cancelled-stream-persistence.js";
 import {
   beginStartPlanBusyAdmissionRetryAttempt,
@@ -274,6 +276,21 @@ async function runModelBackedTurnStepImpl(
       onStreamReasoningDelta: (text) => streamingToolCoordinator.recordReasoningDelta(text),
       onStreamTextDelta: (text) => streamingToolCoordinator.recordTextDelta(text),
       onStreamToolCall: (toolCall) => streamingToolCoordinator.accept(toolCall),
+      // Gemini 的思考签名挂在完整 tool_call 上（adapters transform.ts「thought_signature」）；
+      // 截断合成的调用没有签名，回放会 400，所以 Gemini 模型不截断。
+      ...(/gemini/i.test(String(model.modelId))
+        ? {}
+        : {
+            probeUnreadWriteTarget: (filePath: string, signal: AbortSignal) =>
+              isUnreadExistingWriteTarget({
+                filePath,
+                fileSystemPort: this.fileSystemPort,
+                readFileState: this.readFileState,
+                signal,
+                workingDirectory: this.workingDirectory,
+                workspaceRoot: this.workspaceRoot,
+              }),
+          }),
       streamRecovery: streamRecoveryRequest,
       tools: options.tools,
       toolSearchEnabled: options.toolSearch?.mode === "native",
@@ -785,6 +802,11 @@ async function runModelBackedTurnStepImpl(
     .filter((toolCall) => !toolCall.providerExecuted)
     .map((toolCall) => streamingToolCoordinator.admit(toolCall));
   const streamedToolResults = await streamingToolCoordinator.drain(executableToolCalls);
+  // 流中截断的未读 Write 只有 file_path，不能执行；用合成失败结果代替执行。
+  const cutoffWriteCall =
+    result.writeCutoff &&
+    executableToolCalls.find((toolCall) => toolCall.id === result.writeCutoff?.toolCallId);
+  if (cutoffWriteCall) streamedToolResults.push(createWriteCutoffToolResult(cutoffWriteCall));
   if (outputTokenContinuation !== "none") {
     const assistantCommitted = await persistCompletedAssistantStep(this, state, {
       assistantPersistenceAnchor,

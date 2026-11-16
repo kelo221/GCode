@@ -34,7 +34,7 @@ import {
   recordModelHistoryRound,
   type RegularTurnLoopState,
 } from "./turn-loop-state.js";
-import { createRuntimeAssistantEntry } from "../../agent/message-history.js";
+import { createRuntimeAssistantEntry, toolCallPartMetadata } from "../../agent/message-history.js";
 import { commitTurnRequestEntries } from "./turn-output-token-continuation.js";
 
 const STREAMING_TOOL_CANCEL_DRAIN_TIMEOUT_MS = 250;
@@ -335,9 +335,10 @@ async function executeDuringStream(
           callID: toolCall.id,
           declarationIndex: options.declarationIndex,
           tool: toolCall.name,
-          metadata: toolCall.modelCallWrapper
-            ? { modelCallWrapper: toolCall.modelCallWrapper }
-            : undefined,
+          metadata:
+            toolCall.modelCallWrapper || toolCall.providerOptions
+              ? toolCallPartMetadata(toolCall)
+              : undefined,
           state: {
             status: "running",
             input,

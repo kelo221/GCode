@@ -119,4 +119,32 @@ describe("Speak closing a turn", () => {
     ]);
     expect(requests).toHaveLength(2);
   });
+
+  it("keeps working after an info heads-up and rate-limits the next one", async () => {
+    const heads = (id: string) => ({
+      id,
+      name: "Speak",
+      input: { message: "Heads up, carrying on.", kind: "info" },
+    });
+    const read = (id: string) => ({ id, name: "Read", input: { file_path: "missing.txt" } });
+    const { requests, speak } = await runTurn([
+      {
+        text: "Starting.",
+        finishReason: "tool-calls",
+        usage: {},
+        toolCalls: [heads("call-h1"), read("call-r1")],
+      },
+      {
+        text: "Still going.",
+        finishReason: "tool-calls",
+        usage: {},
+        toolCalls: [heads("call-h2"), read("call-r2")],
+      },
+      { text: "Here is the report.", finishReason: "stop", usage: {} },
+    ]);
+    expect(requests).toHaveLength(3);
+    expect(speak).toHaveBeenCalledOnce();
+    const toolTexts = JSON.stringify(requests[2]?.messages);
+    expect(toolTexts).toContain("heads-up only a few steps ago");
+  });
 });

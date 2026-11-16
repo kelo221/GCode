@@ -51,6 +51,37 @@ export function createSyntheticStreamedToolResult(
   };
 }
 
+const WRITE_CUTOFF_ERROR_TYPE = "write_stream_cutoff";
+
+// 开头与 write.ts 的 WRITE_NOT_READ_MESSAGE 相同：GPUI 按这句把行显示为 "Read first"。
+const WRITE_CUTOFF_MESSAGE =
+  "File has not been read yet. Read it first before writing to it. This Write was stopped as soon as its file_path appeared, so none of its content was used; Read the file, then call Write again with the full content.";
+
+/**
+ * 流中截断的未读 Write（docs/design/v2/tool/17-read-file-state-resume.md「未读 Write 在流中截断」）。
+ * 输入里没有 content，绝不能交给 handler 执行，直接给失败结果。
+ */
+export function createWriteCutoffToolResult(toolCall: ModelToolCall): StreamedToolExecutionResult {
+  const now = new Date();
+  return {
+    input: toRecordInput(toolCall.input),
+    ledgerRecorded: false,
+    partID: createPartId(),
+    result: {
+      toolCallId: toolCall.id,
+      toolName: toolCall.name,
+      success: false,
+      output: null,
+      modelContent: WRITE_CUTOFF_MESSAGE,
+      error: { type: WRITE_CUTOFF_ERROR_TYPE, message: WRITE_CUTOFF_MESSAGE },
+      durationMs: 0,
+      startedAt: now,
+      completedAt: now,
+    },
+    toolCallId: toolCall.id as ToolCallId,
+  };
+}
+
 export async function emitSyntheticStreamedToolError(
   runtime: AgentRuntimeInternal,
   events: SessionEvent[],

@@ -36,6 +36,8 @@ export interface AiSdkMessageTransformOptions {
   providerKind?: "openai" | "anthropic" | "openai-compatible" | "gateway" | "custom";
   stripMedia?: boolean;
   inputFormat?: ModelInputFormat;
+  /** 本次请求的目标模型；用于判断历史 tool call 的 provider 元数据是否属于同一模型。 */
+  targetModel?: { providerId: string; modelId: string };
 }
 
 type AiSdkAssistantMessage = Extract<AiSdkModelMessage, { role: "assistant" }>;
@@ -47,6 +49,7 @@ type AiSdkProviderOptions = NonNullable<
 >;
 type AiSdkAssistantTransformOptions = AiSdkMessageTransformOptions & {
   stripOpenAiResponsesStoredReasoning?: boolean;
+  replayToolCallThoughtSignature?: boolean;
 };
 
 export function toAiSdkMessages(
@@ -95,6 +98,7 @@ export function toAiSdkMessages(
         const content = toAiSdkAssistantContent(message.content, message.toolCalls, {
           ...options,
           stripOpenAiResponsesStoredReasoning: shouldStripOpenAiResponsesStoredReasoning,
+          replayToolCallThoughtSignature: shouldReplayToolCallThoughtSignature(message, options),
         });
         // 模型空回复（如 Speak-only 步骤后 finishReason=stop、text=""）会落成 content ""
         // 的 assistant 记录；Anthropic 把它序列化为空 text block 并以 400
@@ -313,6 +317,9 @@ function toAiSdkAssistantContent(
         toolCallId: toolCall.id,
         toolName: projectToolNameForProvider(toolCall.name, options),
         input: toolCall.input,
+        ...(options.replayToolCallThoughtSignature
+          ? providerOptionsForToolCallThoughtSignature(toolCall.providerOptions)
+          : {}),
       }),
     ) ?? [];
 
@@ -418,6 +425,37 @@ function isAnthropicWire(options: AiSdkMessageTransformOptions): boolean {
   const apiFormat = resolveApiFormat(options);
   if (apiFormat !== undefined) return apiFormat === "anthropic-messages";
   return options.providerKind === "anthropic";
+}
+
+/**
+ * 修复原因：Gemini（Google OpenAI-compat 端点）要求当前 turn 回放的第一个 function call 带回
+ * `extra_content.google.thought_signature`，缺失即 400。`@ai-sdk/openai-compatible` 解析时把签名写到
+ * `providerMetadata[<providerId>].thoughtSignature`，序列化时却只读 `providerOptions.google.thoughtSignature`，
+ * 所以必须在投影边界转换 key。只对同 provider + 同模型的历史回放，避免把 `extra_content`
+ * 发给不认识它的服务；见 model README §3.1.4。
+ */
+function shouldReplayToolCallThoughtSignature(
+  message: ModelInputMessage,
+  options: AiSdkMessageTransformOptions,
+): boolean {
+  if (options.providerKind !== "openai-compatible" || !options.targetModel) return false;
+  if (!message.providerId || !message.modelId) return false;
+  return (
+    message.providerId === options.targetModel.providerId &&
+    message.modelId === options.targetModel.modelId
+  );
+}
+
+function providerOptionsForToolCallThoughtSignature(
+  providerOptions: Record<string, unknown> | undefined,
+): { providerOptions: AiSdkProviderOptions } | Record<string, never> {
+  for (const value of Object.values(providerOptions ?? {})) {
+    const thoughtSignature = objectRecord(value).thoughtSignature;
+    if (typeof thoughtSignature === "string" && thoughtSignature.length > 0) {
+      return { providerOptions: { google: { thoughtSignature } } };
+    }
+  }
+  return {};
 }
 
 function hasOpenAiStoredReasoningItemId(providerOptions: unknown): boolean {

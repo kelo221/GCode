@@ -20,9 +20,11 @@ import {
   type FileSystemWriteTextRequest,
   type ModelMessageContent,
   type PermissionRuleset,
+  type SessionStorePort,
 } from "@zcode/contracts";
 import { PermissionService, defaultPermissionConfig } from "../src/permission/service.js";
 import { createToolExecutor } from "../src/tool/executor.js";
+import { readToolEntry } from "../src/tool/handlers/read.js";
 import { writeHandler, writeToolEntry } from "../src/tool/handlers/write.js";
 import { createReadFileStatePathKey } from "../src/tool/read-file-state.js";
 import { createToolRegistry } from "../src/tool/registry.js";
@@ -563,6 +565,115 @@ describeWriteStrictContract("Write strict model-result contract", () => {
     });
   });
 });
+
+// 被拒的 Write 附带当前正文并记成已读，模型可以直接重试（17-read-file-state-resume.md）。
+describe("Write rejection carries the current contents", () => {
+  const NOT_READ = "File has not been read yet. Read it first before writing to it.";
+
+  it("shows the unread file in Read format and lets the next Write through", async () => {
+    const file = join(tmpDir, "unread.rs");
+    const fs = createMemoryFileSystem({ [file]: "fn a() {}\nfn b() {}\n" });
+    const harness = createWriteReadHarness(fs);
+
+    const rejected = await harness.write({ file_path: file, content: "fn c() {}\n" });
+    expect(rejected.success).toBe(false);
+    expect(rejected.error?.message).toBe(NOT_READ);
+    const modelText = asModelText(rejected.modelContent);
+    expect(modelText).toContain(NOT_READ);
+    expect(modelText).toContain("now count as read");
+    expect(modelText).toContain("1\tfn a() {}\n2\tfn b() {}");
+    expect(fs.files.get(file)).toBe("fn a() {}\nfn b() {}\n");
+
+    const retried = await harness.write({ file_path: file, content: "fn c() {}\n" });
+    expect(retried.success).toBe(true);
+    expect(fs.files.get(file)).toBe("fn c() {}\n");
+  });
+
+  it("shows fresh contents after an external change and lets the next Write through", async () => {
+    const file = join(tmpDir, "stale.rs");
+    const fs = createMemoryFileSystem({ [file]: "before" });
+    const harness = createWriteReadHarness(fs, createReadFileState(file, "before"));
+    fs.files.set(file, "after");
+
+    const rejected = await harness.write({ file_path: file, content: "replacement" });
+    expect(rejected.success).toBe(false);
+    expect(rejected.error?.message).toContain("File has been modified since read");
+    expect(asModelText(rejected.modelContent)).toContain("1\tafter");
+
+    const retried = await harness.write({ file_path: file, content: "replacement" });
+    expect(retried.success).toBe(true);
+  });
+
+  it("keeps the plain error when Read of the path is denied", async () => {
+    const file = join(tmpDir, "secret.env");
+    const fs = createMemoryFileSystem({ [file]: "TOKEN=hunter2\n" });
+    const harness = createWriteReadHarness(fs, new Map(), [
+      { toolName: "Read", ruleContent: file },
+    ]);
+
+    const rejected = await harness.write({ file_path: file, content: "TOKEN=x\n" });
+    expect(rejected.success).toBe(false);
+    expect(asModelText(rejected.modelContent ?? rejected.error?.message ?? "")).not.toContain(
+      "hunter2",
+    );
+    expect(harness.readFileState.size).toBe(0);
+
+    const retried = await harness.write({ file_path: file, content: "TOKEN=x\n" });
+    expect(retried.success).toBe(false);
+    expect(fs.files.get(file)).toBe("TOKEN=hunter2\n");
+  });
+
+  it("keeps the plain error when the file is over Read's line limit", async () => {
+    const file = join(tmpDir, "huge.txt");
+    const fs = createMemoryFileSystem({ [file]: "x\n".repeat(3000) });
+    const harness = createWriteReadHarness(fs);
+
+    const rejected = await harness.write({ file_path: file, content: "small" });
+    expect(rejected.success).toBe(false);
+    expect(asModelText(rejected.modelContent ?? rejected.error?.message ?? "")).not.toContain(
+      "now count as read",
+    );
+    expect(harness.readFileState.size).toBe(0);
+  });
+});
+
+function createWriteReadHarness(
+  fileSystemPort: FileSystemPort,
+  readFileState: ReadFileStateMap = new Map(),
+  readDeny: { toolName: string; ruleContent: string }[] = [],
+) {
+  const sessionId = createSessionId("write-reject");
+  const turnId = createTurnId("write-reject");
+  const traceContext = createRootTraceContext({ sessionId, turnId });
+  const registry = createToolRegistry();
+  registry.register(readToolEntry);
+  registry.register(writeToolEntry);
+  const permission: PermissionRuleset = { version: 1, scope: "session", deny: readDeny };
+  const executor = createToolExecutor({
+    emitEvent: async () => {},
+    fileSystemPort,
+    mode: "edit",
+    permissionService: new PermissionService(defaultPermissionConfig),
+    readFileState,
+    registry,
+    sessionId,
+    sessionStore: {
+      getSession: async () => ({ id: sessionId, permission }),
+    } as unknown as SessionStorePort,
+    traceContext,
+    turnId,
+    workingDirectory: tmpDir,
+    workspaceRoot: tmpDir,
+  });
+  return {
+    readFileState,
+    write: (input: unknown) =>
+      executor.execute(
+        { id: createToolCallId("write-reject"), input, name: "Write" },
+        { traceContext },
+      ),
+  };
+}
 
 async function writeForModel(input: unknown, context: ToolExecutionContext) {
   const output = await writeHandler(input, context);

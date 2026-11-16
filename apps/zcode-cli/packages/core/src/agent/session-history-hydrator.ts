@@ -1,5 +1,9 @@
 import { genUiModelContextSchema, type GenUiModelContext } from "@zcode/shared/gen-ui";
-import { attachGenUiContext, normalizeGenUiInput } from "./message-history.js";
+import {
+  attachGenUiContext,
+  normalizeGenUiInput,
+  toolCallProviderOptionsFromPartMetadata,
+} from "./message-history.js";
 import { ModelCallWrapperSchema } from "@zcode/contracts";
 import {
   hydrateToolSearchContent,
@@ -252,6 +256,8 @@ export async function hydrateMessageHistoryFromSession(input: {
         input: part.state.input,
         modelCallWrapper: modelCallWrapperFromPart(part),
         name: historyToolNameFromPart(part),
+        // 冷恢复（重启、compact 后重建）同样回放 Gemini thought signature，与 live history 一致。
+        providerOptions: toolCallProviderOptionsFromPartMetadata(part.metadata),
       }),
     );
     input.history.addEntries(

@@ -346,6 +346,11 @@ export interface ModelToolCall {
   name: string;
   input: unknown;
   providerExecuted?: boolean;
+  /**
+   * AI SDK final tool-call 的 providerMetadata 原样保存（例如 Gemini thought signature）。
+   * 不透明字段，只由 adapter 的 provider 投影解释；见 model README §3.1.4。
+   */
+  providerOptions?: Record<string, unknown>;
 }
 
 export type AttachmentKind = "local_file" | "resource" | "inline";

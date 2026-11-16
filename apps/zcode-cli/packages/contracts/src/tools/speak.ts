@@ -25,7 +25,8 @@ export const SpeakInputJsonSchema = toToolJsonSchema(SpeakInputSchema);
 export const SpeakOutputSchema = z
   .object({
     spoken: z.boolean(),
-    reason: z.enum(["disabled", "unfocusedOnly", "unavailable"]).optional(),
+    // tooSoon 由 CLI 自己判定（info 播报节流），不经过客户端。
+    reason: z.enum(["disabled", "unfocusedOnly", "unavailable", "tooSoon"]).optional(),
   })
   .strict();
 

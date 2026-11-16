@@ -33,6 +33,43 @@ export interface ToolCallInput {
   id: string;
   name: string;
   input: unknown;
+  /** provider 返回的 tool-call 元数据（如 Gemini thought signature），见 ModelToolCall。 */
+  providerOptions?: Record<string, unknown>;
+}
+
+// 修复原因：assistant tool call 在这里按字段重建，原实现只拷贝 id/name/input，
+// Gemini thought signature 因此在进入 history 时丢失、下一轮 400；与 modelCallWrapper 同样保留。
+function toolCallProviderOptionsField(
+  call: Pick<ToolCallInput, "providerOptions">,
+): Pick<ToolCallInput, "providerOptions"> {
+  return call.providerOptions ? { providerOptions: call.providerOptions } : {};
+}
+
+/** ToolPart.metadata 上保存 tool-call provider 元数据的 key；冷恢复由 hydrator 读回。 */
+const TOOL_CALL_PROVIDER_OPTIONS_METADATA_KEY = "providerOptions";
+
+/**
+ * 本地工具 ToolPart 每次落盘都要带上的 tool-call 身份元数据。persistPart 整体覆盖 part，
+ * 所以 pending/running/completed 各次写入都必须带上同一组字段，否则后一次写入会抹掉签名。
+ */
+export function toolCallPartMetadata(
+  call: Pick<ToolCallInput, "modelCallWrapper" | "providerOptions"> | undefined,
+): Record<string, unknown> {
+  return {
+    ...(call?.modelCallWrapper ? { modelCallWrapper: call.modelCallWrapper } : {}),
+    ...(call?.providerOptions
+      ? { [TOOL_CALL_PROVIDER_OPTIONS_METADATA_KEY]: call.providerOptions }
+      : {}),
+  };
+}
+
+export function toolCallProviderOptionsFromPartMetadata(
+  metadata: Record<string, unknown> | undefined,
+): Record<string, unknown> | undefined {
+  const value = metadata?.[TOOL_CALL_PROVIDER_OPTIONS_METADATA_KEY];
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : undefined;
 }
 
 // 仅模型协议出口和原始调用诊断使用；内部消费者始终读取目标 name/input。
@@ -42,6 +79,7 @@ export function toModelToolCall(call: ToolCallInput): ModelToolCall {
     id: call.id,
     name: call.modelCallWrapper,
     input: { name: call.name, input: call.input },
+    ...toolCallProviderOptionsField(call),
   };
 }
 
@@ -254,6 +292,7 @@ export class MessageHistoryImpl implements MessageHistory {
           name: tc.name,
           input: tc.input,
           ...(tc.modelCallWrapper ? { modelCallWrapper: tc.modelCallWrapper } : {}),
+          ...toolCallProviderOptionsField(tc),
         })),
         ...(model ? { providerId: model.providerId, modelId: model.modelId } : {}),
       },
@@ -410,6 +449,7 @@ export function createRuntimeAssistantEntry(
         name: toolCall.name,
         input: toolCall.input,
         ...(toolCall.modelCallWrapper ? { modelCallWrapper: toolCall.modelCallWrapper } : {}),
+        ...toolCallProviderOptionsField(toolCall),
       })),
       ...(model ? { providerId: model.providerId, modelId: model.modelId } : {}),
     },

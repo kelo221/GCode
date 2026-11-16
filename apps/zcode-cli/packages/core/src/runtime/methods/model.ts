@@ -1,4 +1,4 @@
-import { beginLocalTurnPreparation } from "@zcode/contracts";
+import { beginLocalTurnPreparation, type ModelEvent } from "@zcode/contracts";
 import { runWithModelInvocationContext, traceContextToLogContext } from "../deps.js";
 import type { ModelReasoningContentBlock, ModelToolCall, ModelUsage, ToolCallId } from "../deps.js";
 import {
@@ -125,11 +125,18 @@ export async function runModelTextRequest(
     streamIdleTimeoutRetryNumber: projectedOptions.streamRecovery?.retryNumber,
     streamRecovery: projectedOptions.streamRecovery,
   };
+  // 只属于这次请求的取消：截断未读 Write 时用它停掉 provider 流，turn 本身不取消。
+  const writeCutoffController = projectedOptions.probeUnreadWriteTarget
+    ? new AbortController()
+    : undefined;
   const modelRequest = {
     messages: projectedOptions.messages,
     tools: projectedOptions.tools,
     toolSearchEnabled: projectedOptions.toolSearchEnabled,
-    abortSignal: projectedOptions.abortSignal,
+    abortSignal:
+      writeCutoffController && projectedOptions.abortSignal
+        ? AbortSignal.any([projectedOptions.abortSignal, writeCutoffController.signal])
+        : (writeCutoffController?.signal ?? projectedOptions.abortSignal),
     ...(projectedOptions.maxOutputTokens !== undefined
       ? { options: { maxOutputTokens: projectedOptions.maxOutputTokens } }
       : {}),
@@ -175,6 +182,76 @@ export async function runModelTextRequest(
   const toolCalls: ModelToolCall[] = [];
   const toolCallIds = new Set<string>();
   const toolInputDeltaBuffers = new Map<ToolCallId, string>();
+  // 未读 Write 截断：每个 Write 参数流在取到 file_path 前的原文；判定命中后在下一个事件处截断。
+  const writeInputHeads = new Map<string, string>();
+  let pendingWriteCutoff: { toolCallId: string; filePath: string } | undefined;
+  let writeCutoff: { toolCallId: string; filePath: string } | undefined;
+  // 参数已开始、完整 tool_call 还没到的本地工具调用。
+  const openToolInputs = new Set<string>();
+  const readyWriteCutoff = (event: ModelEvent) => {
+    const cutoff = pendingWriteCutoff;
+    if (!cutoff || toolCallIds.has(cutoff.toolCallId)) return undefined;
+    // 这个 Write 已经完整收到，就照常执行，交给 handler 拒绝。
+    if (event.type === "tool_call" && event.toolCall.id === cutoff.toolCallId) return undefined;
+    // 还有没结束的 thinking（签名在 reasoning_end 才到）或别的工具参数没收完时不截：
+    // 截了会留下无签名的 thinking 或悬空的工具卡。等它们结束后的下一个事件再截。
+    if (reasoningById.size > 0) return undefined;
+    for (const id of openToolInputs) if (id !== cutoff.toolCallId) return undefined;
+    return cutoff;
+  };
+  const probeWriteInput = (toolCallId: string, delta: string) => {
+    const probe = options.probeUnreadWriteTarget;
+    const head = writeInputHeads.get(toolCallId);
+    if (!probe || !writeCutoffController || head === undefined) return;
+    const next = head + delta;
+    const filePath = readStreamedFilePath(next);
+    if (filePath === undefined) {
+      if (next.length > WRITE_CUTOFF_PROBE_MAX_CHARS) writeInputHeads.delete(toolCallId);
+      else writeInputHeads.set(toolCallId, next);
+      return;
+    }
+    writeInputHeads.delete(toolCallId);
+    void probe(filePath, writeCutoffController.signal).then(
+      (unread) => {
+        if (unread && !toolCallIds.has(toolCallId)) pendingWriteCutoff ??= { toolCallId, filePath };
+      },
+      () => undefined,
+    );
+  };
+  // 截断后按正常的工具调用响应收口：保留已收到的文本与 thinking，被截的 Write 只带 file_path。
+  const finishWriteCutoff = async (cutoff: { toolCallId: string; filePath: string }) => {
+    const toolCall: ModelToolCall = {
+      id: cutoff.toolCallId,
+      name: "Write",
+      input: { file_path: cutoff.filePath },
+    };
+    toolCallIds.add(toolCall.id);
+    toolCalls.push(toolCall);
+    finishReason = "tool-calls";
+    this.logger?.info("Stopped a Write to an unread file mid-stream", {
+      ...traceContextToLogContext(options.traceContext),
+      event: "model.streaming.write_cutoff",
+      module: "core.runtime",
+      status: "completed",
+      toolCallId: toolCall.id,
+    });
+    await flushAllToolInputDeltas();
+    await enqueueStreamingEventAndDrain({
+      assistantMessageId: options.assistantMessageId,
+      delta: "",
+      done: false,
+      input: toolCall.input,
+      kind: "tool_call",
+      toolCallId: toolCall.id as ToolCallId,
+      toolName: toolCall.name,
+    });
+    await enqueueStreamingEventAndDrain({
+      assistantMessageId: options.assistantMessageId,
+      delta: "",
+      done: true,
+      kind: "finish",
+    });
+  };
   const providerToolRounds: ProviderToolRound[] = [];
   const providerToolStartedAt = new Map<string, number>();
   let roundStartedAt = Date.now();
@@ -255,6 +332,14 @@ export async function runModelTextRequest(
   finishAssembly();
   try {
     for await (const event of modelStream) {
+      const cutoff = readyWriteCutoff(event);
+      if (cutoff) {
+        // 在处理本事件之前截断（含 finish，避免 finish 发两次）。先停 provider 请求再退出循环：
+        // 退出会关闭迭代器，abort 保证连接不再继续生成 token。
+        writeCutoff = cutoff;
+        writeCutoffController?.abort();
+        break;
+      }
       switch (event.type) {
         case "start": {
           await enqueueStreamingEvent({
@@ -358,6 +443,10 @@ export async function runModelTextRequest(
         case "tool_input_start": {
           const toolCallId = event.id as ToolCallId;
           toolInputDeltaBuffers.delete(toolCallId);
+          if (!event.providerExecuted) openToolInputs.add(toolCallId);
+          if (event.toolName === "Write" && !event.providerExecuted) {
+            writeInputHeads.set(toolCallId, "");
+          }
           this.logger?.debug("Model streaming tool input started", {
             ...traceContextToLogContext(options.traceContext),
             event: "model.streaming.tool_input_start",
@@ -380,6 +469,7 @@ export async function runModelTextRequest(
 
         case "tool_input_delta": {
           await appendToolInputDelta(event.id as ToolCallId, event.delta);
+          probeWriteInput(event.id, event.delta);
           break;
         }
 
@@ -413,6 +503,8 @@ export async function runModelTextRequest(
             break;
           }
           await flushToolInputDelta(toolCall.id as ToolCallId);
+          writeInputHeads.delete(toolCall.id);
+          openToolInputs.delete(toolCall.id);
           if (toolCallIds.has(toolCall.id)) {
             // 防御原因：协议兼容或自定义 adapter 路径可能重复投递同 id 的 final tool_call；
             // runtime 按 id 去重，避免同一次响应内重复执行。
@@ -536,6 +628,9 @@ export async function runModelTextRequest(
     );
     throw error;
   }
+  if (writeCutoff) {
+    await finishWriteCutoff(writeCutoff);
+  }
   await streamingEventQueue.drain();
   if (
     await settleUnfinishedProviderToolCards(
@@ -631,5 +726,23 @@ export async function runModelTextRequest(
     toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
     ...(providerToolRounds.length > 0 ? { providerToolRounds } : {}),
     usage,
+    ...(writeCutoff ? { writeCutoff } : {}),
   };
+}
+
+const WRITE_CUTOFF_PROBE_MAX_CHARS = 8 * 1024;
+
+/**
+ * 从还没收完的 Write 参数 JSON 里取出已经闭合的 `file_path` 字符串值。
+ * content 里出现的 `\"file_path\"` 带转义反斜杠，匹配不上，不会被误认。
+ */
+function readStreamedFilePath(raw: string): string | undefined {
+  const match = /"file_path"\s*:\s*("(?:[^"\\]|\\.)*")/.exec(raw);
+  if (!match?.[1]) return undefined;
+  try {
+    const value: unknown = JSON.parse(match[1]);
+    return typeof value === "string" && value.trim().length > 0 ? value : undefined;
+  } catch {
+    return undefined;
+  }
 }

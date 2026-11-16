@@ -47,6 +47,7 @@ impl AppState {
             .and_then(Value::as_str)
             .unwrap_or("")
             .trim();
+        let kind = params.get("kind").and_then(Value::as_str).unwrap_or("");
         let settings = settings(cx);
         let outcome = rules::speak_gate(&settings, window_active).and_then(|()| {
             if message.is_empty() {
@@ -57,7 +58,7 @@ impl AppState {
         let result = match outcome {
             Ok(()) => {
                 if let Some(voice) = self.voice.as_mut() {
-                    voice.ledger.spoke(session_id);
+                    voice.ledger.spoke(session_id, kind);
                 }
                 json!({ "accepted": true })
             }
