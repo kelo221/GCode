@@ -44,6 +44,7 @@ import {
 } from "./workspace-checkpoint-persistence.js";
 import { mainTurnCacheHitAggregateFromMessages } from "./turn-model-step-usage.js";
 import { refreshRestoredAnnouncements } from "./context-refresh.js";
+import { hydrateCodemodeStoreFromSession } from "../../agent/codemode-store-hydrator.js";
 
 export function toScheduleState(
   this: AgentRuntimeInternal,
@@ -151,6 +152,14 @@ export async function resumeFromStore(
     rewindTargetMessageId,
     workingDirectory: this.workingDirectory,
     workspaceRoot: this.workspaceRoot,
+  });
+  hydrateCodemodeStoreFromSession({
+    store: this.codemodeStore,
+    messages,
+    branchCutAfterMessageId,
+    rewindCreatedMessageId,
+    rewindKeptMessageIds,
+    rewindTargetMessageId,
   });
   await this.ensureContextInitialized(traceContext);
   // 恢复的 envInfo 来自存储，不是刚读的 Git，不能当预取；恢复的窗口还没决定过时，下一次请求重新读取。

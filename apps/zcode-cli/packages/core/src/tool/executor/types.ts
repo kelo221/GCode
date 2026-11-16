@@ -48,6 +48,7 @@ import type {
   BackgroundTaskControlPort,
   ExecutableToolCall,
   ReadFileStateMap,
+  SpeakCadencePort,
   ToolBatchEvent,
   ToolExecutionResult,
   ToolRuntimeScope,
@@ -121,6 +122,7 @@ export interface ToolExecutorOptions {
   automationPort?: AutomationPort;
   offPeakPort?: OffPeakPort;
   voicePort?: VoicePort;
+  speakCadence?: SpeakCadencePort;
   codeSearchPort?: CodeSearchPort;
   diagnosticsPort?: DiagnosticsPort;
   topicResourcePort?: TopicResourcePort;
@@ -134,6 +136,8 @@ export interface ToolExecutorOptions {
   modelCatalogPort?: ModelCatalogPort;
   runtimeTaskRegistry?: RuntimeTaskRegistry;
   readFileState?: ReadFileStateMap;
+  /** codemode store；runtime 持有。缺席时 codemode 的 store/load 只在单次脚本内有效。 */
+  codemodeStore?: Map<string, unknown>;
   /** 技能门的探针（ToolInputResolutionContext.hasLoadedSkill）；runtime 按 provider 可见历史回答。 */
   hasLoadedSkill?: (skillName: string) => boolean;
   subagentBackgroundBashMaxMs?: number;
@@ -252,6 +256,7 @@ export interface ToolExecutorDeps {
   automationPort?: AutomationPort;
   offPeakPort?: OffPeakPort;
   voicePort?: VoicePort;
+  speakCadence?: SpeakCadencePort;
   codeSearchPort?: CodeSearchPort;
   diagnosticsPort?: DiagnosticsPort;
   topicResourcePort?: TopicResourcePort;
@@ -265,6 +270,7 @@ export interface ToolExecutorDeps {
   modelCatalogPort?: ModelCatalogPort;
   runtimeTaskRegistry?: RuntimeTaskRegistry;
   readFileState: ReadFileStateMap;
+  codemodeStore?: Map<string, unknown>;
   /** 文件读取快照的下一个序号；执行器持有计数器，只增不减。 */
   nextReadFileStateSnapshotIndex: () => number;
   hasLoadedSkill?: (skillName: string) => boolean;

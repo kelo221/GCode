@@ -5,7 +5,8 @@
 //
 // Output: <outdir>/zcode-backend[.exe] plus provider/zcode-builtin.json, which the CLI
 // looks for beside its entry, and node_modules/ripgrep, which the file-search worker
-// imports by file URL (a compiled worker cannot resolve bare package names). The production release is staged, never the test one,
+// imports by file URL (a compiled worker cannot resolve bare package names), and
+// node_modules/quickjs-wasi/quickjs.wasm for the codemode tool. The production release is staged, never the test one,
 // because the CLI materializes it into the environment root that Desktop also uses.
 // Mirrors packages/cli/scripts/build.mjs: TUI, playwright-core and koffi stay
 // external (TUI and browser automation are unavailable in this binary; app-server
@@ -27,7 +28,12 @@ const outfile = join(outdir, process.platform === "win32" ? "zcode-backend.exe" 
 await mkdir(join(outdir, "provider"), { recursive: true });
 const started = performance.now();
 const result = await Bun.build({
-  entrypoints: [join(root, "apps/zcode-cli/packages/cli/src/main.ts")],
+  // The codemode worker is a second embedded entrypoint beside main.ts; the runtime starts it
+  // as "./codemode-worker.js" (core/src/tool/codemode/sandbox.ts).
+  entrypoints: [
+    join(root, "apps/zcode-cli/packages/cli/src/main.ts"),
+    join(root, "apps/zcode-cli/packages/cli/src/codemode-worker.ts"),
+  ],
   compile: { outfile },
   target: "bun",
   format: "esm",
@@ -61,6 +67,18 @@ await mkdir(ripgrepTarget, { recursive: true });
 await copyFile(join(ripgrepPackage, "package.json"), join(ripgrepTarget, "package.json"));
 await copyFile(join(ripgrepPackage, "LICENSE.md"), join(ripgrepTarget, "LICENSE.md"));
 await cp(join(ripgrepPackage, "lib"), join(ripgrepTarget, "lib"), { recursive: true });
+// codemode loads QuickJS from <exe dir>/node_modules/quickjs-wasi/quickjs.wasm. Resolve it
+// from pi-codemode, which pins its own quickjs-wasi version.
+const codemodeEntry = Bun.resolveSync(
+  "@earendil-works/pi-codemode",
+  join(root, "apps/zcode-cli/packages/core"),
+);
+const quickjsWasm = Bun.resolveSync("quickjs-wasi/quickjs.wasm", dirname(codemodeEntry));
+const quickjsTarget = join(outdir, "node_modules/quickjs-wasi");
+await rm(quickjsTarget, { recursive: true, force: true });
+await mkdir(quickjsTarget, { recursive: true });
+await copyFile(quickjsWasm, join(quickjsTarget, "quickjs.wasm"));
+await copyFile(join(dirname(quickjsWasm), "LICENSE"), join(quickjsTarget, "LICENSE"));
 const size = Bun.file(outfile).size / 1024 / 1024;
 console.log(
   `Built ${outfile} (${size.toFixed(1)} MiB, v${version}) in ${((performance.now() - started) / 1000).toFixed(1)}s`,

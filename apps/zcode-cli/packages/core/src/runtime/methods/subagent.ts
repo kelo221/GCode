@@ -56,6 +56,7 @@ import {
   filterSubagentChildToolNames,
 } from "../../subagent/tool-policy.js";
 import { withCodeSearchEquivalents } from "../../subagent/explore-tools.js";
+import { resolveCodemodeMode } from "../helpers/tool-allowlist.js";
 import { isSubagentDispatchToolName } from "../../tool/compat.js";
 import { resolveEmbeddedSearchBranchCapability } from "../../embedded-search/capability.js";
 import { getSessionShellEnvironment } from "./session-shell-environment.js";
@@ -125,6 +126,7 @@ export function createDefaultSubagentPort(
       return buildExploreAllowedTools({
         embeddedSearchEnabled: resolveSubagentEmbeddedSearchEnabled(),
         codeSearch: deps.codeSearchPort !== undefined,
+        codemode: resolveCodemodeMode(this.config) !== "off",
       });
     },
     runExploreAgent: async (request, options) => {
@@ -377,6 +379,8 @@ export function createDefaultSubagentPort(
             bashTimeoutPolicy: this.config.bashTimeoutPolicy,
             midConversationSystem: this.config.midConversationSystem,
             toolSearch: this.config.toolSearch,
+            // codemode 随父 runtime：child 的脚本只能调用 child registry 里的工具。
+            codemode: this.config.codemode,
             bashShellSelection,
             // child 只复用父 runtime 已解析的 instructions snapshot；Project Context 仍不继承。
             currentDate: this.contextSourceSnapshot?.currentDate ?? this.config.currentDate,

@@ -74,6 +74,8 @@ pub struct HostPrefs {
     pub lsp_diagnostics_enabled: bool,
     /// Settings › MCP Servers "Load MCP tools on demand": `auto` | `local` | `off`.
     pub tool_search_mode: &'static str,
+    /// Settings › MCP Servers "Code mode": `off` | `on` | `only`.
+    pub codemode_mode: &'static str,
     /// Provider cards' "Prompt cache": `{providerId: "1h" | "off"}`; missing means `5m`.
     pub prompt_cache_modes: Value,
 }
@@ -86,6 +88,7 @@ impl Default for HostPrefs {
             code_search_enabled: false,
             lsp_diagnostics_enabled: false,
             tool_search_mode: "off",
+            codemode_mode: "off",
             prompt_cache_modes: json!({}),
         }
     }
@@ -124,6 +127,7 @@ pub fn dispatch_reverse_rpc(
                 "codeSearchEnabled": prefs.code_search_enabled,
                 "lspDiagnosticsEnabled": prefs.lsp_diagnostics_enabled,
                 "toolSearchMode": prefs.tool_search_mode,
+                "codemodeMode": prefs.codemode_mode,
                 "promptCacheModes": prefs.prompt_cache_modes
             }),
         ),

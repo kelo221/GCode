@@ -47,6 +47,7 @@ import {
   type TurnId,
   type UsageStorePort,
   type WorkspaceId,
+  type CodemodeMode,
 } from "@zcode/contracts";
 import {
   subagentRuntimeConfigSchema,
@@ -186,6 +187,8 @@ interface SessionStartupPreferences {
   // GPUI 语言服务器诊断：Host 下发 true 才注入 DiagnosticsPort；子会话沿用父值。
   lspDiagnosticsEnabled: boolean;
   toolSearchMode: AppToolSearchMode;
+  // GPUI codemode：Host 缺省不下发即 off；子会话沿用父值。
+  codemodeMode: CodemodeMode;
   // GPUI prompt cache 生命周期（按 providerId）：交给本会话 model adapter；子会话沿用父值。
   promptCacheModes?: PromptCacheModes;
   resolveInitialBashShellSelection: () => Promise<ExecutionShellSelection | undefined>;
@@ -3440,6 +3443,7 @@ async function resolveSessionStartupPreferences(
       toolSearchMode: source.parent.toolSearchMode,
       codeSearchEnabled: source.parent.codeSearchEnabled === true,
       lspDiagnosticsEnabled: source.parent.lspDiagnosticsEnabled === true,
+      codemodeMode: source.parent.codemodeMode ?? "off",
       promptCacheModes: source.parent.promptCacheModes,
       resolveInitialBashShellSelection: async () => inheritedShellSelection,
     };
@@ -3467,6 +3471,7 @@ async function resolveSessionStartupPreferences(
     codeSearchEnabled: runtimePreferences.codeSearchEnabled === true,
     lspDiagnosticsEnabled: runtimePreferences.lspDiagnosticsEnabled === true,
     toolSearchMode: runtimePreferences.toolSearchMode,
+    codemodeMode: runtimePreferences.codemodeMode ?? "off",
     promptCacheModes: runtimePreferences.promptCacheModes,
     resolveInitialBashShellSelection: async () => {
       const executionPreferences = await requestSessionRuntimePreferences(
@@ -3587,6 +3592,7 @@ async function createRecord(
       toolDisallowlist: resolveSessionToolDenylist(params, workspace),
       nativeSearchEnhancementsEnabled: startupPreferences.nativeSearchEnhancementsEnabled,
       toolSearch: { mode: startupPreferences.toolSearchMode },
+      codemode: { mode: startupPreferences.codemodeMode },
       modelContextBudgetStrategy: startupPreferences.modelContextBudgetStrategy,
       // Memory Settings 是现有 CLI features.memory/use 之外的总开关。只在关闭时
       // 写入 override，避免开启值反向覆盖用户已有的 CLI 禁用配置。
@@ -3694,6 +3700,7 @@ async function createRecord(
     toolSearchMode: startupPreferences.toolSearchMode,
     codeSearchEnabled: startupPreferences.codeSearchEnabled,
     lspDiagnosticsEnabled: startupPreferences.lspDiagnosticsEnabled,
+    codemodeMode: startupPreferences.codemodeMode,
     ...(startupPreferences.promptCacheModes
       ? { promptCacheModes: startupPreferences.promptCacheModes }
       : {}),

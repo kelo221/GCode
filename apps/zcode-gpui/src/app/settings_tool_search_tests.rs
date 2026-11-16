@@ -90,3 +90,11 @@ fn unknown_tool_search_modes_are_rejected_before_saving() {
     let ok = PreferenceChange::ToolSearchMode("local".into());
     assert!(ok.validate(&AppSettings::default()).is_ok());
 }
+
+#[test]
+fn unknown_codemode_modes_are_rejected_before_saving() {
+    let change = PreferenceChange::CodemodeMode("auto".into());
+    assert!(change.validate(&AppSettings::default()).is_err());
+    let ok = PreferenceChange::CodemodeMode("only".into());
+    assert!(ok.validate(&AppSettings::default()).is_ok());
+}

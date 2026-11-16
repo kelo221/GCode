@@ -94,6 +94,18 @@ https://github.com/dmtrKovalenko/fff (MIT, Copyright Dmitry Kovalenko). It
 powers the GPUI-only `FindFiles` and `SearchCode` agent tools; the MIT notice
 above applies.
 
+## Codemode sandbox (pi-codemode, quickjs-wasi, QuickJS, MIT)
+
+The compiled backend embeds `@earendil-works/pi-codemode` 1.5.2, from
+https://github.com/earendil-works/pi (MIT, Copyright Earendil Works), which
+runs the `codemode` agent tool's scripts. Its QuickJS runtime is
+`quickjs-wasi` 3.6.2, from https://github.com/vercel-labs/quickjs-wasi (MIT,
+Copyright Vercel, Inc.); `quickjs.wasm` ships beside the backend in
+`node_modules/quickjs-wasi/` with that package's `LICENSE`. The wasm build
+contains QuickJS-ng (https://github.com/quickjs-ng/quickjs, MIT). The codemode
+tool description is adapted from pi's `packages/coding-agent/docs/codemode.md`.
+The MIT notice above applies.
+
 ## Transitive dependencies
 
 Transitive crate dependencies (e.g. vte, unicode-width, parking_lot, regex)

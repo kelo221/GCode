@@ -163,6 +163,25 @@ export const toolResultDisplaySchema = z.discriminatedUnion("kind", [
   toolCallSavedWorkflowListDisplaySchema,
   toolCallListModelsDisplaySchema,
   toolCallResumeWorkflowRunDisplaySchema,
+  // codemode 脚本的嵌套调用清单；与 CLI contracts 的 codemodeToolResultDisplayPayloadSchema 同步。
+  z
+    .object({
+      kind: z.literal("codemode"),
+      ok: z.boolean(),
+      calls: z
+        .array(
+          z
+            .object({
+              name: z.string().min(1).max(256),
+              status: z.enum(["ok", "error", "cancelled"]),
+              durationMs: z.number().int().nonnegative(),
+            })
+            .strict(),
+        )
+        .max(100),
+      truncated: z.literal(true).optional(),
+    })
+    .strict(),
 ]);
 export type ToolResultDisplay = z.infer<typeof toolResultDisplaySchema>;
 

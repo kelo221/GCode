@@ -1,4 +1,4 @@
-import type { ToolSearchExecutionContext, ToolSearchMode } from "@zcode/contracts";
+import type { CodemodeMode, ToolSearchExecutionContext, ToolSearchMode } from "@zcode/contracts";
 import type { RequestVerificationReason } from "@zcode/shared";
 import type { GetAgentDefinitions, LoadAgentDefinitions } from "../subagent/definitions.js";
 import type { RuntimeInputPresentation, TurnExecutionModelFallbackReason } from "@zcode/contracts";
@@ -126,6 +126,11 @@ import type { WorkspaceHookRuntimeAdmissionPort } from "../hooks/workspace-hook-
 
 export interface AgentRuntimeConfig {
   toolSearch?: { mode?: ToolSearchMode };
+  /**
+   * codemode（docs/design/v2/tool/21-codemode.md）。缺省 off：只有 Host（GPUI 设置，缺省 on）显式
+   * 下发时才注册；子 Agent 继承父 runtime 的值。
+   */
+  codemode?: { mode?: CodemodeMode };
   /** shared-host CUA request routing metadata; desktop is the safe default. */
   clientMode?: "desktop-continuous" | "web-remote-replayable";
   deliveryKind?: "desktop-continuous" | "web-remote-replayable";
@@ -920,6 +925,11 @@ export interface RunModelTextRequestOptions {
   onStreamTextDelta?: (text: string) => void;
   onStreamToolCall?: (toolCall: ModelToolCall) => void;
   onModelNetworkStatus?: (event: ModelNetworkStatusEvent) => void;
+  /**
+   * 流中截断未读 Write 的判定；true 即停止这次响应（17-read-file-state-resume.md「未读 Write 在流中截断」）。
+   * 缺省则不截断。
+   */
+  probeUnreadWriteTarget?: (filePath: string, signal: AbortSignal) => Promise<boolean>;
   streamRecovery?: ModelStreamRecoveryStatus;
   tools: ModelToolContract[];
   traceContext: TraceContext;
@@ -950,6 +960,8 @@ export interface RuntimeModelTextResult {
   /** 服务端内置工具切出的前序轮次；text/reasoning 只保留最后一轮。 */
   providerToolRounds?: ProviderToolRound[];
   usage: ModelUsage;
+  /** 响应在这个未读 Write 的参数流中被截断；它在 toolCalls 里，输入只有 file_path，不能执行。 */
+  writeCutoff?: { toolCallId: string; filePath: string };
 }
 
 export type ParsedRewindCommand =

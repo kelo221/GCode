@@ -55,12 +55,13 @@ fn test_provider_runtime_headers_fast_fails() {
 fn test_runtime_preferences_served() {
     let id = serde_json::json!(42);
     let params = serde_json::json!({});
-    for (enabled, tool_search_mode, prompt_cache_modes) in [
-        (false, "off", serde_json::json!({})),
-        (true, "auto", serde_json::json!({ "anthropic": "1h" })),
+    for (enabled, tool_search_mode, codemode_mode, prompt_cache_modes) in [
+        (false, "off", "off", serde_json::json!({})),
+        (true, "auto", "on", serde_json::json!({ "anthropic": "1h" })),
         (
             true,
             "local",
+            "only",
             serde_json::json!({ "anthropic": "1h", "proxy": "off" }),
         ),
     ] {
@@ -74,6 +75,7 @@ fn test_runtime_preferences_served() {
                 code_search_enabled: enabled,
                 lsp_diagnostics_enabled: enabled,
                 tool_search_mode,
+                codemode_mode,
                 prompt_cache_modes: prompt_cache_modes.clone(),
             },
         ) {
@@ -87,6 +89,7 @@ fn test_runtime_preferences_served() {
                 assert_eq!(val["result"]["codeSearchEnabled"], enabled);
                 assert_eq!(val["result"]["lspDiagnosticsEnabled"], enabled);
                 assert_eq!(val["result"]["toolSearchMode"], tool_search_mode);
+                assert_eq!(val["result"]["codemodeMode"], codemode_mode);
                 assert_eq!(val["result"]["promptCacheModes"], prompt_cache_modes);
             }
             _ => panic!("Must respond"),

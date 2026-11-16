@@ -1,4 +1,5 @@
 import { buildToolExposure } from "../../tool/search/exposure.js";
+import { applyCodemodeOnlyExposure } from "../../tool/codemode/catalog.js";
 import type { ModelToolContract } from "@zcode/contracts";
 import type { RuntimeMessageEntry } from "../../agent/message-history.js";
 import type { ToolRegistry } from "../../tool/registry.js";
@@ -26,7 +27,7 @@ export function shouldFoldRemindersIntoToolResults(
 }
 
 type RequestRuntime = {
-  readonly config: Pick<AgentRuntimeConfig, "midConversationSystem" | "toolSearch">;
+  readonly config: Pick<AgentRuntimeConfig, "midConversationSystem" | "toolSearch" | "codemode">;
 };
 
 interface MessageProjectionInput {
@@ -47,9 +48,13 @@ export function prepareRuntimeProviderRequest(
     prompt?: string;
   },
 ) {
+  const codemodeOnly = runtime.config.codemode?.mode === "only";
   const exposure = buildToolExposure({
     model: input.model,
-    mode: runtime.config.toolSearch?.mode,
+    // 修复原因：`only` 模式会去掉 ToolSearch，但旧代码仍按 toolSearch 配置延迟 MCP 工具——native 时
+    // 请求带 deferLoading 却没有加载入口，local 时被延迟的工具在 codemode 说明里完全不出现。
+    // `only` 由 codemode 自己的说明预算负责"延迟"，工具搜索在这里整体关闭。
+    mode: codemodeOnly ? "off" : runtime.config.toolSearch?.mode,
     tools: input.tools,
     registry: input.registry,
     entries: input.entries,
@@ -67,7 +72,8 @@ export function prepareRuntimeProviderRequest(
   return {
     request: {
       messages: projection.messages,
-      tools: exposure.tools,
+      // `only`：其他工具只经 codemode 脚本调用（docs/design/v2/tool/21-codemode.md）。
+      tools: codemodeOnly ? applyCodemodeOnlyExposure(exposure.tools) : exposure.tools,
       toolSearchEnabled: exposure.context.mode === "native",
     },
     projection,

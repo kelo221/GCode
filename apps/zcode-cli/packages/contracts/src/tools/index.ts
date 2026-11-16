@@ -20,6 +20,7 @@ export * from "./todo.js";
 export * from "./automation.js";
 export * from "./off-peak.js";
 export * from "./speak.js";
+export * from "./codemode.js";
 export * from "./code-search.js";
 export * from "./diagnostics.js";
 export * from "./compact.js";

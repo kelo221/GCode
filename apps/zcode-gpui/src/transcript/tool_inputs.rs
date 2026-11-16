@@ -236,6 +236,50 @@ pub(crate) fn task_output_view(display: Option<&Value>, output_text: &str) -> An
         .into_any_element()
 }
 
+/// `-` old lines then `+` new lines — `render_diff` colors by line prefix.
+pub(crate) fn edit_diff(v: &Value, label: &str) -> Option<String> {
+    let pair = |old: &Value, new: &Value| -> Option<String> {
+        let old = old.as_str()?;
+        let new = new.as_str()?;
+        let mut out = String::new();
+        for line in old.lines() {
+            out.push('-');
+            out.push_str(line);
+            out.push('\n');
+        }
+        for line in new.lines() {
+            out.push('+');
+            out.push_str(line);
+            out.push('\n');
+        }
+        Some(out)
+    };
+    if label == "MultiEdit" {
+        let edits = v.get("edits").and_then(Value::as_array)?;
+        let mut out = String::new();
+        for e in edits {
+            // Skip partial entries instead of aborting the whole edit.
+            if let (Some(old), Some(new)) = (e.get("old_string"), e.get("new_string"))
+                && let Some(d) = pair(old, new)
+            {
+                out.push_str(&d);
+            }
+        }
+        (!out.is_empty()).then_some(out)
+    } else if label == "Write" {
+        let content = v.get("content").and_then(Value::as_str)?;
+        let mut out = String::new();
+        for line in content.lines() {
+            out.push('+');
+            out.push_str(line);
+            out.push('\n');
+        }
+        (!out.is_empty()).then_some(out)
+    } else {
+        pair(v.get("old_string")?, v.get("new_string")?)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::canonical_tool;

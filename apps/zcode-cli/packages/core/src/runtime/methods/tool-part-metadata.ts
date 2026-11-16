@@ -1,4 +1,5 @@
-import { PersistedToolSearchContentSchema } from "@zcode/contracts";
+import { CODEMODE_TOOL_NAME, PersistedToolSearchContentSchema } from "@zcode/contracts";
+import { isCodemodeOutput } from "../../tool/handlers/codemode.js";
 import {
   COMPLETED_TOOL_PART_METADATA_SCHEMA_VERSION,
   type CompletedToolPartMetadata,
@@ -36,5 +37,14 @@ export function completedToolPartMetadata(result: ToolExecutionResult): Complete
     // resume 需要恢复模型当时真实读到的文件快照；只依赖 tool_result 文本
     // 会把主路径绑死在 provider 展示格式上，所以新 session 结构化持久化 read-state。
     ...(result.readFileStateMetadata ? { readFileState: result.readFileStateMetadata } : {}),
+    // codemode store 的增量；resume/rewind 按活动分支顺序重放（agent/codemode-store-hydrator.ts）。
+    ...codemodeStoreMetadata(result),
   };
+}
+
+function codemodeStoreMetadata(result: ToolExecutionResult): { codemodeStore?: unknown } {
+  if (result.toolName !== CODEMODE_TOOL_NAME || !result.success) return {};
+  const output = result.output;
+  if (!isCodemodeOutput(output) || !output.storeWrites) return {};
+  return { codemodeStore: output.storeWrites };
 }

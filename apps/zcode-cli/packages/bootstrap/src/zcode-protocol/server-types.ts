@@ -9,6 +9,7 @@ import {
   type SessionTaskType,
   type SessionStorePort,
   type TraceContext,
+  type CodemodeMode,
 } from "@zcode/contracts";
 import type { McpTelemetryTracker } from "@zcode/adapters";
 import type { PromptCacheModes } from "@zcode/adapters/model";
@@ -100,6 +101,8 @@ export interface ZCodeProtocolSessionRecord {
   codeSearchEnabled?: boolean;
   /** GPUI 语言服务器诊断；继承来源（子会话）沿用父值。 */
   lspDiagnosticsEnabled?: boolean;
+  /** GPUI codemode（docs/design/v2/tool/21-codemode.md）；缺省 off，继承来源（子会话）沿用父值。 */
+  codemodeMode?: CodemodeMode;
   /** GPUI prompt cache 生命周期（按 providerId）；缺省条目即 5m。继承来源（子会话）沿用父值。 */
   promptCacheModes?: PromptCacheModes;
   modelContextBudgetStrategy: ZCodeModelContextBudgetStrategy;

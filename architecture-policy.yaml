@@ -1546,6 +1546,17 @@ exceptions:
     paths:
       - apps/zcode-cli/packages/core/src/browser-client/dom-snapshot-diff.ts
     reason: Fork feature (docs/browser-use/2026-11-09-dom-snapshot-diff-spec.md). The per-tab domSnapshot baseline cache and line diff renderer live in their own file so the upstream playwright.ts and facade.ts only gain an options check and a tab key, and source syncs stay mergeable.
+  - id: fork-codemode-cli
+    rule: unmanaged-new-file
+    paths:
+      - apps/zcode-cli/packages/cli/src/codemode-worker.ts
+      - apps/zcode-cli/packages/contracts/src/tools/codemode.ts
+      - apps/zcode-cli/packages/core/src/agent/codemode-store-hydrator.ts
+      - apps/zcode-cli/packages/core/src/tool/codemode/catalog.ts
+      - apps/zcode-cli/packages/core/src/tool/codemode/sandbox.ts
+      - apps/zcode-cli/packages/core/src/tool/executor/nested-tools.ts
+      - apps/zcode-cli/packages/core/src/tool/handlers/codemode.ts
+    reason: Fork feature (apps/zcode-cli/docs/design/v2/tool/21-codemode.md). The codemode tool (pi-codemode QuickJS sandbox), its nested tool port, store hydrator, display contract and compiled worker entry live in their own files so the upstream executor, runtime and registry only gain small hooks, and source syncs stay mergeable.
   - id: workflow-mode-user-choice-unmanaged-edit
     rule: unmanaged-new-file
     paths:

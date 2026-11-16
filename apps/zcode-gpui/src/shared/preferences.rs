@@ -84,6 +84,8 @@ pub(crate) enum PreferenceChange {
         String,
         crate::shared::auto_compact_settings::AutoCompactEntry,
     ),
+    /// `off` | `on` | `only` (GPUI-only `gpuiCodemode`).
+    CodemodeMode(String),
     /// `auto` | `local` | `off` (shared `toolSearchMode`).
     ToolSearchMode(String),
     /// Provider ID and `5m` | `1h` | `off` (GPUI-only `gpuiPromptCacheByProvider`).
@@ -111,6 +113,7 @@ impl PreferenceChange {
                 settings.gpui_last_composer_model = Some(choice.clone())
             }
             Self::AutoCompact(key, entry) => settings.set_auto_compact(key, *entry),
+            Self::CodemodeMode(mode) => settings.gpui_codemode = Some(mode.clone()),
             Self::ToolSearchMode(mode) => settings.tool_search_mode = Some(mode.clone()),
             Self::PromptCache(provider, mode) => settings.set_prompt_cache_mode(provider, mode),
             Self::Shortcut(id, bindings) => {
@@ -151,6 +154,11 @@ impl PreferenceChange {
                     .contains(&mode.as_str()) =>
             {
                 Err(format!("Unknown tool search mode: {mode}"))
+            }
+            Self::CodemodeMode(mode)
+                if !crate::shared::codemode_setting::CODEMODE_MODES.contains(&mode.as_str()) =>
+            {
+                Err(format!("Unknown codemode mode: {mode}"))
             }
             Self::PromptCache(provider, mode)
                 if provider.is_empty()

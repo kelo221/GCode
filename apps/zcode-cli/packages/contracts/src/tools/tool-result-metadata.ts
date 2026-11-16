@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { PersistedToolSearchContentSchema } from "./tool-search.js";
+import { codemodeToolResultDisplayPayloadSchema } from "./codemode.js";
 import {
   DIAGNOSTICS_AVAILABILITY,
   DIAGNOSTICS_CHECK,
@@ -319,6 +320,7 @@ export const toolResultDisplayPayloadSchema = z.discriminatedUnion("kind", [
   savedWorkflowListToolResultDisplayPayloadSchema,
   listModelsToolResultDisplayPayloadSchema,
   resumeWorkflowRunToolResultDisplayPayloadSchema,
+  codemodeToolResultDisplayPayloadSchema,
 ]);
 
 export type FileDiffToolResultDisplayPayload = z.infer<

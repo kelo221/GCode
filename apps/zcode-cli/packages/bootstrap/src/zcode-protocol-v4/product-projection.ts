@@ -5760,7 +5760,9 @@ export class ProductProjection {
     // Bug 原因：child tool lifecycle 会镜像到父 runtime，但它不是父 session 的工具事实。
     // V4 过去把 mirror 当普通 ToolCallRow，导致 main timeline 展示 child 的 Read/Bash，
     // 并让 replayable snapshot 同样带上脏 row。完整工具历史只应由 child topic 物化。
-    return payload.source === "subagent";
+    // codemode 脚本内的嵌套调用同理：它们由 codemode 行的 display 汇总，不是独立行
+    // （docs/design/v2/tool/21-codemode.md）。
+    return payload.source === "subagent" || payload.source === "codemode";
   }
 
   private openAssistantSegments(): Partial<

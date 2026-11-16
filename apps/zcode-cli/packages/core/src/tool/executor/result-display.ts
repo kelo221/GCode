@@ -20,6 +20,8 @@ import {
   type ToolResultDisplayPayload,
 } from "@zcode/contracts";
 import { createBashResultDisplay } from "./bash-result-display.js";
+import { CODEMODE_TOOL_NAME } from "@zcode/contracts";
+import { createCodemodeDisplay } from "../handlers/codemode.js";
 import { countPatchLines } from "../diff.js";
 import { boundDisplayText } from "./display-text.js";
 import { createCreateWorkflowDisplay } from "./create-workflow-display.js";
@@ -181,6 +183,7 @@ export function createToolResultDisplay(
   },
 ): ToolResultDisplayPayload | undefined {
   if (toolName === "Bash") return createBashResultDisplay(output);
+  if (toolName === CODEMODE_TOOL_NAME) return createCodemodeDisplay(output);
 
   const cuaToolName = readCuaToolName(toolName);
   if (cuaToolName) {

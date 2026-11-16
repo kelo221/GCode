@@ -8,6 +8,7 @@ import {
   createCoreError,
   createRootTraceContext,
   getCurrentTraceContext,
+  isCoreError,
   traceContextToLogContext,
   type ToolExecutionSpanWriter,
   type SessionEvent,
@@ -40,11 +41,12 @@ import {
   runPreToolUseHooks,
 } from "./hook-flow.js";
 import { resolveToolCallCapabilityFlags } from "./permission-capability.js";
-import { resolveToolPermission } from "./permission-flow.js";
+import { areReadsDeniedWithoutPrompt, resolveToolPermission } from "./permission-flow.js";
 import { snapshotPermissionInput } from "./permission-input.js";
 import { buildToolInputResolutionContext } from "./permission-input-adjustments.js";
 import { createMcpToolDisplay, createToolResultDisplay } from "./result-display.js";
 import { serializeOutput } from "./result-serialization.js";
+import { createNestedToolPort } from "./nested-tools.js";
 import { redactSecretText, redactSecretsDeep } from "../../secrets/secret-vault.js";
 import {
   appendDiagnosticsTrailer,
@@ -560,6 +562,7 @@ async function executeToolCallImpl(
         automationPort: deps.automationPort,
         offPeakPort: deps.offPeakPort,
         voicePort: deps.voicePort,
+        speakCadence: deps.speakCadence,
         codeSearchPort: deps.codeSearchPort,
         diagnosticsPort: deps.diagnosticsPort,
         topicResourcePort: deps.topicResourcePort,
@@ -571,6 +574,9 @@ async function executeToolCallImpl(
         modelCatalogPort: deps.modelCatalogPort,
         runtimeTaskRegistry: deps.runtimeTaskRegistry,
         readFileState: deps.readFileState,
+        codemodeStore: deps.codemodeStore,
+        areReadsDeniedWithoutPrompt: (filePaths) =>
+          areReadsDeniedWithoutPrompt(deps, filePaths, traceContext),
         recordReadFileStateMetadata: (metadata) => {
           // 修复原因：part 在工具开始前按声明顺序落盘、完成时原地更新；工具结果返回的先后也不等于
           // 写入先后（handler 写入之后还有序列化、hook、结果事件等异步步骤）。冷恢复按这两种顺序重放
@@ -599,6 +605,18 @@ async function executeToolCallImpl(
         sessionId: deps.sessionId,
         turnId,
         ...(inputAdjustments === undefined ? {} : { inputAdjustments }),
+        ...(entry.nestedToolAccess
+          ? {
+              nestedTools: createNestedToolPort({
+                deps,
+                backgroundTasks,
+                parentToolCallId: canonicalToolCall.id,
+                options,
+                parentSignal: executionAbortController.signal,
+                executeToolCall,
+              }),
+            }
+          : {}),
       };
 
       // GCode 密钥库（apps/zcode-gpui/SECRETS.md）：在序列化、display、失败转换之前按值脱敏，
@@ -775,6 +793,14 @@ async function executeToolCallImpl(
           } catch {
             // 冻结的错误对象无法改写；保持原样，不让脱敏本身把失败路径打断。
           }
+        }
+      }
+      // model-only 后缀（例如 Write 被拒时附带的文件正文）同样进模型上下文，按同一规则脱敏。
+      if (isCoreError(error) && typeof error.context?.modelContentSuffix === "string") {
+        try {
+          error.context.modelContentSuffix = redactSecretText(error.context.modelContentSuffix);
+        } catch {
+          // 同上：冻结的 context 无法改写时保持原样。
         }
       }
       const failureHookResult = await runPostToolUseFailureHooks(

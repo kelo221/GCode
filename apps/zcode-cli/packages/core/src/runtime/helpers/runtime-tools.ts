@@ -16,6 +16,7 @@ import { createRuntimeSessionModePort } from "../session-mode-port.js";
 import { shouldSuppressSealedSubagentBashNotification } from "../../runtime-task/notification-policy.js";
 import {
   resolveBuiltInToolAllowlist,
+  resolveCodemodeMode,
   resolveRuntimeDisallowedTools,
   resolveRuntimeDynamicWorkflowToolsIncluded,
 } from "./tool-allowlist.js";
@@ -90,6 +91,8 @@ function registerRuntimeBuiltInTools(runtime: AgentRuntimeInternal, deps: AgentR
     // node_repl/browser-use 由 ZCode 官方 browser-use 插件启停推导出的 runtimeFeatures 控制。
     includeNodeRepl: nodeReplEnabled,
     includeBrowserUse: browserUseEnabled,
+    // codemode（docs/design/v2/tool/21-codemode.md）：缺省 on，子 Agent 继承同一配置。
+    includeCodemode: resolveCodemodeMode(runtime.config) !== "off",
     embeddedSearchEnabled: resolveRuntimeEmbeddedSearchEnabled(runtime),
     allowedTools: resolveBuiltInToolAllowlist(runtime.config),
     // workflow_child 的结构性禁用（CreateWorkflow/SaveWorkflow 因 alwaysAsk 隐形挂起；
@@ -205,6 +208,7 @@ function createRuntimeToolExecutor(
     automationPort: deps.automationPort,
     offPeakPort: deps.offPeakPort,
     voicePort: runtime.config.taskType === "subagent_child" ? undefined : deps.voicePort,
+    speakCadence: runtime.speakCadence,
     codeSearchPort: deps.codeSearchPort,
     diagnosticsPort: deps.diagnosticsPort,
     topicResourcePort: deps.topicResourcePort,
@@ -219,6 +223,7 @@ function createRuntimeToolExecutor(
       void runtime.trackResidencyBlockingWork(work).catch(() => undefined);
     },
     readFileState: runtime.readFileState,
+    codemodeStore: runtime.codemodeStore,
     // 工作流创作工具的技能门（tool/handlers/workflow-skill-gate.ts）：按模型此刻看得见的历史回答
     // 「读过技能没有」。只在会话真有 Skill 工具时给探针——没有 skillPort 的会话装不上那个技能，
     // 门若仍然在场就成了一道谁也过不去的墙。

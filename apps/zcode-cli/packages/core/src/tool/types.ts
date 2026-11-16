@@ -61,6 +61,7 @@ import type {
   WorkflowSubmitPort,
 } from "@zcode/contracts";
 import type { RuntimeTaskRegistry } from "../runtime-task/registry.js";
+import type { NestedToolPort } from "./executor/nested-tools.js";
 import type { SystemReminderSource } from "../system-reminder/source.js";
 import type {
   PersistedReadFileStateMetadata,
@@ -141,6 +142,11 @@ export interface BackgroundTaskControlPort {
   ): Promise<BackgroundTaskControlStopResult>;
 }
 
+/** 回合中途 info 播报的节流；runtime 持有唯一实例（handlers/speak.ts `SpeakCadence`）。 */
+export interface SpeakCadencePort {
+  tryClaimInfo(turnId: string | undefined): boolean;
+}
+
 export interface ToolExecutionContext {
   toolSearch?: ToolSearchExecutionContext;
   toolCallId: string;
@@ -189,6 +195,7 @@ export interface ToolExecutionContext {
   automationPort?: AutomationPort;
   offPeakPort?: OffPeakPort;
   voicePort?: VoicePort;
+  speakCadence?: SpeakCadencePort;
   codeSearchPort?: CodeSearchPort;
   diagnosticsPort?: DiagnosticsPort;
   topicResourcePort?: TopicResourcePort;
@@ -204,6 +211,8 @@ export interface ToolExecutionContext {
   runtimeTaskRegistry?: RuntimeTaskRegistry;
   readFileState?: ReadFileStateMap;
   recordReadFileStateMetadata?: (metadata: PersistedReadFileStateMetadata) => void;
+  /** 无确认判定这些路径的 Read 是否被拒（与 compaction 补回同一套规则）；Write 被拒时决定能否附带正文。 */
+  areReadsDeniedWithoutPrompt?: (filePaths: readonly string[]) => Promise<boolean[]>;
   /** 记录 Skill resolved metadata；仅用于 telemetry，不改变模型可见结果。 */
   recordSkillTelemetryMetadata?: (metadata: SkillTelemetryMetadata) => void;
   bashShellSelection?: ExecutionShellSelection;
@@ -225,6 +234,13 @@ export interface ToolExecutionContext {
    * `applied`）。handler 据它告诉模型「实际跑的不是你传的那个值」；缺席即没有调整。
    */
   inputAdjustments?: Readonly<Record<string, unknown>>;
+  /**
+   * 经完整执行管线调用其他工具（codemode 脚本的 `tools.*`）。只给声明了
+   * {@link ToolEntry.nestedToolAccess} 的工具注入。
+   */
+  nestedTools?: NestedToolPort;
+  /** codemode 的 store/load 当前值；runtime 持有，resume/rewind 时从 tool part 重建。 */
+  codemodeStore?: Map<string, unknown>;
 }
 
 export interface ToolEmbeddedSearchContext {
@@ -326,6 +342,8 @@ export type ToolHandler<TInput = unknown, TOutput = unknown> = (
 export interface ToolEntry extends ToolContractDeclaration {
   /** 宿主资源在审批之前固定归属；所有返回路径均释放，撤销信号进入现有取消链。 */
   retainExecution?: (callId: string) => { signal: AbortSignal; release(): void };
+  /** handler 需要 {@link ToolExecutionContext.nestedTools}（codemode）。 */
+  nestedToolAccess?: true;
   aliases?: readonly string[];
   /**
    * Host-issued atomicity policy for model content. Only an authority-verified

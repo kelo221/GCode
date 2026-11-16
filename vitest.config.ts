@@ -73,6 +73,7 @@ export default defineConfig({
           include: [
             "apps/zcode-browser-extension/test/**/*.test.ts",
             "packages/shared/test/zcodeProtocolSpeak.test.ts",
+            "packages/shared/test/zcodeProtocolV4CodemodeDisplay.test.ts",
           ],
         },
       },

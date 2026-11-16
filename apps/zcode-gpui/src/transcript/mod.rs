@@ -2,6 +2,7 @@
 //! (follow-bottom, history anchoring, middle-click autoscroll).
 
 pub(crate) mod chat;
+pub(crate) mod codemode_card;
 pub(crate) mod edit_diagnostics;
 pub(crate) mod image_viewer;
 #[cfg(test)]

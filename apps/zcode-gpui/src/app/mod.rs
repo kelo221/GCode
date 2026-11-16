@@ -91,6 +91,7 @@ mod settings_browser;
 mod settings_code_search;
 #[cfg(test)]
 mod settings_code_search_tests;
+mod settings_codemode;
 #[cfg(test)]
 mod settings_language_tests;
 mod settings_lsp_diagnostics;

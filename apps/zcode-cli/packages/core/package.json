@@ -33,6 +33,7 @@
     "lint:fix": "oxlint --fix src --no-ignore"
   },
   "dependencies": {
+    "@earendil-works/pi-codemode": "1.5.2",
     "@zcode/contracts": "workspace:*",
     "@zcode/dynamic-workflow": "workspace:*",
     "@zcode/shared": "workspace:*",

@@ -12,7 +12,7 @@ use crate::shared::theme::{
 use crate::shared::theme_colors::tinted;
 use crate::transcript::tagged_text::clean_tool_output;
 use crate::transcript::tool_inputs::{
-    canonical_tool, generic_input_view, mono, selectable, task_output_view,
+    canonical_tool, edit_diff, generic_input_view, mono, selectable, task_output_view,
 };
 use crate::transcript::tool_results::displayed_result;
 use ely_gpui_component::primitives::IconName;
@@ -32,6 +32,8 @@ pub(crate) struct ToolCallView<'a> {
     pub input_text: &'a str,
     pub output_text: &'a str,
     pub display: Option<&'a Value>,
+    /// Write/Edit's "read the file first" guard: muted, not a failure.
+    pub needs_read: bool,
 }
 
 /// Desktop renderer icon per tool kind (`ToolCallBlocks/renderers/*`).
@@ -46,6 +48,7 @@ fn tool_icon(label: &str) -> IconName {
         "AskUserQuestion" => IconName::CircleHelp,
         "ExitPlanMode" => IconName::ListChecks,
         "Speak" => IconName::Volume2,
+        "codemode" => IconName::Code,
         _ => IconName::Wrench,
     }
 }
@@ -64,6 +67,7 @@ impl crate::app::root::RootView {
             input_text,
             output_text,
             display,
+            needs_read,
         } = view;
         let tool = canonical_tool(if tool_name.is_empty() {
             label
@@ -72,7 +76,7 @@ impl crate::app::root::RootView {
         });
         let expanded = self.expanded_tools.contains(&r_id);
         let is_running = status == "running" || status == "inputStreaming";
-        let is_error = status == "error";
+        let is_error = status == "error" && !needs_read;
         let input: Option<Value> = serde_json::from_str(input_text).ok();
         let images = self.tool_images_view(
             r_id,
@@ -110,6 +114,7 @@ impl crate::app::root::RootView {
                             .child(label.to_string()),
                     )
                     .child(summary_label(tool, input.as_ref()))
+                    .children(crate::transcript::codemode_card::calls_chip(display))
                     .children(crate::transcript::edit_diagnostics::diagnostics_chip(
                         display, r_id,
                     ))
@@ -119,6 +124,16 @@ impl crate::app::root::RootView {
                                 .flex_none()
                                 .text_color(rgb(DANGER))
                                 .child(crate::shared::i18n::label("Failed", "失败")),
+                        )
+                    })
+                    // 修复原因：Write/Edit 拒写未读文件是保护机制，紧接着的重试会成功；
+                    // 显示成红色「失败」会让用户以为出了错。
+                    .when(needs_read, |el| {
+                        el.child(
+                            div()
+                                .flex_none()
+                                .text_color(rgb(SUBTLEST))
+                                .child(crate::shared::i18n::label("Read first", "需先读取")),
                         )
                     })
                     .when(tool == "CreateWorkflow" || tool == "Agent", |chip| {
@@ -177,6 +192,7 @@ impl crate::app::root::RootView {
                             .w_full()
                             .min_w_0()
                             .child(input_view(tool, input.as_ref(), input_text, r_id))
+                            .children(crate::transcript::codemode_card::calls_view(display))
                             .child(output_view(tool, display, output_text)),
                     ),
                 )
@@ -251,6 +267,7 @@ pub(crate) fn tool_summary(label: &str, v: &Value) -> Option<String> {
             .and_then(|q| q.get("question"))
             .and_then(Value::as_str)
             .map(str::to_string),
+        "codemode" => crate::transcript::codemode_card::script_summary(v),
         "TodoWrite" => v
             .get("todos")
             .and_then(Value::as_array)
@@ -283,6 +300,9 @@ fn output_view(tool: &str, display: Option<&Value>, output_text: &str) -> AnyEle
     let text = displayed_result(canonical_tool(tool), clean_tool_output(output_text));
     if text.is_empty() {
         return div().into_any_element();
+    }
+    if tool == crate::transcript::codemode_card::CODEMODE_TOOL {
+        return crate::transcript::codemode_card::output_view(&text);
     }
     if crate::shared::diff_view::looks_like_diff(&text) {
         return crate::shared::diff_view::render_diff(&text);
@@ -329,6 +349,11 @@ fn input_view(label: &str, input: Option<&Value>, raw: &str, id_base: u64) -> An
                         .into_any_element();
                 }
             }
+            "codemode" => {
+                if let Some(script) = crate::transcript::codemode_card::script_view(v, id_base) {
+                    return script;
+                }
+            }
             _ => {}
         }
     }
@@ -342,50 +367,6 @@ fn mono_block(slot: &'static str, text: &str) -> AnyElement {
         .text_color(rgb(TEXT))
         .child(selectable(slot, text.to_string()))
         .into_any_element()
-}
-
-/// `-` old lines then `+` new lines — `render_diff` colors by line prefix.
-fn edit_diff(v: &Value, label: &str) -> Option<String> {
-    let pair = |old: &Value, new: &Value| -> Option<String> {
-        let old = old.as_str()?;
-        let new = new.as_str()?;
-        let mut out = String::new();
-        for line in old.lines() {
-            out.push('-');
-            out.push_str(line);
-            out.push('\n');
-        }
-        for line in new.lines() {
-            out.push('+');
-            out.push_str(line);
-            out.push('\n');
-        }
-        Some(out)
-    };
-    if label == "MultiEdit" {
-        let edits = v.get("edits").and_then(Value::as_array)?;
-        let mut out = String::new();
-        for e in edits {
-            // Skip partial entries instead of aborting the whole edit.
-            if let (Some(old), Some(new)) = (e.get("old_string"), e.get("new_string"))
-                && let Some(d) = pair(old, new)
-            {
-                out.push_str(&d);
-            }
-        }
-        (!out.is_empty()).then_some(out)
-    } else if label == "Write" {
-        let content = v.get("content").and_then(Value::as_str)?;
-        let mut out = String::new();
-        for line in content.lines() {
-            out.push('+');
-            out.push_str(line);
-            out.push('\n');
-        }
-        (!out.is_empty()).then_some(out)
-    } else {
-        pair(v.get("old_string")?, v.get("new_string")?)
-    }
 }
 
 #[cfg(test)]

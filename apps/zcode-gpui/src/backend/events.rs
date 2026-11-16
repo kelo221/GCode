@@ -292,6 +292,9 @@ impl AppState {
                     tool_search_mode: cx
                         .try_global::<crate::shared::preferences::PreferenceOwner>()
                         .map_or("off", |owner| owner.0.read(cx).snapshot.tool_search_mode()),
+                    codemode_mode: cx
+                        .try_global::<crate::shared::preferences::PreferenceOwner>()
+                        .map_or("on", |owner| owner.0.read(cx).snapshot.codemode_mode()),
                     prompt_cache_modes: cx
                         .try_global::<crate::shared::preferences::PreferenceOwner>()
                         .map_or(serde_json::json!({}), |owner| {

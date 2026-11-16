@@ -58,6 +58,7 @@ import type { AgentRuntimeCoreMethods } from "./internal-methods.js";
 import type { AgentRuntimeTurnMethods } from "./internal-turn-methods.js";
 import type { AgentRuntimeHookMethods } from "./internal-hook-methods.js";
 import type { MemoryRecallState } from "../memory/recall/index.js";
+import type { SpeakCadence } from "../tool/handlers/speak.js";
 import type { ProjectMemoryRecallPrefetch } from "./helpers/project-memory-recall.js";
 import type { ProjectMemoryExtractionScheduler } from "./helpers/project-memory-extraction.js";
 import type { ProjectMemoryUpdate } from "./helpers/project-memory-dream.js";
@@ -92,6 +93,10 @@ export interface AgentRuntimeInternal
   sessionModelSelection: ModelSelection | undefined;
   messageHistory: MessageHistory;
   readFileState: ReadFileStateMap;
+  /** codemode store/load 的当前值；resume/rewind 时由 codemode-store-hydrator 从 tool part 重建。 */
+  codemodeStore: Map<string, unknown>;
+  /** 回合中途 info 播报节流的唯一所有者；handler 抢名额，turn-tools 记工作步。 */
+  speakCadence: SpeakCadence;
   cachedTools: ModelToolContract[] | null;
   /** 工作流工具面是否已注册（launch.md「On demand: activation」）；非 onDemand 会话出生即 true。 */
   dynamicWorkflowToolsActivated: boolean;

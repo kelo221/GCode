@@ -8,20 +8,29 @@ import {
   RESPOND_TO_COORDINATOR_TOOL_NAME,
   RESUME_WORKFLOW_RUN_TOOL_NAME,
   SAVE_WORKFLOW_TOOL_NAME,
+  type CodemodeMode,
   type SessionTaskType,
 } from "@zcode/contracts";
 import {
   EXPLORE_AGENT_ALLOWED_TOOLS,
   EXPLORE_AGENT_CODE_SEARCH_TOOLS,
+  EXPLORE_AGENT_CODEMODE_TOOLS,
 } from "../../subagent/explore-tools.js";
 import type { AgentRuntimeConfig } from "../types.js";
 import { normalizeToolNameAlias } from "../../tool/tool-visibility.js";
 
-// FindFiles/SearchCode 只在注入 CodeSearchPort 时注册；允许列表里出现不影响其他宿主。
+// FindFiles/SearchCode 只在注入 CodeSearchPort 时注册；codemode 只在 codemode 模式非 off 时注册。
+// 允许列表里出现不影响其他宿主。
 const EXPLORE_AGENT_ALLOWED_TOOL_SET = new Set<string>([
   ...EXPLORE_AGENT_ALLOWED_TOOLS,
   ...EXPLORE_AGENT_CODE_SEARCH_TOOLS,
+  ...EXPLORE_AGENT_CODEMODE_TOOLS,
 ]);
+
+/** codemode 模式的唯一推导：缺省 off，只有 Host 显式下发才开启。 */
+export function resolveCodemodeMode(config: Pick<AgentRuntimeConfig, "codemode">): CodemodeMode {
+  return config.codemode?.mode ?? "off";
+}
 
 /**
  * workflow child 运行时额外不注册的工具。

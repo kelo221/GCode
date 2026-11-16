@@ -21,6 +21,7 @@ import {
   FIND_FILES_TOOL_NAME,
   SEARCH_CODE_TOOL_NAME,
   SUBMIT_RESULT_TOOL_NAME,
+  CODEMODE_TOOL_NAME,
   type JsonSchema,
 } from "@zcode/contracts";
 import type { ToolEntry } from "../types.js";
@@ -78,6 +79,7 @@ import { speakToolEntry } from "./speak.js";
 import { findFilesToolEntry, searchCodeToolEntry } from "./code-search.js";
 import { diagnosticsToolEntry } from "./diagnostics.js";
 import { compactToolEntry } from "./compact.js";
+import { codemodeToolEntry } from "./codemode.js";
 import { evalWorkflowSnippetToolEntry } from "./eval-workflow-snippet.js";
 import { listWorkflowRunsToolEntry } from "./list-workflow-runs.js";
 import { getWorkflowRunToolEntry } from "./get-workflow-run.js";
@@ -169,6 +171,8 @@ export const builtInTools: ToolEntry[] = [
   diagnosticsToolEntry,
   // Agent 请求的 compact：主会话与 subagent 都注册，turn loop 在下一步前执行。
   compactToolEntry,
+  // 脚本内调用工具（docs/design/v2/tool/21-codemode.md）：includeCodemode 为真才注册。
+  codemodeToolEntry,
   // workflowToolEntry,
 ];
 
@@ -234,6 +238,8 @@ interface RegisterBuiltInToolsOptions {
   includeNodeRepl?: boolean;
   /** browser-use 说明和 agent.browsers 注入由官方 browser-use 插件 + 宿主 browser bridge 共同启用。 */
   includeBrowserUse?: boolean;
+  /** codemode；只有显式 true 才注册（分支刷新入口省略时保留首次装配的结论）。 */
+  includeCodemode?: boolean;
   embeddedSearchEnabled?: boolean;
   allowedTools?: readonly string[];
   disallowedTools?: readonly string[];
@@ -331,6 +337,9 @@ export function registerBuiltInTools(
       continue;
     }
     if (entry.metadata.name === "js" && options.includeNodeRepl !== true) {
+      continue;
+    }
+    if (entry.metadata.name === CODEMODE_TOOL_NAME && options.includeCodemode !== true) {
       continue;
     }
     registry.register(resolveBuiltInToolEntryForBranch(entry, options, codeSearchVisible), {

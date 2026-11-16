@@ -17,6 +17,9 @@ export const EXPLORE_AGENT_ALLOWED_TOOLS = [
 // 其余宿主（Electron）的允许列表与事件载荷保持不变。
 export const EXPLORE_AGENT_CODE_SEARCH_TOOLS = ["FindFiles", "SearchCode"] as const;
 
+// codemode：父会话开启时 Explore 同享；脚本只能调用 Explore 自己 registry 里的工具。
+export const EXPLORE_AGENT_CODEMODE_TOOLS = ["codemode"] as const;
+
 const CODE_SEARCH_EQUIVALENTS: ReadonlyMap<string, string> = new Map([
   ["Glob", "FindFiles"],
   ["Grep", "SearchCode"],
@@ -40,7 +43,8 @@ export function withCodeSearchEquivalents(toolNames: readonly string[]): readonl
 
 export type ExploreAgentAllowedTool =
   | (typeof EXPLORE_AGENT_ALLOWED_TOOLS)[number]
-  | (typeof EXPLORE_AGENT_CODE_SEARCH_TOOLS)[number];
+  | (typeof EXPLORE_AGENT_CODE_SEARCH_TOOLS)[number]
+  | (typeof EXPLORE_AGENT_CODEMODE_TOOLS)[number];
 
 export const EXPLORE_AGENT_EMBEDDED_SEARCH_ALLOWED_TOOLS = [
   "ToolSearch",
@@ -71,14 +75,17 @@ export function buildExploreAllowedTools(
   options: {
     embeddedSearchEnabled?: boolean;
     codeSearch?: boolean;
+    codemode?: boolean;
   } = {},
 ): readonly ExploreAgentAllowedTool[] {
-  const tools: readonly ExploreAgentAllowedTool[] = options.embeddedSearchEnabled
+  const base: readonly ExploreAgentAllowedTool[] = options.embeddedSearchEnabled
     ? EXPLORE_AGENT_EMBEDDED_SEARCH_ALLOWED_TOOLS
     : EXPLORE_AGENT_ALLOWED_TOOLS;
-  if (!options.codeSearch) return tools;
-  const bash = tools.indexOf("Bash") + 1;
-  return [...tools.slice(0, bash), ...EXPLORE_AGENT_CODE_SEARCH_TOOLS, ...tools.slice(bash)];
+  const bash = base.indexOf("Bash") + 1;
+  const tools = options.codeSearch
+    ? [...base.slice(0, bash), ...EXPLORE_AGENT_CODE_SEARCH_TOOLS, ...base.slice(bash)]
+    : base;
+  return options.codemode ? [...tools, ...EXPLORE_AGENT_CODEMODE_TOOLS] : tools;
 }
 
 export function formatExploreAllowedToolsForAgentDescription(

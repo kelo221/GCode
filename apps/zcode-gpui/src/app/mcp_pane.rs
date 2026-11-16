@@ -77,6 +77,9 @@ impl RootView {
             .child(crate::app::settings_tool_search::tool_search_card(
                 settings, blocked,
             ))
+            .child(crate::app::settings_codemode::codemode_card(
+                settings, blocked,
+            ))
             .child(installed_group);
         for (plugin, rows) in plugins {
             page = page.child(

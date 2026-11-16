@@ -25,6 +25,8 @@ const RESIDENT_NAMES = [
   "Speak",
   "ToolSearch",
   "Write",
+  // Fork: codemode (docs/design/v2/tool/21-codemode.md) is the entry point for script tool use.
+  "codemode",
 ];
 
 function fixture(embeddedSearchEnabled = false) {
@@ -44,6 +46,7 @@ function fixture(embeddedSearchEnabled = false) {
     includeNodeRepl: true,
     includeBrowserUse: true,
     embeddedSearchEnabled,
+    includeCodemode: true,
   });
   const model: Model = {
     ...createTestRuntimeModel({

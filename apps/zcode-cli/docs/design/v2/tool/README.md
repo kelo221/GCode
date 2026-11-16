@@ -24,6 +24,7 @@
 14. [EnterPlanMode / ExitPlanMode](16-plan-mode.md)
 15. [ToolSearch](19-tool-search.md)
 16. [node_repl 调用账本：结果里的可信事实](20-node-repl-call-ledger.md)
+17. [codemode：脚本内调用工具](21-codemode.md)
 
 ## 公共 tool 形态
 

@@ -4,9 +4,11 @@
 pub(crate) mod acceptance;
 pub(crate) mod app_assets;
 pub(crate) mod auto_compact_settings;
+pub(crate) mod codemode_setting;
 pub(crate) mod data_paths;
 pub(crate) mod desktop_lock;
 pub(crate) mod diff_view;
+pub(crate) mod gpui_only_settings;
 pub(crate) mod i18n;
 pub(crate) mod identity;
 pub(crate) mod isolation;

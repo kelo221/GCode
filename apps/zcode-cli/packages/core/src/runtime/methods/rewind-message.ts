@@ -34,6 +34,7 @@ import {
   selectCheckpointsForMessages,
   throwIfTurnAborted,
 } from "../helpers/index.js";
+import { hydrateCodemodeStoreFromSession } from "../../agent/codemode-store-hydrator.js";
 import type {
   ConversationRewindResult,
   WorkspaceRewindRestoredFile,
@@ -704,6 +705,11 @@ async function rebuildConversationDerivedState(
     retainContextSeeds: true,
     workingDirectory: this.workingDirectory,
     workspaceRoot: this.workspaceRoot,
+    ...branchOptions,
+  });
+  hydrateCodemodeStoreFromSession({
+    store: this.codemodeStore,
+    messages: options.persistedMessages,
     ...branchOptions,
   });
   rebuildContextPrefix(this);

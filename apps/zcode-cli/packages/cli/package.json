@@ -26,6 +26,7 @@
     "lint:fix": "oxlint --write src"
   },
   "dependencies": {
+    "@earendil-works/pi-codemode": "1.5.2",
     "@zcode/adapters": "workspace:*",
     "@zcode/bootstrap": "workspace:*",
     "@zcode/contracts": "workspace:*",

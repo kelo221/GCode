@@ -2165,6 +2165,9 @@ export const zcodeSessionRuntimePreferencesResultSchema = z
     // "Prompt cache lifetime"). A missing map or entry means "5m", the markers the runtime
     // already places.
     promptCacheModes: z.record(nonEmptyString, z.enum(["5m", "1h", "off"])).optional(),
+    // GPUI-only codemode (apps/zcode-cli/docs/design/v2/tool/21-codemode.md): scripts that call
+    // other tools. Omitted (Electron, older hosts) means `off`.
+    codemodeMode: z.enum(["off", "on", "only"]).optional(),
   })
   .strict();
 export type ZCodeSessionRuntimePreferencesResult = z.infer<

@@ -84,6 +84,22 @@ limits below take precedence over the retained historical milestone requirements
 - **Transcript.** A `ToolSearch` row's summary lists the tool names for a `select:` query, and
   otherwise shows the quoted search query.
 
+## Code mode (codemode tool, 2026-11-16)
+
+- **Setting.** Settings › MCP Servers has a "Code mode" select with On, Only and Off. It writes the
+  GPUI-only key `gpuiCodemode` in `gpui_settings.json`, so it saves while the desktop runs. A
+  missing or unknown value means On. Spec: `apps/zcode-cli/docs/design/v2/tool/21-codemode.md`.
+- **Runtime.** GPUI answers `session/requestRuntimePreferences` with `codemodeMode`. The CLI reads it
+  when a session is created or cold-resumed, and subagents inherit the parent's. On adds the
+  `codemode` tool; Only also hides the other tools from the model and lists them inside codemode's
+  description. Hosts that omit the field (Electron) get Off.
+- **Transcript.** A `codemode` row has a code icon, summarizes the first non-comment line of the
+  script plus "· N tool calls", expands to the script highlighted as JavaScript, and lists the
+  nested calls (name, duration or error) from the result's `codemode` display. Nested calls get no
+  rows of their own; their permission prompts still appear.
+- **Packaging.** `scripts/build_backend.ts` embeds `packages/cli/src/codemode-worker.ts` and stages
+  `node_modules/quickjs-wasi/quickjs.wasm`; `scripts/backend_codemode_smoke.ts` checks both.
+
 ## New-task draft model and thinking level (2026-10-30)
 
 - **Each new-task draft keeps its own picks.** The model, thinking level, permission mode and plan
@@ -351,6 +367,12 @@ limits below take precedence over the retained historical milestone requirements
   `RootView.expanded_folds`, keyed by the run's first row id. The list index is unchanged
   (`transcript/noise_free.rs` places each visible row by walking its own run), so history
   paging and scroll anchoring work as before.
+- **"Read first" rows (2026-11-14).** Write and Edit refuse an existing file the agent hasn't read
+  (or that changed since). This is a guard, and the agent's retry succeeds. So such an error row
+  shows a muted "Read first" instead of the red "Failed", and doesn't count toward "K failed".
+  This applies with the mode on or off, and on the phone too. The wire `error.code` is only the
+  generic `ToolExecutionFailed`, so `conversation/rows.rs` `is_needs_read_error` matches the CLI's
+  fixed messages from `write.ts`/`edit.ts`. Change both places together.
 
 ## System prompt override (2026-10-19, GPUI-only)
 
