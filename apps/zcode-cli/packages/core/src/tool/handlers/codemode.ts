@@ -17,6 +17,8 @@ import {
 import { z } from "zod";
 import {
   CODEMODE_DISPLAY_MAX_CALLS,
+  CODEMODE_DISPLAY_MAX_MEDIA,
+  CODEMODE_DISPLAY_MAX_MEDIA_BASE64,
   CODEMODE_TOOL_NAME,
   type CodemodeToolResultDisplayPayload,
   type JsonSchema,
@@ -271,7 +273,33 @@ export function createCodemodeDisplay(
       durationMs: Math.max(0, Math.round(call.durationMs)),
     })),
     ...(output.calls.length > CODEMODE_DISPLAY_MAX_CALLS ? { truncated: true as const } : {}),
+    ...displayMedia(output.images),
   };
+}
+
+const MAX_DISPLAY_MEDIA_TOTAL_BYTES = 512 * 1024;
+const IMAGE_MIME_PATTERN = /^image\/[a-z0-9.+-]+$/iu;
+
+/**
+ * 修复原因：display 原先只有调用清单，脚本 image() 的图片只进了模型内容，GPUI 卡片只能看到
+ * `[Attached image/jpeg]` 占位。按 CUA display 的预算放进 media（超限的单张直接跳过，
+ * 不能让 strict schema 把整块 display 丢掉）。
+ */
+function displayMedia(
+  images: CodemodeOutput["images"],
+): Pick<CodemodeToolResultDisplayPayload, "media"> {
+  const media: Array<{ mimeType: string; data: string }> = [];
+  let totalBytes = 0;
+  for (const image of images) {
+    if (media.length >= CODEMODE_DISPLAY_MAX_MEDIA) break;
+    if (!image.data || !IMAGE_MIME_PATTERN.test(image.mimeType)) continue;
+    if (image.data.length > CODEMODE_DISPLAY_MAX_MEDIA_BASE64) continue;
+    const bytes = Buffer.byteLength(image.data, "base64");
+    if (totalBytes + bytes > MAX_DISPLAY_MEDIA_TOTAL_BYTES) continue;
+    totalBytes += bytes;
+    media.push({ mimeType: image.mimeType, data: image.data });
+  }
+  return media.length > 0 ? { media } : {};
 }
 
 export const codemodeToolEntry: ToolEntry = {

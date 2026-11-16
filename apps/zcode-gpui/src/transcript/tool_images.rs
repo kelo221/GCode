@@ -338,6 +338,13 @@ mod tests {
     }
 
     #[test]
+    fn codemode_script_images_are_collected() {
+        let d = json!({ "kind": "codemode", "ok": true, "calls": [],
+            "media": [ { "mimeType": "image/jpeg", "data": "AAAA" } ] });
+        assert_eq!(image_refs("codemode", "success", None, Some(&d)).len(), 1);
+    }
+
+    #[test]
     fn read_of_absolute_image_path_only_when_successful() {
         let path = if cfg!(windows) {
             "C:/tmp/shot.png"

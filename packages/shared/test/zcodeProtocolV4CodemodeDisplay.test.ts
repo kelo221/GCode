@@ -22,6 +22,11 @@ describe("codemode display", () => {
     expect(toolOutputSchema.parse({ text: "ok", display }).display).toEqual(display);
   });
 
+  it("keeps script images in media", () => {
+    const withMedia = { ...display, media: [{ mimeType: "image/jpeg", data: "QUJD" }] };
+    expect(toolOutputSchema.parse({ text: "ok", display: withMedia }).display).toEqual(withMedia);
+  });
+
   it("drops a display with an unknown field instead of failing the output", () => {
     const parsed = toolOutputSchema.parse({ text: "ok", display: { ...display, extra: 1 } });
     expect(parsed.display).toBeUndefined();

@@ -6,6 +6,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import {
   SessionEventType,
+  codemodeToolResultDisplayPayloadSchema,
   createRootTraceContext,
   createSessionId,
   createToolCallId,
@@ -310,6 +311,31 @@ return "${"y".repeat(200)}";`,
       durationMs: 2,
     } satisfies CodemodeOutput);
     expect(display?.calls).toEqual([{ name: "unknown", status: "ok", durationMs: 2 }]);
+  });
+
+  it("puts script images in the display media within the size budget", () => {
+    const small = "QUJD";
+    // 300 KiB 原图：超过单张 256 KiB 上限，只给模型。
+    const huge = "A".repeat(Math.ceil((300 * 1024 * 4) / 3));
+    const output = {
+      ok: true,
+      text: "",
+      images: [
+        { mimeType: "image/jpeg", data: small },
+        { mimeType: "image/png", data: huge },
+        { mimeType: "text/plain", data: small },
+        { mimeType: "image/png", data: small },
+      ],
+      calls: [],
+      durationMs: 1,
+    } satisfies CodemodeOutput;
+    const display = createCodemodeDisplay(output);
+    expect(display?.media).toEqual([
+      { mimeType: "image/jpeg", data: small },
+      { mimeType: "image/png", data: small },
+    ]);
+    expect(codemodeToolResultDisplayPayloadSchema.parse(display)).toEqual(display);
+    expect(createCodemodeDisplay({ ...output, images: [] })).not.toHaveProperty("media");
   });
 
   it("returns the worker slot when the sandbox cannot be created", async () => {

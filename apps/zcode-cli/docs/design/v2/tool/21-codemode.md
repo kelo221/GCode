@@ -81,8 +81,10 @@ model ──codemode{code}──► turn loop（ToolCallScheduled → row + Tool
   `<console_output>`、失败时 `Script error:`。超过 `max_output_tokens`（缺省 10000，按 4 字符/token
   估算）时保留首尾并注明省略的字符数（不写临时文件）；预算为 0 时只返回省略说明。最多 4 张图片作为图片内容返回。
 - 嵌套调用在 hook 中附加的上下文追加在输出之后。
-- `output.display = {kind:"codemode", ok, calls[{name, status, durationMs}], truncated?}`，最多 100 条，
+- `output.display = {kind:"codemode", ok, calls[{name, status, durationMs}], truncated?, media?}`，最多 100 条，
   供 UI 列出嵌套调用；`shared` 的 `toolResultDisplaySchema` 与 contracts 的成员同步。
+- `media[{mimeType, data}]`：脚本 `image()` 输出的图片（即返回给模型的那几张），供 UI 显示缩略图。
+  预算同 CUA display：单张 ≤ 256 KiB、合计 ≤ 512 KiB（解码后字节），超出的图片只给模型、不进 display。
 - 元数据：`needsApproval: false`（每个嵌套调用自己判权限），非只读。plan mode 下允许调用本工具，
   嵌套写操作由各自的权限判断拒绝。
 - 超时：工具本身无缺省超时（executor `timeout.kind = "none"`），因为嵌套调用可能在等用户审批；

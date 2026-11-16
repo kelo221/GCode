@@ -180,6 +180,19 @@ export const toolResultDisplaySchema = z.discriminatedUnion("kind", [
         )
         .max(100),
       truncated: z.literal(true).optional(),
+      // 脚本 image() 输出的图片；上限与 contracts 侧相同。
+      media: z
+        .array(
+          z
+            .object({
+              mimeType: z.string().regex(/^image\/[a-z0-9.+-]+$/iu),
+              data: z.string().min(1).max(349_528),
+            })
+            .strict(),
+        )
+        .min(1)
+        .max(4)
+        .optional(),
     })
     .strict(),
 ]);
