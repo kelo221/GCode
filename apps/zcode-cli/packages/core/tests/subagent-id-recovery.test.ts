@@ -250,13 +250,19 @@ describe("subagent id recovery", () => {
     }
     expect(isCoreError(thrown)).toBe(true);
     const agentId = Object.keys(internal.runtimeTaskRegistry.all())[0]!;
+    // 合并上游后 agentId 行由 Agent 工具的 failure handback 给出（executor 以 modelNote 传入，
+    // 与 call-runner 相同），不再走 error.context.modelContentSuffix。
     const result = createErrorResult(
       { id: createToolCallId("agent-call"), name: "Agent", input: {} } as any,
       thrown as Error,
+      undefined,
+      { modelNote: agentToolEntry.formatErrorModelContent!(thrown) },
     );
     expect(result.error?.message).not.toContain(agentId);
     expect(result.modelContent).toContain(`agentId: ${agentId}`);
     expect(result.modelContent).toContain(`SendMessage with to: '${agentId}'`);
+    // agentId 行只出现一次：handback 给出，runner 不再附重复后缀。
+    expect(result.modelContent!.split(`agentId: ${agentId}`)).toHaveLength(2);
   });
 
   it("leaves error results without a suffix unchanged", () => {

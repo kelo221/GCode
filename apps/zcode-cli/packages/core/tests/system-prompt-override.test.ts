@@ -7,6 +7,9 @@ import { createTestModelFactory } from "./test-runtime-model.js";
 
 type Request = Array<{ role: string; content: string }>;
 
+// A sentence of the default body (the environment moved to the environment announcement upstream).
+const DEFAULT_BODY = "You are an agent working with the user";
+
 function text(content: unknown): string {
   if (typeof content === "string") return content;
   if (Array.isArray(content)) {
@@ -70,18 +73,18 @@ describe("system prompt override", () => {
     const { runtime, requests } = createRuntime();
 
     await runtime.executeTurn("first");
-    expect(systemText(requests[0])).toContain("# Environment");
+    expect(systemText(requests[0])).toContain(DEFAULT_BODY);
 
     expect(runtime.setSystemPromptOverride("Talk like a pirate.")).toBe(true);
     await runtime.executeTurn("second");
     const custom = systemText(requests[1]);
     expect(custom).toContain("You are GCode, an interactive coding agent");
     expect(custom).toContain("Talk like a pirate.");
-    expect(custom).not.toContain("# Environment");
+    expect(custom).not.toContain(DEFAULT_BODY);
 
     expect(runtime.setSystemPromptOverride("   ")).toBe(true);
     await runtime.executeTurn("third");
-    expect(systemText(requests[2])).toContain("# Environment");
+    expect(systemText(requests[2])).toContain(DEFAULT_BODY);
     expect(systemText(requests[2])).not.toContain("Talk like a pirate.");
   });
 
@@ -106,7 +109,7 @@ describe("system prompt override", () => {
     runtime.setSystemPromptOverride("Custom.");
 
     const preview = runtime.previewDefaultSystemPrompt();
-    expect(preview).toContain("# Environment");
+    expect(preview).toContain(DEFAULT_BODY);
     expect(preview).not.toContain("Custom.");
     expect(preview.startsWith("You are GCode, an interactive coding agent")).toBe(false);
   });

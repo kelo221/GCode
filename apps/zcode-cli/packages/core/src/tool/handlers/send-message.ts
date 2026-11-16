@@ -81,10 +81,10 @@ export const sendMessageToolEntry: ToolEntry = {
     name: SEND_MESSAGE_TOOL_NAME,
     searchHint: "send messages to agent teammates",
     description: SEND_MESSAGE_PROVIDER_DESCRIPTION,
-    // 计划模式下被唤醒的子代理会按父会话当时的 plan 状态重建运行时（resolveSubagentPermissionMode），
-    // 所以续问只能让它继续只读调查，不会借此获得写权限。
-    allowedInPlanMode: true,
-    readOnly: false,
+    // 修复原因（ZCT-2119028473032097792）：曾声明为非只读，Plan 闸门直接拒绝，父会话在 Plan 下
+    // 无法唤醒已结束的子代理补发报告；Agent 已是只读。子代理的工具由子会话自己的权限模式判定，
+    // 恢复时与新开用同一规则按父会话当前状态重算，所以这里与 Agent 一致声明只读。
+    readOnly: true,
     destructive: false,
     concurrentSafe: true,
     timeoutMs: 10000,

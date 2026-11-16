@@ -27,6 +27,7 @@ import type { ResolveAuxiliaryModel } from "../../tool/executor/types.js";
 import { EXPLORE_AGENT_TYPE } from "../../subagent/explore.js";
 import { getOffPeakExecution } from "../off-peak/runtime.js";
 import { createRuntimeModel } from "../methods/runtime-model.js";
+import { sessionControlForRuntime } from "../../tool/session-control/contract.js";
 
 const DEFAULT_SUBAGENT_BACKGROUND_BASH_MAX_MS = 3_600_000;
 const EMPTY_RUNTIME_HOOK_CONFIG = {
@@ -51,6 +52,11 @@ export function initializeRuntimeTooling(
 
 function registerRuntimeBuiltInTools(runtime: AgentRuntimeInternal, deps: AgentRuntimeDeps): void {
   const nodeReplEnabled = runtime.config.runtimeFeatures?.nodeRepl === true;
+  runtime.sessionControlKind = sessionControlForRuntime(
+    deps.sessionControl,
+    runtime.config.taskType,
+    runtime.sessionId,
+  )?.kind;
   const browserUseEnabled = resolveRuntimeBrowserUseEnabled(runtime, deps);
   registerBuiltInTools(runtime.registry, {
     bashTimeoutPolicy: runtime.config.bashTimeoutPolicy,
@@ -72,6 +78,7 @@ function registerRuntimeBuiltInTools(runtime: AgentRuntimeInternal, deps: AgentR
     // escalate 与 submit_result 同门同理由：端口在场即注册（不做 opt-in：最可能撞墙的 actor 恰是作者没标记的那个）。
     includeEscalate: Boolean(deps.workflowEscalatePort),
     includeWorkflow: Boolean(deps.workflowPort),
+    sessionControlKind: runtime.sessionControlKind,
     includeAutomation: Boolean(deps.automationPort) && runtime.config.taskType !== "subagent_child",
     // offPeakPort 只在 host 下发 offPeakToolEnabled 时注入（灰度/远程门在 host 端），
     // 端口存在即代表曝光允许；subagent 子会话与 automation 同规则不暴露。
@@ -83,10 +90,14 @@ function registerRuntimeBuiltInTools(runtime: AgentRuntimeInternal, deps: AgentR
     includeCodeSearch: Boolean(deps.codeSearchPort),
     // diagnosticsPort 只在 Host 下发 lspDiagnosticsEnabled 时注入（GPUI）；子代理同享。
     includeDiagnostics: Boolean(deps.diagnosticsPort),
+    // 话题资源只在 App 托管运行时可读；CLI 不知道会话是否为机器人会话，授权在调用时按可信输入校验。
+    includeTopicResource: Boolean(deps.topicResourcePort),
     // 动态工作流灰度门：与 off-peak 相反，
     // 这里不能用端口在场做判据——十个工具的端口在任何 CLI 里都装配齐全，灰度是 Host 的决定。
     // 取值收在 tool-allowlist.ts，与分支刷新那个入口共用同一个推导。
     includeDynamicWorkflow: resolveRuntimeDynamicWorkflowToolsIncluded(runtime),
+    includePluginDiscovery:
+      Boolean(deps.pluginDiscoveryPort) && runtime.config.taskType !== "subagent_child",
     // 修复原因：browserControlPort 只是宿主能力，不应隐式暴露高权限 node_repl。
     // node_repl/browser-use 由 ZCode 官方 browser-use 插件启停推导出的 runtimeFeatures 控制。
     includeNodeRepl: nodeReplEnabled,
@@ -204,7 +215,13 @@ function createRuntimeToolExecutor(
     coordinatorResponsePort: deps.coordinatorResponsePort,
     workflowSubmitPort: deps.workflowSubmitPort,
     workflowEscalatePort: deps.workflowEscalatePort,
+    webSearchBudget: deps.webSearchBudget,
     artifactStore: deps.artifactStore,
+    sessionControl: sessionControlForRuntime(
+      deps.sessionControl,
+      runtime.config.taskType,
+      runtime.sessionId,
+    ),
     automationPort: deps.automationPort,
     offPeakPort: deps.offPeakPort,
     voicePort: runtime.config.taskType === "subagent_child" ? undefined : deps.voicePort,
@@ -212,6 +229,7 @@ function createRuntimeToolExecutor(
     codeSearchPort: deps.codeSearchPort,
     diagnosticsPort: deps.diagnosticsPort,
     topicResourcePort: deps.topicResourcePort,
+    pluginDiscoveryPort: deps.pluginDiscoveryPort,
     sessionStore: deps.sessionStore,
     sessionModePort: createRuntimeSessionModePort(runtime),
     workflowPort: deps.workflowPort,
@@ -243,6 +261,7 @@ function createRuntimeToolExecutor(
     setWorkingDirectory: runtime.setWorkingDirectory.bind(runtime),
     getWorkspaceRoot: () => runtime.workspaceRoot,
     workspaceIdentity: runtime.config.workspaceIdentity?.toString(),
+    workspaceKey: runtime.config.workspaceKey,
     remoteSessionId: runtime.config.remoteSessionId,
     clientMode: runtime.config.clientMode,
     deliveryKind: runtime.config.deliveryKind,
@@ -258,7 +277,8 @@ function createRuntimeToolExecutor(
 }
 
 /**
- * 工具内部抽取调用（ReadSessionContext）使用的辅助模型：即 Explore 子代理会用的模型。
+ * 工具内部抽取调用使用的辅助模型（原消费者 ReadSessionContext 已随上游删除，目前无工具读取
+ * getAuxiliaryModel，保留供后续抽取类工具复用）：即 Explore 子代理会用的模型。
  * 只有 Explore profile 显式指定了模型时才另建句柄；其余情况返回 undefined，调用方用本轮模型。
  * 规则与验收见 docs/session-context-tool.md「Extraction model」。
  */

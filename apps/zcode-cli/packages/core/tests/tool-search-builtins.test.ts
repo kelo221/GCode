@@ -23,10 +23,15 @@ const RESIDENT_NAMES = [
   "SearchCode",
   "Skill",
   "Speak",
+  "TodoWrite",
   "ToolSearch",
+  "WebFetch",
+  "WebSearch",
   "Write",
   // Fork: codemode (docs/design/v2/tool/21-codemode.md) is the entry point for script tool use.
   "codemode",
+  // 只在注入 workflowSubmitPort 的 actor 会话注册；fixture 打开了 includeSubmitResult。
+  "submit_result",
 ];
 
 function fixture(embeddedSearchEnabled = false) {

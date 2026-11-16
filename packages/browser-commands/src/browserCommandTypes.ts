@@ -16,6 +16,17 @@ export interface ControlledViewWebContents {
    * 由 browserGuestManager wire 到 `guest.executeJavaScript(script, true)`（userGesture=true，与 element-picker 一致）。
    */
   executeJavaScript(script: string): Promise<unknown>;
+  /**
+   * Electron guest 的 webContents.sendInputEvent：按键直投 guest，不按窗口焦点路由。
+   * GCode 的 GPUI 浏览器扩展桥没有该能力，可缺省；缺省时主 frame 按键走 CDP。
+   */
+  sendInputEvent?(event: ControlledViewKeyInputEvent): void;
+}
+
+export interface ControlledViewKeyInputEvent {
+  type: "keyDown" | "keyUp" | "char";
+  keyCode: string;
+  modifiers?: Array<"alt" | "control" | "meta" | "shift">;
 }
 
 export interface ControlledViewCdp {

@@ -8,11 +8,14 @@
     "lib": ["es2025", "dom"],
     "types": ["node", "electron"]
   },
-  "include": ["src/main", "src/shared", "src/scheduler"],
+  "include": ["src/main", "src/shared", "src/scheduler", "src/extension-host"],
   // main 直接依赖 shared 和 services；把引用补齐后，desktop 子工程也能稳定复用上游声明产物。
   "references": [
     { "path": "../shared" },
     { "path": "../services" },
-    { "path": "../browser-commands" }
+    { "path": "../browser-commands" },
+    // 扩展进程源码随 main 一起类型检查（根 typecheck 只覆盖 main/host/e2e 三个工程）。
+    { "path": "../rpc" },
+    { "path": "./tsconfig.app-navigation.json" }
   ]
 }

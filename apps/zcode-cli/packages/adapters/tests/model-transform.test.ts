@@ -1,8 +1,46 @@
 import { describe, expect, it } from "vitest";
 import { toAiSdkMessages } from "../src/model/index.js";
+import { normalizeReasoningHistory } from "../src/model/reasoning-history-normalization.js";
 import { createTestInputFormat } from "./test-model-format.js";
 
 describe("AI SDK model message transform", () => {
+  it("orders assistant blocks by blockIndex without merging or leaking the field", () => {
+    const [assistant] = toAiSdkMessages([
+      {
+        role: "assistant",
+        content: [
+          { type: "reasoning", text: "first thought", blockIndex: 0 },
+          { type: "text", text: "A", blockIndex: 1 },
+          { type: "reasoning", text: "second thought", blockIndex: 3 },
+          { type: "text", text: "B", blockIndex: 4 },
+        ],
+        toolCalls: [{ id: "t1", name: "Read", input: {}, blockIndex: 2 }],
+      },
+    ]);
+    expect(assistant?.content).toEqual([
+      { type: "reasoning", text: "first thought" },
+      { type: "text", text: "A" },
+      { type: "tool-call", toolCallId: "t1", toolName: "Read", input: {} },
+      { type: "reasoning", text: "second thought" },
+      { type: "text", text: "B" },
+    ]);
+    expect(JSON.stringify(assistant)).not.toContain("blockIndex");
+  });
+
+  it("keeps the legacy content-then-tools layout when any block lacks blockIndex", () => {
+    const [assistant] = toAiSdkMessages([
+      {
+        role: "assistant",
+        content: [{ type: "text", text: "A" }],
+        toolCalls: [{ id: "t1", name: "Read", input: {}, blockIndex: 0 }],
+      },
+    ]);
+    expect(assistant?.content).toEqual([
+      { type: "text", text: "A" },
+      { type: "tool-call", toolCallId: "t1", toolName: "Read", input: {} },
+    ]);
+  });
+
   it("uses a fixed wire-only fallback for empty user content", () => {
     expect(
       toAiSdkMessages([
@@ -47,6 +85,7 @@ describe("AI SDK model message transform", () => {
       { providerKind: "anthropic" as const },
       { providerKind: "custom" as const, apiFormat: "anthropic-messages" },
     ]) {
+      // Legacy entries (no blockIndex) skip rule a, so this layer drops their whitespace blocks.
       expect(toAiSdkMessages(history, options)).toEqual([
         { role: "user", content: "write the doc" },
         { role: "user", content: "where is it?" },
@@ -62,8 +101,54 @@ describe("AI SDK model message transform", () => {
       { role: "assistant", content: "" },
       { role: "assistant", content: [] },
       { role: "user", content: "still there?" },
-      { role: "assistant", content: [{ type: "text", text: "yes" }] },
+      {
+        role: "assistant",
+        content: [
+          { type: "text", text: "  " },
+          { type: "text", text: "yes" },
+        ],
+      },
     ]);
+  });
+
+  it("drops a whitespace text block beside visible text once Anthropic normalization ran", () => {
+    // The real Anthropic request path (runner projectRequestHistory) normalizes before
+    // serializing; rule a removes whitespace text unless it sits between two thinking blocks.
+    const normalized = normalizeReasoningHistory([
+      { role: "user", content: "still there?" },
+      {
+        role: "assistant",
+        content: [
+          { type: "text", text: "  ", blockIndex: 0 },
+          { type: "text", text: "yes", blockIndex: 1 },
+        ],
+      },
+      { role: "user", content: "ok" },
+    ]);
+    expect(toAiSdkMessages(normalized, { providerKind: "anthropic" })).toEqual([
+      { role: "user", content: "still there?" },
+      { role: "assistant", content: [{ type: "text", text: "yes" }] },
+      { role: "user", content: "ok" },
+    ]);
+  });
+
+  it("keeps ordered whitespace between two thinking blocks on the Anthropic wire", () => {
+    const messages = toAiSdkMessages(
+      [
+        {
+          role: "assistant",
+          content: [
+            { type: "reasoning", text: "a", blockIndex: 0 },
+            { type: "text", text: "\n\n", blockIndex: 1 },
+            { type: "reasoning", text: "b", blockIndex: 2 },
+            { type: "text", text: "done", blockIndex: 3 },
+          ],
+        },
+      ],
+      { providerKind: "anthropic" },
+    );
+    const parts = messages[0]?.content as Array<{ type: string; text?: string }>;
+    expect(parts.map((part) => part.text)).toEqual(["a", "\n\n", "b", "done"]);
   });
 
   it("keeps an empty-text assistant turn that still carries tool calls", () => {

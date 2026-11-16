@@ -12,11 +12,14 @@ import {
   createCoreError,
   formatAgentIncompleteNotice,
   formatAgentUsageEntries,
+  readAgentFailureHandback,
+  type AgentContextReport,
   type AgentInput,
   type AgentOutput,
   type TraceContext,
 } from "@zcode/contracts";
 import { TASK_TOOL_NAME } from "../compat.js";
+import { truncateMiddleForModel } from "../result-persistence-format.js";
 import type { ToolEntry, ToolHandler } from "../types.js";
 
 const MAX_AGENT_MODEL_BYTES = 120_000;
@@ -125,7 +128,7 @@ function buildAgentProviderDescription(
     "",
     "- The agent's final report is not shown to the user — relay what matters.",
     "- Use SendMessage with the agent's ID to continue a previously spawned agent with its context intact; a new Agent call starts fresh.",
-    "- Subagents have no token or turn budget; when an agent's context fills up it is compacted automatically and it keeps working. In the result's `<usage>`, `cumulative_billed_tokens` sums every model request (each one re-counts the whole context), so a large number does not mean anything ran out; `peak_context_tokens` against `context_window` shows how full the context actually got. If the result says `status: incomplete`, continue that agent with SendMessage instead of starting a new one.",
+    "- A full context does not end a subagent: when an agent's context fills up it is compacted automatically and it keeps working. In the result's `<usage>`, `cumulative_billed_tokens` sums every model request (each one re-counts the whole context), so a large number does not mean anything ran out; `peak_context_tokens` against `context_window` shows how full the context actually got. If the result says `status: incomplete`, continue that agent with SendMessage instead of starting a new one.",
     "- Each agent type's model, reasoning effort, and tools come from its definition (`.zcode/agents/*.md` frontmatter).",
     // GCode 默认前台运行；后台说明只写这一行，并要求不编造未到达的结果。
     "- `run_in_background: true` runs the agent asynchronously; you'll be notified when it completes. Never fabricate or predict a pending agent's results — the notification is never something you write yourself; if the user asks before it arrives, say it's still running.",
@@ -155,6 +158,48 @@ function formatSubagentHandback(report: string): string {
   return `${SUBAGENT_HANDBACK_FRAME}\n  ${indented}`;
 }
 
+// 同步失败时部分报告前的截断说明：报告不完整，父模型不能把它当成完成的结论。
+const SUBAGENT_PARTIAL_OUTPUT_NOTE =
+  "Everything below is PARTIAL output recovered from the agent before it was cut off. The agent did NOT finish its task \u2014 treat these results as incomplete.";
+
+function formatAgentContinuation(agentId: string): string {
+  return `agentId: ${agentId} (use SendMessage with to: '${agentId}', summary: '<5-10 word recap>' to continue this agent)`;
+}
+
+// 单个 subagent_tokens 是逐请求累计值（每步重计整段上下文），父模型曾把它当成预算耗尽；
+// 改为 cumulative_billed_tokens 并附上下文峰值/窗口/compaction 次数（有 contextReport 时）。
+function formatAgentUsage(usage: {
+  contextReport?: AgentContextReport;
+  totalDurationMs: number;
+  totalTokens?: number;
+  totalToolUseCount: number;
+}): string {
+  const usageLines = formatAgentUsageEntries({
+    ...(usage.contextReport ? { contextReport: usage.contextReport } : {}),
+    durationMs: usage.totalDurationMs,
+    toolUseCount: usage.totalToolUseCount,
+    totalTokens: usage.totalTokens,
+  }).map(([key, value]) => `${key}: ${value}`);
+  return `<usage>${usageLines.join("\n")}</usage>`;
+}
+
+// 修复原因（2026-11-09）：同步子代理跑了几十步后限流失败，父模型只收到 provider 原文，没有 agentId，
+// 无法用 SendMessage 续接。工具调用仍是失败；只给模型的文本补上部分报告（有正文时）、agentId 行和 usage，
+// 结构与同步完成相同。
+function formatAgentFailureForModel(error: unknown): string | undefined {
+  const handback = readAgentFailureHandback(error);
+  if (!handback) return undefined;
+  const report =
+    handback.report !== undefined && handback.report.trim().length > 0
+      ? truncateMiddleForModel(handback.report)
+      : undefined;
+  return [
+    ...(report === undefined ? [] : [SUBAGENT_PARTIAL_OUTPUT_NOTE, formatSubagentHandback(report)]),
+    formatAgentContinuation(handback.agentId),
+    formatAgentUsage(handback),
+  ].join("\n");
+}
+
 function formatAgentOutputForModel(output: unknown): string {
   const parsed = AgentOutputSchema.safeParse(output);
   if (!parsed.success) {
@@ -164,19 +209,14 @@ function formatAgentOutputForModel(output: unknown): string {
   const data = parsed.data as AgentOutput;
   if (data.status !== "async_launched") {
     const childText = data.content.map((block) => block.text).join("\n");
-    // 单个 subagent_tokens 是逐请求累计值（每步重计整段上下文），父模型曾把它当成预算耗尽。
-    const usageLines = formatAgentUsageEntries({
-      ...(data.contextReport ? { contextReport: data.contextReport } : {}),
-      durationMs: data.totalDurationMs,
-      toolUseCount: data.totalToolUseCount,
-      totalTokens: data.totalTokens,
-    }).map(([key, value]) => `${key}: ${value}`);
+    // Explore 可以用 SendMessage 继续，所以同样带 agentId 与 usage。
+    // 这段文本只给模型：父对话里的 Agent 卡片不展开，界面上不出现框架前缀。
     const trailer = [
       ...(data.incomplete && data.incomplete.remainingItems.length > 0
         ? [formatAgentIncompleteNotice(data.agentId, data.incomplete)]
         : []),
-      `agentId: ${data.agentId} (use SendMessage with to: '${data.agentId}', summary: '<5-10 word recap>' to continue this agent)`,
-      `<usage>${usageLines.join("\n")}</usage>`,
+      formatAgentContinuation(data.agentId),
+      formatAgentUsage(data),
     ].join("\n");
     const report =
       childText.trim().length > 0
@@ -212,14 +252,32 @@ function formatAgentOutputForModel(output: unknown): string {
  * 父模型就无法再用 SendMessage 续上这个 agent。这里先截 child 正文，保证 trailer 始终在预算内。
  */
 function fitChildTextBeforeTrailer(childText: string, trailer: string): string {
-  const budget = MAX_AGENT_MODEL_BYTES - Buffer.byteLength(trailer, "utf8") - 512;
-  const bytes = Buffer.from(childText, "utf8");
-  if (bytes.length <= budget) return childText;
-  const kept = bytes
-    .subarray(0, Math.max(0, budget))
-    .toString("utf8")
-    .replace(/\uFFFD+$/u, "");
-  return `${kept}\n[Subagent output truncated after ${budget} bytes. Use SendMessage to ask the agent for the rest.]`;
+  // 修复原因：预算原来只扣 trailer，没算 hand-back 框架行和逐行缩进（每个换行多 2 字节），
+  // 最终结果超出 maxModelBytes，被序列化层截成预览后 agentId 行又丢了。
+  const budget =
+    MAX_AGENT_MODEL_BYTES -
+    Buffer.byteLength(trailer, "utf8") -
+    Buffer.byteLength(SUBAGENT_HANDBACK_FRAME, "utf8") -
+    512;
+  if (handbackBodyBytes(childText) <= budget) return childText;
+  const sliceTo = (limit: number) =>
+    Buffer.from(childText, "utf8")
+      .subarray(0, Math.max(0, limit))
+      .toString("utf8")
+      .replace(/\uFFFD+$/u, "");
+  let kept = sliceTo(budget);
+  // 缩进开销随保留的行数增长；按第一次切出的行数扣掉开销再切一次。再切只会更短、开销更小，必在预算内。
+  const indentOverhead = handbackBodyBytes(kept) - Buffer.byteLength(kept, "utf8");
+  if (indentOverhead > 0) kept = sliceTo(budget - indentOverhead);
+  return `${kept}\n[Subagent output truncated after ${Buffer.byteLength(kept, "utf8")} bytes. Use SendMessage to ask the agent for the rest.]`;
+}
+
+/** 报告进 hand-back 框架后（换行统一并逐行缩进两格）的字节数。 */
+function handbackBodyBytes(text: string): number {
+  return Buffer.byteLength(
+    text.replace(SUBAGENT_REPORT_LINE_BREAKS, "\n").split("\n").join("\n  "),
+    "utf8",
+  );
 }
 
 const agentHandler: ToolHandler = async (input, context) => {
@@ -288,6 +346,7 @@ export const agentToolEntry: ToolEntry = {
   },
   handler: agentHandler,
   formatModelContent: formatAgentOutputForModel,
+  formatErrorModelContent: formatAgentFailureForModel,
   inputSchema: AgentInputJsonSchema,
   outputSchema: AGENT_TOOL_OUTPUT_SCHEMA,
   runtimeInputSchema: AgentInputSchema,

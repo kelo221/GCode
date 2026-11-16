@@ -24,7 +24,6 @@ import type { AgentRuntimeInternal } from "../internal.js";
 import { buildPersistedConversationInputIntent } from "./input-intent-persistence.js";
 import { recordToolUsageFromEvent } from "./usage-observability.js";
 import { redactSecretsDeep } from "../../secrets/secret-vault.js";
-import { persistSessionShellEnvironmentSnapshot } from "./session-shell-environment.js";
 import { persistRuntimeModelSelection } from "./turn-model.js";
 import { writeDynamicWorkflowActivationEntryIfActivated } from "./dynamic-workflow-activation.js";
 import { writeSessionFeaturesEntryAfterFirstPersist } from "../session-features/contract.js";
@@ -582,6 +581,13 @@ export function isSessionPersisted(this: AgentRuntimeInternal): boolean {
 
 const pendingSessionPersistence = new WeakMap<AgentRuntimeInternal, Promise<void>>();
 
+/** 授权复用已有持久化等待；读取不能使草稿提前成为正式任务。 */
+export function getPendingSessionPersistence(
+  runtime: AgentRuntimeInternal,
+): Promise<void> | undefined {
+  return pendingSessionPersistence.get(runtime);
+}
+
 export async function ensureSessionPersisted(
   this: AgentRuntimeInternal,
   input: string,
@@ -625,9 +631,12 @@ async function persistSession(
     const workspaceIdentity = this.config.memory?.workspaceIdentity?.trim();
     await this.sessionStore.createSession({
       id: this.sessionId,
-      // worktree 子代理归属父工作区的 project，而不是 .zcode/worktrees 下的执行目录。
+      // 受管 worktree 会话的项目身份映射回源仓库路径（§6.6.3），directory 仍是实际 cwd。
+      // worktree 隔离的子代理（executionDirectoryOverride）同样归属父工作区的 project，
+      // 而不是 .zcode/worktrees 下的执行目录。
       projectID: projectIdFromDirectory(
-        this.config.executionDirectoryOverride ? persistedWorkspacePath : directory,
+        this.config.projectDirectory ??
+          (this.config.executionDirectoryOverride ? persistedWorkspacePath : directory),
       ),
       // Memory workspaceIdentity 是上游提供的不透明隔离键。这里只做类型品牌化，
       // 不能调用会改写字符串的 ID 生成器，否则恢复后的 Memory root 会发生漂移。
@@ -652,8 +661,6 @@ async function persistSession(
     phase = "session_model_selection";
     const initialSelection = this.getSessionModelSelection();
     if (initialSelection) await persistRuntimeModelSelection(this, initialSelection);
-    phase = "session_shell_snapshot";
-    await persistSessionShellEnvironmentSnapshot(this, traceContext);
     phase = "session_execution_state";
     await this.sessionStore.saveSessionEntry?.(
       buildExecutionStateEntry(this.sessionId, readRuntimeExecutionState(this)),

@@ -28,9 +28,13 @@ const SIGNED_CALL = {
 };
 const UNSIGNED_CALL = { id: "call_b", name: "SigRead", input: { file_path: "b.txt" } };
 
+// 上游给 tool call 加了响应内块序号 blockIndex（docs/design/v2/model/assistant-block-order.md），
+// 它与签名无关；这里只比较身份、输入与 providerOptions。
 function assistantToolCalls(messages: readonly ModelInputMessage[]) {
   return messages.flatMap((message) =>
-    message.role === "assistant" ? (message.toolCalls ?? []) : [],
+    message.role === "assistant"
+      ? (message.toolCalls ?? []).map(({ blockIndex: _blockIndex, ...call }) => call)
+      : [],
   );
 }
 

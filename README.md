@@ -4,7 +4,7 @@
 
 This README only covers what the fork adds. For ZCode itself (the Electron desktop app, the Web client, the CLI distribution, packaging, configuration and the project notice), see the [upstream repository](https://github.com/zai-org/ZCode) and its README.
 
-The fork tracks upstream releases (currently v3.16.2) and keeps its changes on `main`. The Electron desktop app and the Web client are left as upstream ships them.
+The fork tracks upstream releases (currently v3.18.2) and keeps its changes on `main`. The Electron desktop app and the Web client are left as upstream ships them.
 
 ## What the fork adds
 

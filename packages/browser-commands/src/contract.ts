@@ -7,6 +7,7 @@ export type {
   BrowserPoint,
   ControlledView,
   ControlledViewCdp,
+  ControlledViewKeyInputEvent,
   ControlledViewWebContents,
 } from "./browserCommandTypes.js";
 export type { BrowserCommandLogger, BrowserCommandRuntime } from "./browserCommandRuntime.js";

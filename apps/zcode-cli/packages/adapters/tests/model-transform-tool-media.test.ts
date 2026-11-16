@@ -2,6 +2,10 @@ import { describe, expect, it } from "vitest";
 import { toAiSdkMessages } from "../src/model/index.js";
 import { createTestInputFormat } from "./test-model-format.js";
 
+/** 1×1 PNG，供请求出口按字节识别为 image/png。 */
+const CHART_PNG_BASE64 =
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
+
 describe("AI SDK tool result media projection", () => {
   it("accepts case-insensitive data URL schemes for image tool results", () => {
     const messages = toAiSdkMessages(
@@ -470,9 +474,11 @@ describe("AI SDK tool result media projection", () => {
           content: [
             { type: "text", text: "Chart of weekly commits:" },
             {
+              // GCode 的请求出口只放行 PNG/JPEG/GIF/WebP（providerImageMediaType），
+              // SVG 会被替换成文字占位；这里用真实 PNG 字节，只验证说明文字的配对语义。
               type: "image",
-              mediaType: "image/svg+xml",
-              dataUrl: "data:image/svg+xml;base64,Y2hhcnQ=",
+              mediaType: "image/png",
+              dataUrl: `data:image/png;base64,${CHART_PNG_BASE64}`,
             },
           ],
           toolCallId: "call_chart",
@@ -492,9 +498,9 @@ describe("AI SDK tool result media projection", () => {
         (part) => part.type === "text" && String(part.text).includes("Chart of weekly commits:"),
       ),
     ).toBe(false);
-    expect(mediaContent.some((part) => part.type === "image" && part.image === "Y2hhcnQ=")).toBe(
-      true,
-    );
+    expect(
+      mediaContent.some((part) => part.type === "image" && part.image === CHART_PNG_BASE64),
+    ).toBe(true);
   });
 
   it("keeps standalone text untouched when the tool result has no media at all", () => {

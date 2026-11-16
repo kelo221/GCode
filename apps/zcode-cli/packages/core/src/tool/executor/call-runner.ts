@@ -28,6 +28,7 @@ import type { ToolExecutionContext, ToolExecutionResult } from "../types.js";
 import type { ToolEntry } from "../types.js";
 import type { BackgroundTaskTracker } from "./background-tasks.js";
 import {
+  annotateUnsettledCall,
   createErrorResult,
   createPermissionErrorResult,
   createToolHandlerFailureError,
@@ -527,6 +528,7 @@ async function executeToolCallImpl(
         toolCallId: canonicalToolCall.id,
         toolSearch: options?.toolSearch,
         telemetry,
+        logger: deps.logger,
         automationTurn: options?.automationTurn,
         automationId: options?.automationId,
         offPeakTurn: options?.offPeakTurn,
@@ -558,13 +560,16 @@ async function executeToolCallImpl(
         coordinatorResponsePort: deps.coordinatorResponsePort,
         workflowSubmitPort: deps.workflowSubmitPort,
         workflowEscalatePort: deps.workflowEscalatePort,
+        webSearchBudget: deps.webSearchBudget,
         artifactStore: deps.artifactStore,
+        sessionControl: deps.sessionControl,
         automationPort: deps.automationPort,
         offPeakPort: deps.offPeakPort,
         voicePort: deps.voicePort,
         speakCadence: deps.speakCadence,
         codeSearchPort: deps.codeSearchPort,
         diagnosticsPort: deps.diagnosticsPort,
+        pluginDiscoveryPort: options?.pluginDiscoveryUi ? deps.pluginDiscoveryPort : undefined,
         topicResourcePort: deps.topicResourcePort,
         sessionStore: deps.sessionStore,
         sessionModePort: deps.sessionModePort,
@@ -594,6 +599,7 @@ async function executeToolCallImpl(
         workingDirectory: guardedWorkingDirectory ?? deps.getWorkingDirectory(),
         workspaceRoot: deps.getWorkspaceRoot(),
         workspaceIdentity: deps.workspaceIdentity,
+        workspaceKey: deps.workspaceKey,
         remoteSessionId: deps.remoteSessionId,
         clientMode: deps.clientMode,
         deliveryKind: deps.deliveryKind,
@@ -813,25 +819,32 @@ async function executeToolCallImpl(
       );
       // 修复原因：Hook 文本原来以 UI 摘要为底拼进失败结果，有 Hook 与没有 Hook 时模型看到的
       // 错误不同。现在 tool result 只放 createErrorResult 的原文，Hook 文本另成附件。
-      let result = withHookAdditionalContexts(
-        createErrorResult(
-          canonicalToolCall,
-          error instanceof Error ? error : new Error(String(error)),
-          durationMs,
-        ),
-        [
-          // 修复原因：成功路径格式化之后再抛错（例如官方 CUA 帧校验失败、写结果事件失败）时，
-          // 重新格式化会用未过滤的上下文，把被过滤的凭据送进附件，超长上下文还会再落盘一次。
-          ...(formattedSafePreContexts ?? (await formatPreToolHookContexts())),
-          ...(await formatToolHookAdditionalContexts(
-            deps,
-            HookEventName.PostToolUseFailure,
-            canonicalToolCall,
-            failureHookResult.additionalContexts,
-            traceContext,
-          )),
-        ],
+      // 规格 0.15：超时与执行中取消会在「请求可能已被受理」之后打断 handler，回执送不回来；
+      // 让工具把对账身份追加进同一条错误，否则模型只能另起新请求、重复执行。
+      const failure = annotateUnsettledCall(
+        error instanceof Error ? error : new Error(String(error)),
+        entry ?? {},
+        executionInput,
+        canonicalToolCall.id,
       );
+      // 修复原因：同步子代理失败时父模型只收到 provider 原文，拿不到续接用的 agentId。
+      // 工具补充的文本只接在模型可见原文之后；UI 摘要、错误事件和日志都不变。
+      const errorResult = createErrorResult(canonicalToolCall, failure, durationMs, {
+        // 工具补充文本（例如子代理的部分报告）同样进模型上下文，按同一规则脱敏。
+        modelNote: redactOptionalSecretText(entry?.formatErrorModelContent?.(error)),
+      });
+      let result = withHookAdditionalContexts(errorResult, [
+        // 修复原因：成功路径格式化之后再抛错（例如官方 CUA 帧校验失败、写结果事件失败）时，
+        // 重新格式化会用未过滤的上下文，把被过滤的凭据送进附件，超长上下文还会再落盘一次。
+        ...(formattedSafePreContexts ?? (await formatPreToolHookContexts())),
+        ...(await formatToolHookAdditionalContexts(
+          deps,
+          HookEventName.PostToolUseFailure,
+          canonicalToolCall,
+          failureHookResult.additionalContexts,
+          traceContext,
+        )),
+      ]);
       result = withAutomationCreateLimitTurnStop(result, {
         error,
         toolName: canonicalToolCall.name,
@@ -909,6 +922,10 @@ function resolveModelOutputEntry(entry: ToolEntry, output: unknown): ToolEntry {
 
 function isEmptyToolName(toolName: string): boolean {
   return toolName.trim().length === 0;
+}
+
+function redactOptionalSecretText(text: string | undefined): string | undefined {
+  return text === undefined ? undefined : redactSecretText(text);
 }
 
 function errorCategoryForToolError(type: string | undefined): AgentTelemetryErrorCategory {

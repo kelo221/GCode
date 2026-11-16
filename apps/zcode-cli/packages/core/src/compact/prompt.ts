@@ -134,7 +134,7 @@ function buildSubagentCompactSection(options: SubagentCompactPromptOptions): str
   return `
 
 Subagent continuation requirements (these override the section list above where they conflict):
-You are a subagent working on a brief delegated by a parent agent. The brief is not finished: after this summary you will keep calling tools to finish it. Nothing has run out — the context is being compacted to make room, and there is no token or turn budget. Write the summary as a working handoff, not as a final report.
+You are a subagent working on a brief delegated by a parent agent. The brief is not finished: after this summary you will keep calling tools to finish it. Compaction does not mean anything ran out — the context is being compacted to make room; your token budget is the <total_tokens> count, not the context size. Write the summary as a working handoff, not as a final report.
 
 Your <summary> must start with these two sections, before section 1:
 
@@ -231,7 +231,7 @@ export function buildSubagentCompactContinuationReminder(input: {
       : "Check the Work Items list in the summary above and continue with every item not marked done.";
 
   return [
-    "Your context was just compacted to make room. This is routine and does not mean anything ran out: you have no token or turn budget, and your tools are available.",
+    "Your context was just compacted to make room. This is routine and does not mean anything ran out: your token budget is the <total_tokens> count, not the context size, and your tools are available.",
     "Keep working on the task below until every item is done. Do not hand back partial results because of the compaction.",
     ...(briefBlock
       ? ["", "Your task (the latest instructions from the parent agent):", briefBlock]

@@ -5,6 +5,7 @@
 import { type ModelMessage as AiSdkModelMessage, type ToolResultPart } from "ai";
 import {
   ModelErrorCode,
+  isBlockIndex,
   modelMessageContentToText,
   type ModelCacheControl,
   type ModelInputMessage,
@@ -310,32 +311,77 @@ function toAiSdkAssistantContent(
   toolCalls: ModelInputMessage["toolCalls"],
   options: AiSdkAssistantTransformOptions,
 ): AiSdkAssistantContent {
-  const toolCallParts =
-    toolCalls?.map(
-      (toolCall): AiSdkAssistantContentPart => ({
-        type: "tool-call",
-        toolCallId: toolCall.id,
-        toolName: projectToolNameForProvider(toolCall.name, options),
-        input: toolCall.input,
-        ...(options.replayToolCallThoughtSignature
-          ? providerOptionsForToolCallThoughtSignature(toolCall.providerOptions)
-          : {}),
-      }),
-    ) ?? [];
-
   // Anthropic 同样拒绝只含空白的 text block。
-  if (typeof content === "string" && toolCallParts.length === 0) {
+  if (typeof content === "string" && !toolCalls?.length) {
     return content.trim().length > 0 ? content : "";
   }
+  const toToolCallPart = (toolCall: ModelInputToolCall): AiSdkAssistantContentPart => ({
+    type: "tool-call",
+    toolCallId: toolCall.id,
+    toolName: projectToolNameForProvider(toolCall.name, options),
+    input: toolCall.input,
+    ...(options.replayToolCallThoughtSignature
+      ? providerOptionsForToolCallThoughtSignature(toolCall.providerOptions)
+      : {}),
+  });
 
+  const ordered =
+    typeof content === "string" ? undefined : orderedAssistantItems(content, toolCalls);
+  if (ordered) {
+    // 有序条目（docs/design/v2/model/assistant-block-order.md）：按 orderedAssistantItems 的顺序
+    // 输出内容块与工具调用。只改变顺序，不合并块；blockIndex 不进入请求。
+    return ordered.flatMap((item) =>
+      item.kind === "content"
+        ? contentBlockToAiSdkAssistantParts(item.block, options)
+        : [toToolCallPart(item.call)],
+    );
+  }
+
+  const toolCallParts = toolCalls?.map(toToolCallPart) ?? [];
   const contentParts =
     typeof content === "string"
       ? content.trim().length > 0
         ? [{ type: "text" as const, text: content }]
         : []
-      : content.flatMap((block) => contentBlockToAiSdkAssistantParts(block, options));
+      : content
+          // 修复原因：没有 blockIndex 的旧历史不经规则 a 过滤；Anthropic 拒绝纯空白文字块（400），
+          // 旧会话会永久卡死。只在旧条目路径丢弃，有序条目交给规则 a（保留思考块之间的空白）。
+          .filter(
+            (block) =>
+              !(block.type === "text" && block.text.trim().length === 0 && isAnthropicWire(options)),
+          )
+          .flatMap((block) => contentBlockToAiSdkAssistantParts(block, options));
 
   return [...contentParts, ...toolCallParts];
+}
+
+type ModelInputToolCall = NonNullable<ModelInputMessage["toolCalls"]>[number];
+
+/** 有序条目里的一个块：内容块或工具调用，带它的 blockIndex。 */
+export type OrderedAssistantItem =
+  | { kind: "content"; block: ModelMessageContentBlock; blockIndex: number }
+  | { kind: "tool"; call: ModelInputToolCall; blockIndex: number };
+
+/**
+ * 有序条目（docs/design/v2/model/assistant-block-order.md）：内容块与工具调用的 blockIndex 都合法时，
+ * 返回按 blockIndex 稳定排序的块，序号相同时内容块在前；否则返回 undefined。
+ * 请求排列和 Anthropic 规则（reasoning-history-normalization.ts）都用它，两边的判定和顺序因此一致。
+ */
+export function orderedAssistantItems(
+  content: readonly ModelMessageContentBlock[],
+  toolCalls: ModelInputMessage["toolCalls"],
+): OrderedAssistantItem[] | undefined {
+  const items: OrderedAssistantItem[] = [];
+  for (const block of content) {
+    const blockIndex = "blockIndex" in block ? block.blockIndex : undefined;
+    if (!isBlockIndex(blockIndex)) return undefined;
+    items.push({ kind: "content", block, blockIndex });
+  }
+  for (const call of toolCalls ?? []) {
+    if (!isBlockIndex(call.blockIndex)) return undefined;
+    items.push({ kind: "tool", call, blockIndex: call.blockIndex });
+  }
+  return items.sort((left, right) => left.blockIndex - right.blockIndex);
 }
 
 function contentBlockToAiSdkAssistantParts(
@@ -349,7 +395,9 @@ function contentBlockToAiSdkAssistantParts(
         "Tool references must appear inside tool results",
       );
     case "text":
-      return block.text.trim().length > 0 ? [{ type: "text", text: block.text }] : [];
+      // 修复原因：fork 曾在所有线路丢弃纯空白文字块；upstream 的 Anthropic 规则 a
+      // （assistant-block-order.md）已过滤空白块，并保留两个思考块之间的空白，否则思考签名前缀被改。
+      return block.text.length > 0 ? [{ type: "text", text: block.text }] : [];
 
     case "reasoning": {
       if (

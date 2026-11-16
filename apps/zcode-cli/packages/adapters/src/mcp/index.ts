@@ -53,7 +53,7 @@ import {
 import { buildMcpAppsClientCapabilities } from "@zcode/shared/mcp-apps";
 import { createHash, randomUUID } from "node:crypto";
 import { resolve } from "node:path";
-import { isDeepStrictEqual } from "node:util";
+import { isDeepStrictEqual, stripVTControlCharacters } from "node:util";
 import {
   createSharedZCodeCredentialStore,
   type SharedZCodeCredentialStore,
@@ -114,6 +114,7 @@ const DEFAULT_MCP_TIMEOUT_MS = 30_000;
 const MCP_PING_TIMEOUT_MS = 5_000;
 const MAX_MCP_VERSION_PROBE_TIMEOUT_MS = 5_000;
 const MCP_STDIO_STDERR_LOG_MAX_CHARS = 4_000;
+const MCP_STDIO_ERROR_MESSAGE_MAX_CHARS = 512;
 /**
  * span → request id 的暂存条数上限。正常情况下每条都会在同一次 tool call 结束时被取走，
  * 留下的只有无人认领的（如连接期请求），几十条足够，纯为防止长会话下无界增长。
@@ -157,6 +158,11 @@ export interface CreateMcpAdapterOptions {
   workingDirectory?: string;
   /** 连接池按需启动 stdio MCP 时持久化工具清单的文件；缺省则全部会话启动即拉起（lazy-stdio.ts）。 */
   lazyToolCacheFile?: string;
+  /**
+   * 会话所属 workspace 的 key，官方 MCP 授权头请求以它为身份发往 Host。受管 worktree 会话 =
+   * 项目，不等于 workingDirectory（docs/git/worktree.md §9.3）。
+   */
+  workspaceKey?: string;
   /** 有此端口才向 server 宣告 elicitation 能力；缺省时 server 的 elicitation/create 收到 method not found。 */
   elicitation?: McpElicitationPort;
   /** server → client 通知（资源更新 / 列表变化 / 工具列表变化 / 日志）的出口；缺省只记 debug。 */
@@ -233,11 +239,12 @@ export function createMcpAdapterConnectionPool(
   return createMcpConnectionPool({
     logger: options.logger,
     telemetry: options.telemetry,
-    createAdapter: ({ config, connectionContext, serverName, workingDirectory }) => {
+    createAdapter: ({ config, connectionContext, serverName, workingDirectory, workspaceKey }) => {
       const inner = createMcpAdapter({
         ...options,
         connectionContext,
         workingDirectory: workingDirectory ?? options.workingDirectory,
+        ...(workspaceKey ? { workspaceKey } : {}),
       });
       return toolCache && isLazyStdioServer(serverName, config)
         ? createLazyStdioMcpPort({ cache: toolCache, inner, logger: options.logger })
@@ -308,6 +315,7 @@ class NodeMcpAdapter implements McpPort {
   >();
   private readonly records = new Map<string, McpServerRecord>();
   private readonly workingDirectory?: string;
+  private readonly workspaceKey?: string;
   private readonly elicitation?: McpElicitationPort;
   private readonly notifications?: McpNotificationPort;
   /** 资源订阅登记表 serverName → uri → subscriberKey；唯一 owner，连接层计数。 */
@@ -333,6 +341,7 @@ class NodeMcpAdapter implements McpPort {
     this.officialMcpAuth = options.officialMcpAuth;
     this.telemetry = options.telemetry;
     this.workingDirectory = options.workingDirectory;
+    this.workspaceKey = options.workspaceKey;
     this.elicitation = options.elicitation;
     this.notifications = options.notifications;
   }
@@ -1092,6 +1101,7 @@ class NodeMcpAdapter implements McpPort {
         ? { workspaceIdentity: this.officialMcpAuth.workspaceIdentity }
         : {}),
       ...(this.workingDirectory ? { workspacePath: this.workingDirectory } : {}),
+      ...(this.workspaceKey ? { workspaceKey: this.workspaceKey } : {}),
       ...(signal ? { signal } : {}),
     });
     if (!resolved.ok) return fail(resolved.reason);
@@ -1922,14 +1932,25 @@ class NodeMcpAdapter implements McpPort {
     const displayMessage = responseDiagnostic?.serverRequestId
       ? `${message} - ${responseDiagnostic.serverRequestId}`
       : message;
+    const recentStderr = getRecentStderr?.();
+    // 子进程缺依赖等错误只写 stderr，SDK 通常只返回 Connection closed。
+    // 把同一次连接的脱敏诊断带给设置页；只展示证据，不按错误文本改变失败分类或重试。
+    const statusMessage =
+      config.type === "stdio"
+        ? [
+            sanitizeMcpStdioStderr(displayMessage).slice(0, MCP_STDIO_ERROR_MESSAGE_MAX_CHARS),
+            recentStderr,
+          ]
+            .filter(Boolean)
+            .join("\n\n")
+        : displayMessage;
     const status = this.createStatus(config, "failed", {
-      error: displayMessage,
+      error: statusMessage,
       failureKind,
       ...(responseDiagnostic?.serverRequestId
         ? { serverRequestId: responseDiagnostic.serverRequestId }
         : {}),
     });
-    const recentStderr = getRecentStderr?.();
     const mcpTransportPid = getStdioTransportPid(transport);
     await this.closeClientAndTransport(name, client, transport);
     if (!this.isCurrentConnection(name, generation)) {
@@ -2065,6 +2086,7 @@ class NodeMcpAdapter implements McpPort {
         ? { workspaceIdentity: this.officialMcpAuth.workspaceIdentity }
         : {}),
       ...(this.workingDirectory ? { workspacePath: this.workingDirectory } : {}),
+      ...(this.workspaceKey ? { workspaceKey: this.workspaceKey } : {}),
     });
   }
 
@@ -2495,22 +2517,33 @@ function createBoundedTextBuffer(maxChars: number): {
   read(): string;
 } {
   let value = "";
+  let truncated = false;
   return {
     append(text: string) {
       if (!text) return;
       value = `${value}${text}`;
       if (value.length > maxChars) {
         value = value.slice(-maxChars);
+        truncated = true;
       }
     },
     read() {
-      return value;
+      // 尾部截断可能把 VE_SPEECH_MCP_TOKEN=... 切成 KEN=...，键名正则匹配不到会泄露值。
+      // 截断后丢弃第一行残片，保证脱敏看到的每一行都完整。
+      // 行边界含 \r（进度条只用 \r 刷新）。尾部完全没有换行时（单个超长行），
+      // 空白/分隔符可能位于带引号的凭证值内部（KEN="a b" 的 b），从那里恢复会丢失键名和引号上下文而泄露后缀，
+      // 没有可靠的字段边界就不输出，只保留传输错误。
+      if (!truncated) return value;
+      const lineEnd = value.search(/[\r\n]/);
+      return lineEnd < 0 ? "" : value.slice(lineEnd + 1);
     },
   };
 }
 
 function sanitizeMcpStdioStderr(text: string): string {
-  const sensitiveKey = String.raw`(?:api[_-]?key|access[_-]?key|secret(?:[_-]?key)?|private[_-]?key|token|password|passwd|pass|mysql_pass|mysql_password)`;
+  text = stripVTControlCharacters(text);
+  // 插件常给敏感环境变量加前缀，例如 API_TOKEN、VE_SPEECH_MCP_TOKEN，不能只匹配裸 token。
+  const sensitiveKey = String.raw`(?:[a-z0-9_.-]*[_-])?(?:api[_-]?key|access[_-]?key|secret(?:[_-]?key)?|private[_-]?key|token|password|passwd|pass|mysql_pass|mysql_password)`;
   let result = text.replace(/(bearer\s+)[^\s"']+/gi, "$1[Redacted]");
   result = result.replace(
     /(\bauthorization\b\s*[:=]\s*)(bearer\s+)?[^\r\n]+/gi,
@@ -2518,8 +2551,14 @@ function sanitizeMcpStdioStderr(text: string): string {
       `${prefix}${bearer ? "Bearer " : ""}[Redacted]`,
   );
   result = result.replace(new RegExp(`([?&]${sensitiveKey}=)[^&\\s]+`, "gi"), "$1[Redacted]");
+  // 引号中的凭证可能包含空格或转义引号，必须整体替换，不能只遮住第一个词。
+  const quotedValue = String.raw`(["'])(?:\\.|(?!\2)[^\\\r\n])*\2`;
   result = result.replace(
-    new RegExp(`(["']${sensitiveKey}["']\\s*:\\s*)(["'])(?:(?!\\2).)*\\2`, "gi"),
+    new RegExp(String.raw`(["']${sensitiveKey}["']\s*:\s*)${quotedValue}`, "gi"),
+    "$1$2[Redacted]$2",
+  );
+  result = result.replace(
+    new RegExp(String.raw`(\b${sensitiveKey}\b\s*[:=]\s*)${quotedValue}`, "gi"),
     "$1$2[Redacted]$2",
   );
   result = result.replace(

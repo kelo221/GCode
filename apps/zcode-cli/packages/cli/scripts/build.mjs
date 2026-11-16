@@ -13,7 +13,13 @@ const packageJsonFile = "package.json";
 const rootPackageVersionError = "Root package.json must define a non-empty string version.";
 const desktopAgentBuildFlag = "--desktop-agent";
 // @ff-labs/fff-bun 只在 GPUI 的 Bun 编译后端里加载（bun:ffi）；Node 构建永远不打包也不执行它。
-export const resolveBuildExternal = () => ["@zcode/tui", "playwright-core", "koffi", "@ff-labs/fff-bun"];
+export const resolveBuildExternal = () => [
+  "@zcode/tui",
+  "playwright-core",
+  "koffi",
+  "@napi-rs/keyring",
+  "@ff-labs/fff-bun",
+];
 
 export const readZodBuildVersion = async () => {
   const sharedPackage = JSON.parse(
